@@ -91,6 +91,16 @@ export const actions = {
     const students = await loadStudents();
     return created.id ?? students.find((student) => student.name === s.name)?.id ?? "";
   },
+  async deleteStudent(studentId: string) {
+    if (!API_BASE_URL) throw new Error("VITE_API_BASE_URL is not configured");
+
+    const response = await fetch(`${API_BASE_URL}${API_ENDPOINTS.students}/${studentId}`, {
+      method: "DELETE",
+    });
+    if (!response.ok) throw new Error(`Failed to delete student (${response.status})`);
+
+    await loadStudents();
+  },
   async toggleAttendance(studentId: string, day: string) {
     void studentId;
     void day;

@@ -1,6 +1,8 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useMemo, useState } from "react";
+import { Trash2 } from "lucide-react";
 import { AppShell, Panel } from "@/components/AppShell";
+import { Button } from "@/components/ui/button";
 import { attendanceRate, attendedCount, allSundays, actions, useChurch } from "@/lib/church-store";
 import { formatDate, initials } from "@/lib/church-data";
 
@@ -44,7 +46,20 @@ function StudentsPage() {
   const [ageBand, setAgeBand] = useState("all");
   const [selected, setSelected] = useState(students[0]?.id ?? "");
   const [adding, setAdding] = useState(false);
+  const [deleting, setDeleting] = useState(false);
   const [form, setForm] = useState(emptyForm);
+
+  async function handleDelete(studentId: string) {
+    setDeleting(true);
+    try {
+      await actions.deleteStudent(studentId);
+      if (selected === studentId) setSelected("");
+    } catch (error) {
+      console.error("Unable to delete student", error);
+    } finally {
+      setDeleting(false);
+    }
+  }
 
   const rows = useMemo(
     () =>
@@ -191,6 +206,7 @@ function StudentsPage() {
                   <th className="text-left font-medium py-2">Parent Phone</th>
                   <th className="text-left font-medium py-2">Address</th>
                   <th className="text-left font-medium py-2">Training</th>
+                  <th className="py-2 pr-2" aria-label="Actions" />
                 </tr>
               </thead>
               <tbody className="divide-y divide-white/5">
@@ -226,12 +242,29 @@ function StudentsPage() {
                       <td className="py-2.5 text-mint text-[11px]">
                         {done}/{courses.length} complete
                       </td>
+                      <td className="py-2.5 pr-2 text-right">
+                        <Button
+                          type="button"
+                          variant="destructive"
+                          size="sm"
+                          disabled={deleting}
+                          aria-label={`Delete ${s.name}`}
+                          title={`Delete ${s.name}`}
+                          onClick={(event) => {
+                            event.stopPropagation();
+                            void handleDelete(s.id);
+                          }}
+                        >
+                          <Trash2 />
+                          <span className="sr-only">Delete</span>
+                        </Button>
+                      </td>
                     </tr>
                   );
                 })}
                 {rows.length === 0 && (
                   <tr>
-                    <td colSpan={5} className="py-8 text-center text-xs text-muted-foreground">
+                    <td colSpan={6} className="py-8 text-center text-xs text-muted-foreground">
                       No students match this search.
                     </td>
                   </tr>
@@ -244,7 +277,24 @@ function StudentsPage() {
         <div className="col-span-4 space-y-4">
           {student && (
             <>
-              <Panel title="Student Profile" mm="ကျောင်းသား အချက်အလက်">
+              <Panel
+                title="Student Profile"
+                mm="ကျောင်းသား အချက်အလက်"
+                right={
+                  <Button
+                    type="button"
+                    variant="destructive"
+                    size="sm"
+                    disabled={deleting}
+                    aria-label={`Delete ${student.name}`}
+                    title={`Delete ${student.name}`}
+                    onClick={() => void handleDelete(student.id)}
+                  >
+                    <Trash2 />
+                    <span className="sr-only">Delete</span>
+                  </Button>
+                }
+              >
                 <div className="flex items-center gap-3">
                   <div
                     className="size-14 rounded-2xl grid place-items-center font-display text-lg font-semibold"
