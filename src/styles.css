@@ -1,0 +1,157 @@
+@import "tailwindcss" source(none);
+@source "../src";
+@import "tw-animate-css";
+
+@custom-variant dark (&:is(.dark *));
+
+/*
+ * House Of Prayer Assembly — Sunday School OS design system.
+ * Dark "soft glass bento" direction: deep indigo night backdrop, glass panels,
+ * indigo/cyan brand gradient, mint / rose / amber semantic accents.
+ */
+
+@theme inline {
+  --radius-sm: calc(var(--radius) - 4px);
+  --radius-md: calc(var(--radius) - 2px);
+  --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) + 4px);
+  --radius-2xl: calc(var(--radius) + 8px);
+  --radius-3xl: calc(var(--radius) + 12px);
+
+  --font-sans: var(--font-body);
+  --font-display: var(--font-heading);
+
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+  --color-popover: var(--popover);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-destructive: var(--destructive);
+  --color-destructive-foreground: var(--destructive-foreground);
+  --color-border: var(--border);
+  --color-input: var(--input);
+  --color-ring: var(--ring);
+
+  --color-brand: var(--brand);
+  --color-brand-2: var(--brand-2);
+  --color-mint: var(--mint);
+  --color-amber: var(--amber);
+  --color-rose: var(--rose);
+  --color-violet: var(--violet);
+}
+
+:root {
+  --radius: 0.875rem;
+
+  --font-body: "Inter", ui-sans-serif, system-ui, sans-serif;
+  --font-heading: "Space Grotesk", "Inter", sans-serif;
+
+  --background: oklch(0.17 0.045 265);
+  --foreground: oklch(0.98 0.005 250);
+  --card: oklch(0.22 0.045 265);
+  --card-foreground: oklch(0.98 0.005 250);
+  --popover: oklch(0.22 0.05 265);
+  --popover-foreground: oklch(0.98 0.005 250);
+  --primary: oklch(0.62 0.19 275);
+  --primary-foreground: oklch(0.99 0 0);
+  --secondary: oklch(0.28 0.045 265);
+  --secondary-foreground: oklch(0.98 0.005 250);
+  --muted: oklch(0.28 0.04 265);
+  --muted-foreground: oklch(0.72 0.02 260);
+  --accent: oklch(0.79 0.13 200);
+  --accent-foreground: oklch(0.18 0.04 265);
+  --destructive: oklch(0.68 0.19 15);
+  --destructive-foreground: oklch(0.99 0 0);
+  --border: oklch(1 0 0 / 12%);
+  --input: oklch(1 0 0 / 14%);
+  --ring: oklch(0.79 0.13 200);
+
+  --brand: oklch(0.62 0.19 275);
+  --brand-2: oklch(0.79 0.13 200);
+  --violet: oklch(0.62 0.21 292);
+  --mint: oklch(0.79 0.15 163);
+  --amber: oklch(0.84 0.15 84);
+  --rose: oklch(0.72 0.16 12);
+
+  --gradient-brand: linear-gradient(135deg, oklch(0.62 0.19 275), oklch(0.79 0.13 200));
+  --gradient-mint: linear-gradient(135deg, oklch(0.7 0.15 163), oklch(0.82 0.14 168));
+  --gradient-sky: linear-gradient(135deg, oklch(0.65 0.15 240), oklch(0.82 0.13 200));
+  --gradient-violet: linear-gradient(135deg, oklch(0.6 0.2 285), oklch(0.62 0.19 275));
+
+  --app-backdrop:
+    radial-gradient(1200px 700px at 12% -10%, oklch(0.6 0.19 265 / 0.55) 0%, transparent 55%),
+    radial-gradient(1000px 800px at 100% 0%, oklch(0.55 0.22 292 / 0.5) 0%, transparent 55%),
+    radial-gradient(900px 700px at 60% 120%, oklch(0.78 0.13 200 / 0.35) 0%, transparent 55%),
+    oklch(0.16 0.04 265);
+}
+
+@layer base {
+  * {
+    border-color: var(--color-border);
+  }
+
+  body {
+    background: var(--app-backdrop) fixed;
+    color: var(--color-foreground);
+    font-family: var(--font-body);
+  }
+
+  h1,
+  h2,
+  h3 {
+    font-family: var(--font-heading);
+  }
+}
+
+@utility glass {
+  background: linear-gradient(160deg, rgb(255 255 255 / 0.09), rgb(255 255 255 / 0.03));
+  backdrop-filter: blur(14px);
+  border: 1px solid rgb(255 255 255 / 0.1);
+  box-shadow:
+    0 12px 40px rgb(0 0 0 / 0.35),
+    inset 0 1px 0 rgb(255 255 255 / 0.08);
+}
+
+@utility glass-inset {
+  background: rgb(255 255 255 / 0.05);
+  border: 1px solid rgb(255 255 255 / 0.1);
+}
+
+@utility gradient-brand {
+  background-image: var(--gradient-brand);
+}
+
+@utility gradient-mint {
+  background-image: var(--gradient-mint);
+}
+
+@utility gradient-sky {
+  background-image: var(--gradient-sky);
+}
+
+@utility gradient-violet {
+  background-image: var(--gradient-violet);
+}
+
+@utility field {
+  border-radius: var(--radius);
+  background: rgb(255 255 255 / 0.05);
+  border: 1px solid rgb(255 255 255 / 0.1);
+  color: var(--color-foreground);
+  &::placeholder {
+    color: rgb(255 255 255 / 0.4);
+  }
+  &:focus {
+    outline: none;
+    border-color: color-mix(in oklab, var(--brand-2) 60%, transparent);
+  }
+}
