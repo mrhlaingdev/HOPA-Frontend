@@ -76,54 +76,71 @@ function NotificationBell() {
       <PopoverTrigger asChild>
         <button
           type="button"
-          className="glass rounded-xl size-10 grid place-items-center relative text-muted-foreground transition-colors hover:text-foreground"
+          className="relative grid size-9 place-items-center text-muted-foreground transition-colors hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent/60"
           aria-label={`${unreadNotifications.length} unread notifications`}
         >
-          <Bell className="size-4" />
+          <Bell className="size-5" strokeWidth={1.8} />
           {unreadNotifications.length > 0 && (
-            <span className="absolute -top-1 -right-1 min-w-4 h-4 rounded-full bg-rose px-1 text-[10px] leading-4 text-white">
+            <span className="absolute right-0.5 top-0.5 min-w-3.5 h-3.5 rounded-full bg-rose px-1 text-[9px] font-semibold leading-3.5 text-white shadow-sm shadow-black/30">
               {unreadNotifications.length > 9 ? "9+" : unreadNotifications.length}
             </span>
           )}
         </button>
       </PopoverTrigger>
-      <PopoverContent align="end" className="w-80 p-0">
-        <div className="flex items-center justify-between border-b border-border/60 px-4 py-3">
+      <PopoverContent
+        align="end"
+        sideOffset={10}
+        className="w-[min(22rem,calc(100vw-2rem))] overflow-hidden rounded-2xl border border-white/10 bg-[rgb(24_29_54_/_0.94)] p-0 text-white shadow-2xl shadow-black/40 backdrop-blur-xl"
+      >
+        <div className="flex items-center justify-between border-b border-white/10 px-4 py-3">
           <div>
-            <p className="text-sm font-semibold">Notifications</p>
-            <p className="text-[11px] text-muted-foreground">
-              {unreadNotifications.length} unread alert{unreadNotifications.length === 1 ? "" : "s"}
-            </p>
+            <div className="flex items-center gap-2">
+              <p className="text-sm font-semibold tracking-tight">Notifications</p>
+              {unreadNotifications.length > 0 && (
+                <span className="rounded-full bg-rose/15 px-1.5 py-0.5 text-[10px] font-semibold text-rose-200">
+                  {unreadNotifications.length} new
+                </span>
+              )}
+            </div>
+            <p className="mt-0.5 text-[11px] text-white/50">Recent system activity</p>
           </div>
-          <Bell className="size-4 text-muted-foreground" />
+          <Bell className="size-4 text-accent/80" strokeWidth={1.8} />
         </div>
         {unreadNotifications.length === 0 ? (
           <div className="px-4 py-8 text-center">
-            <Check className="mx-auto size-6 text-emerald-400" />
+            <Check className="mx-auto size-6 text-emerald-300" strokeWidth={1.6} />
             <p className="mt-2 text-sm font-medium">No new notifications</p>
-            <p className="mt-1 text-xs text-muted-foreground">You&apos;re all caught up.</p>
+            <p className="mt-1 text-xs text-white/50">You&apos;re all caught up.</p>
           </div>
         ) : (
-          <div className="divide-y divide-border/50">
+          <div>
             {unreadNotifications.map((notification) => (
-              <div key={notification.id} className="px-4 py-3">
-                <div className="flex items-start justify-between gap-3">
-                  <div className="min-w-0">
-                    <p className="text-sm font-medium">{notification.title}</p>
-                    <p className="mt-1 text-xs leading-relaxed text-muted-foreground">
+              <div
+                key={notification.id}
+                className="border-b border-white/8 px-4 py-3 last:border-b-0"
+              >
+                <div className="flex items-start gap-3">
+                  <span className="mt-1.5 size-1.5 shrink-0 rounded-full bg-accent" />
+                  <div className="min-w-0 flex-1">
+                    <div className="flex items-start justify-between gap-3">
+                      <p className="text-xs font-semibold leading-5 text-white/90">
+                        {notification.title}
+                      </p>
+                      <span className="shrink-0 text-[10px] text-white/40">
+                        {notification.timestamp}
+                      </span>
+                    </div>
+                    <p className="mt-0.5 text-[11px] leading-4 text-white/55">
                       {notification.detail}
                     </p>
-                    <p className="mt-2 text-[10px] text-muted-foreground">
-                      {notification.timestamp}
-                    </p>
+                    <button
+                      type="button"
+                      onClick={() => markAsRead(notification.id)}
+                      className="mt-2 text-[10px] font-medium text-accent/90 transition-colors hover:text-accent hover:underline"
+                    >
+                      Mark as read
+                    </button>
                   </div>
-                  <button
-                    type="button"
-                    onClick={() => markAsRead(notification.id)}
-                    className="shrink-0 text-[11px] font-medium text-primary hover:underline"
-                  >
-                    Mark as Read
-                  </button>
                 </div>
               </div>
             ))}
