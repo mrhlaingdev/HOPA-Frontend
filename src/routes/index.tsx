@@ -1,10 +1,11 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useMemo, useState } from "react";
 import { AppShell, Panel } from "@/components/AppShell";
+import { DateFilters } from "@/components/DateFilters";
 import {
-  CURRENT_MONTH,
-  allSundays,
+  ALL_DATE_FILTER,
   attendanceRate,
+  matchesDate,
   monthlyTotals,
   useChurch,
 } from "@/lib/church-store";
@@ -34,22 +35,52 @@ export const Route = createFileRoute("/")({
 });
 
 function Overview() {
-  const { students, courses, attendance, txns } = useChurch();
+  const { students, courses, attendance, completions, txns } = useChurch();
   const [q, setQ] = useState("");
-  const month = monthlyTotals(txns, CURRENT_MONTH);
-  const recentWeeks = allSundays.slice(-7);
+  const [dateFilter, setDateFilter] = useState(ALL_DATE_FILTER);
+  const filteredStudents = students.filter((student) => matchesDate(student.enrolled, dateFilter));
+  const filteredCourses = courses.filter((course) => matchesDate(course.date, dateFilter));
+  const completedInPeriod = completions.filter((completion) =>
+    matchesDate(completion.date, dateFilter),
+  ).length;
+  const filteredAttendance = attendance.filter((record) =>
+    matchesDate(record.split("|")[1] ?? "", dateFilter),
+  );
+  const month = monthlyTotals(txns, dateFilter);
+  const recentWeeks = Array.from(new Set(attendance.map((record) => record.split("|")[1] ?? "")))
+    .filter((date) => matchesDate(date, dateFilter))
+    .sort()
+    .slice(-7);
 
   const filtered = useMemo(
-    () => students.filter((s) => s.name.toLowerCase().includes(q.toLowerCase())).slice(0, 3),
-    [students, q],
+    () =>
+      filteredStudents.filter((s) => s.name.toLowerCase().includes(q.toLowerCase())).slice(0, 3),
+    [filteredStudents, q],
   );
 
-  const weeklyCounts = recentWeeks.map((d) => attendance.filter((k) => k.endsWith("|" + d)).length);
+  const weeklyCounts = recentWeeks.map(
+    (d) => filteredAttendance.filter((k) => k.endsWith("|" + d)).length,
+  );
   const peak = Math.max(...weeklyCounts, 1);
 
   return (
     <AppShell search={q} onSearch={setQ}>
-      <h1 className="sr-only">Church & Sunday School Dashboard</h1>
+      <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
+        <div>
+          <h1 className="font-display text-2xl font-semibold">Overview</h1>
+          <p className="text-[11px] text-muted-foreground">Church &amp; Sunday School Dashboard</p>
+        </div>
+        <DateFilters
+          value={dateFilter}
+          onChange={setDateFilter}
+          dates={[
+            ...students.map((student) => student.enrolled),
+            ...courses.map((course) => course.date),
+            ...txns.map((txn) => txn.date),
+            ...completions.map((completion) => completion.date),
+          ]}
+        />
+      </div>
 
       <div className="grid grid-cols-12 gap-4">
         <div className="glass rounded-2xl col-span-8 p-5">
@@ -57,7 +88,7 @@ function Overview() {
             <p className="text-muted-foreground text-sm">Total Sunday School Students</p>
             <span className="text-[11px] text-muted-foreground">Live data</span>
           </div>
-          <p className="mt-2 text-4xl font-display font-bold">{students.length}</p>
+          <p className="mt-2 text-4xl font-display font-bold">{filteredStudents.length}</p>
           <p className="mt-1 text-[11px] text-muted-foreground">
             တနင်္ဂနွေကျောင်း ကျောင်းသားစုစုပေါင်း
           </p>
@@ -77,10 +108,10 @@ function Overview() {
           <div className="glass rounded-2xl p-5 flex flex-col">
             <p className="text-muted-foreground text-sm">Active Courses</p>
             <p className="mt-1 text-3xl font-display font-bold">
-              {courses.filter((c) => c.active).length}
+              {filteredCourses.filter((c) => c.active).length}
             </p>
             <p className="mt-auto text-[11px] text-muted-foreground">
-              {courses.length} total this year
+              {filteredCourses.length} in selected period
             </p>
           </div>
           <div className="glass rounded-2xl p-5 flex flex-col justify-center">
@@ -111,6 +142,12 @@ function Overview() {
             <span className="size-2.5 rounded-full bg-rose" />
             <span className="text-[11px] text-muted-foreground">Supplies &amp; utilities</span>
           </div>
+        </div>
+
+        <div className="glass rounded-2xl col-span-4 p-5">
+          <p className="text-muted-foreground text-sm">Courses Completed</p>
+          <p className="mt-1 text-3xl font-display font-bold text-accent">{completedInPeriod}</p>
+          <p className="mt-3 text-[11px] text-muted-foreground">In the selected month or period</p>
         </div>
 
         <div className="glass rounded-2xl col-span-4 p-5">
@@ -200,12 +237,12 @@ function Overview() {
           }
         >
           <div className="space-y-2">
-            {students.slice(0, 4).map((s) => (
+            {filteredStudents.slice(0, 4).map((s) => (
               <div key={s.id} className="flex items-center gap-3">
                 <div className="w-28 truncate text-sm opacity-85">{s.name}</div>
                 <div className="flex gap-1.5">
                   {recentWeeks.map((d) => {
-                    const present = attendance.includes(`${s.id}|${d}`);
+                    const present = filteredAttendance.includes(`${s.id}|${d}`);
                     return (
                       <span
                         key={d}
@@ -220,7 +257,7 @@ function Overview() {
                   })}
                 </div>
                 <span className="ml-auto text-[11px] text-muted-foreground">
-                  {attendanceRate(attendance, s.id)}% yearly
+                  {attendanceRate(filteredAttendance, s.id)}% selected
                 </span>
               </div>
             ))}
@@ -242,7 +279,7 @@ function Overview() {
           }
         >
           <div className="grid grid-cols-4 gap-3">
-            {txns
+            {month.rows
               .filter((t) => t.receipt)
               .slice(0, 4)
               .map((t) => (

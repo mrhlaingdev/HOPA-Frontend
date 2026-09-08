@@ -1,14 +1,14 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { useMemo, useState } from "react";
+import { useState } from "react";
 import { Pencil } from "lucide-react";
 import { AppShell, Panel } from "@/components/AppShell";
+import { DateFilters } from "@/components/DateFilters";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import {
-  CURRENT_MONTH,
+  ALL_DATE_FILTER,
   actions,
   formatApiError,
-  monthOf,
   monthlyTotals,
   useChurch,
 } from "@/lib/church-store";
@@ -46,17 +46,13 @@ const emptyTxn = {
 function FinancePage() {
   const { txns } = useChurch();
   const [q, setQ] = useState("");
-  const [month, setMonth] = useState(CURRENT_MONTH);
+  const [dateFilter, setDateFilter] = useState(ALL_DATE_FILTER);
   const [form, setForm] = useState(emptyTxn);
   const [viewing, setViewing] = useState<string | null>(null);
   const [editing, setEditing] = useState<(typeof txns)[number] | null>(null);
   const [editForm, setEditForm] = useState(emptyTxn);
 
-  const months = useMemo(
-    () => Array.from(new Set(txns.map((t) => monthOf(t.date)))).sort().reverse(),
-    [txns],
-  );
-  const totals = monthlyTotals(txns, month);
+  const totals = monthlyTotals(txns, dateFilter);
   const rows = totals.rows.filter(
     (t) =>
       t.description.toLowerCase().includes(q.toLowerCase()) ||
@@ -79,19 +75,24 @@ function FinancePage() {
 
   return (
     <AppShell search={q} onSearch={setQ}>
-      <h1 className="font-display text-2xl font-semibold">Petty Cash &amp; Finance</h1>
-      <p className="text-[11px] text-muted-foreground mb-4">ငွေစာရင်း စီမံခန့်ခွဲမှု</p>
+      <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
+        <div>
+          <h1 className="font-display text-2xl font-semibold">Petty Cash &amp; Finance</h1>
+          <p className="text-[11px] text-muted-foreground">ငွေစာရင်း စီမံခန့်ခွဲမှု</p>
+        </div>
+        <DateFilters value={dateFilter} onChange={setDateFilter} dates={txns.map((txn) => txn.date)} />
+      </div>
 
       <div className="grid grid-cols-12 gap-4">
         <div className="glass rounded-2xl col-span-4 p-5">
-          <p className="text-muted-foreground text-sm">Total Income</p>
+          <p className="text-muted-foreground text-sm">Total Monthly Income</p>
           <p className="mt-1 text-3xl font-display font-bold text-mint">
             {formatShort(totals.income)}
           </p>
           <p className="mt-1 text-[11px] text-muted-foreground">{formatKs(totals.income)}</p>
         </div>
         <div className="glass rounded-2xl col-span-4 p-5">
-          <p className="text-muted-foreground text-sm">Total Expenses</p>
+          <p className="text-muted-foreground text-sm">Monthly Spent Budget</p>
           <p className="mt-1 text-3xl font-display font-bold text-rose">
             {formatShort(totals.expense)}
           </p>
@@ -103,7 +104,9 @@ function FinancePage() {
             {totals.net >= 0 ? "+ " : "− "}
             {formatShort(Math.abs(totals.net))}
           </p>
-          <p className="mt-1 text-[11px] text-muted-foreground">Month {month}</p>
+          <p className="mt-1 text-[11px] text-muted-foreground">
+            {dateFilter.year === "all" ? "All years" : dateFilter.year} · {dateFilter.month === "all" ? "All months" : "Selected month"}
+          </p>
         </div>
 
         <Panel title="Record Transaction" mm="ငွေသွင်း / ငွေထုတ် မှတ်တမ်း" className="col-span-4">
@@ -115,7 +118,6 @@ function FinancePage() {
               try {
                 await actions.addTxn({ ...form, receipt: form.receipt });
                 const description = form.description;
-                setMonth(monthOf(form.date));
                 setForm(emptyTxn);
                 toast.success(`Successfully added ${description}!`);
               } catch (error) {
@@ -189,18 +191,9 @@ function FinancePage() {
           mm={`${rows.length} records`}
           className="col-span-8"
           right={
-            <select
-              value={month}
-              onChange={(e) => setMonth(e.target.value)}
-              className="field px-3 py-2 text-xs"
-              aria-label="Select month"
-            >
-              {months.map((m) => (
-                <option key={m} value={m}>
-                  {m}
-                </option>
-              ))}
-            </select>
+            <span className="text-[11px] text-muted-foreground">
+              {dateFilter.month === "all" ? "All months" : "Selected month"}
+            </span>
           }
         >
           <table className="w-full text-sm">
@@ -272,7 +265,7 @@ function FinancePage() {
               {rows.length === 0 && (
                 <tr>
                   <td colSpan={6} className="py-8 text-center text-xs text-muted-foreground">
-                    No transactions for this month.
+                    No transactions for the selected period.
                   </td>
                 </tr>
               )}

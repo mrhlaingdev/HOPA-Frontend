@@ -258,12 +258,36 @@ export function monthOf(iso: string) {
   return iso.slice(0, 7);
 }
 
-export function monthlyTotals(txns: Txn[], month: string) {
-  const rows = txns.filter((t) => monthOf(t.date) === month);
+export type DateFilter = { year: string; month: string };
+
+export const MONTH_NAMES = [
+  "January",
+  "February",
+  "March",
+  "April",
+  "May",
+  "June",
+  "July",
+  "August",
+  "September",
+  "October",
+  "November",
+  "December",
+] as const;
+
+export const ALL_DATE_FILTER: DateFilter = { year: "all", month: "all" };
+
+export function matchesDate(iso: string, filter: DateFilter) {
+  return (
+    (filter.year === "all" || iso.slice(0, 4) === filter.year) &&
+    (filter.month === "all" || iso.slice(5, 7) === filter.month)
+  );
+}
+
+export function monthlyTotals(txns: Txn[], filter: DateFilter) {
+  const rows = txns.filter((t) => matchesDate(t.date, filter));
   const income = rows.filter((t) => t.type === "income").reduce((a, t) => a + t.amount, 0);
   const expense = rows.filter((t) => t.type === "expense").reduce((a, t) => a + t.amount, 0);
   return { income, expense, net: income - expense, rows };
 }
-
-export const CURRENT_MONTH = new Date().toISOString().slice(0, 7);
 export { allSundays };

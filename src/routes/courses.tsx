@@ -2,9 +2,17 @@ import { createFileRoute } from "@tanstack/react-router";
 import { useEffect, useMemo, useState } from "react";
 import { Pencil, Trash2 } from "lucide-react";
 import { AppShell, Panel } from "@/components/AppShell";
+import { DateFilters } from "@/components/DateFilters";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { actions, formatApiError, loadCourses, useChurch } from "@/lib/church-store";
+import {
+  ALL_DATE_FILTER,
+  actions,
+  formatApiError,
+  loadCourses,
+  matchesDate,
+  useChurch,
+} from "@/lib/church-store";
 import { formatDate } from "@/lib/church-data";
 import { toast } from "sonner";
 
@@ -33,6 +41,7 @@ export const Route = createFileRoute("/courses")({
 function CoursesPage() {
   const { courses, students, completions } = useChurch();
   const [q, setQ] = useState("");
+  const [dateFilter, setDateFilter] = useState(ALL_DATE_FILTER);
   const [selected, setSelected] = useState(courses[0]?.id ?? "");
   const [form, setForm] = useState({
     title: "",
@@ -51,21 +60,30 @@ function CoursesPage() {
 
   const rows = useMemo(
     () =>
-      courses.filter(
+      courses.filter((c) => matchesDate(c.date, dateFilter)).filter(
         (c) =>
           c.title.toLowerCase().includes(q.toLowerCase()) ||
           c.date.includes(q) ||
           formatDate(c.date).toLowerCase().includes(q.toLowerCase()),
       ),
-    [courses, q],
+    [courses, q, dateFilter],
   );
 
-  const course = courses.find((c) => c.id === selected) ?? rows[0] ?? courses[0];
+  const course = rows.find((c) => c.id === selected) ?? rows[0];
 
   return (
     <AppShell search={q} onSearch={setQ}>
-      <h1 className="font-display text-2xl font-semibold">Courses &amp; Training</h1>
-      <p className="text-[11px] text-muted-foreground mb-4">သင်တန်းများ စီမံခန့်ခွဲမှု</p>
+      <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
+        <div>
+          <h1 className="font-display text-2xl font-semibold">Courses &amp; Training</h1>
+          <p className="text-[11px] text-muted-foreground">သင်တန်းများ စီမံခန့်ခွဲမှု</p>
+        </div>
+        <DateFilters
+          value={dateFilter}
+          onChange={setDateFilter}
+          dates={[...courses.map((course) => course.date), ...completions.map((item) => item.date)]}
+        />
+      </div>
 
       <div className="grid grid-cols-12 gap-4">
         <Panel
@@ -112,7 +130,9 @@ function CoursesPage() {
                   <td className="py-2.5 text-muted-foreground">{c.time}</td>
                   <td className="py-2.5 text-muted-foreground">{c.instructor}</td>
                   <td className="py-2.5 text-right text-mint">
-                    {completions.filter((x) => x.courseId === c.id).length}/{students.length}
+                    {completions.filter(
+                      (x) => x.courseId === c.id && matchesDate(x.date, dateFilter),
+                    ).length}/{students.length}
                   </td>
                   <td className="py-2.5 text-right">
                     <div className="flex justify-end gap-1">
