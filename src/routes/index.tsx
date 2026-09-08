@@ -10,6 +10,7 @@ import {
   useChurch,
 } from "@/lib/church-store";
 import { formatDate, formatShort, initials } from "@/lib/church-data";
+import { usePermission } from "@/lib/auth";
 
 export const Route = createFileRoute("/")({
   head: () => ({
@@ -35,6 +36,7 @@ export const Route = createFileRoute("/")({
 });
 
 function Overview() {
+  const canViewFinance = usePermission("view-finance");
   const {
     students: storedStudents,
     courses: storedCourses,
@@ -184,12 +186,14 @@ function Overview() {
             >
               + Attendance
             </Link>
-            <Link
-              to="/finance"
-              className="rounded-xl py-3 text-xs font-medium text-center gradient-sky"
-            >
-              + Finance
-            </Link>
+            {canViewFinance && (
+              <Link
+                to="/finance"
+                className="rounded-xl py-3 text-xs font-medium text-center gradient-sky"
+              >
+                + Finance
+              </Link>
+            )}
             <Link
               to="/students"
               search={{ q: "" }}

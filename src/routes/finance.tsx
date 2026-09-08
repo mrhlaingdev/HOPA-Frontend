@@ -14,6 +14,7 @@ import {
 } from "@/lib/church-store";
 import { formatDate, formatKs, formatShort } from "@/lib/church-data";
 import { toast } from "sonner";
+import { usePermission } from "@/lib/auth";
 
 export const Route = createFileRoute("/finance")({
   head: () => ({
@@ -44,6 +45,7 @@ const emptyTxn = {
 };
 
 function FinancePage() {
+  const canManage = usePermission("manage-finance");
   const { txns } = useChurch();
   const [q, setQ] = useState("");
   const [dateFilter, setDateFilter] = useState(ALL_DATE_FILTER);
@@ -109,7 +111,7 @@ function FinancePage() {
           </p>
         </div>
 
-        <Panel title="Record Transaction" mm="ငွေသွင်း / ငွေထုတ် မှတ်တမ်း" className="col-span-4">
+        {canManage && <Panel title="Record Transaction" mm="ငွေသွင်း / ငွေထုတ် မှတ်တမ်း" className="col-span-4">
           <form
             className="space-y-2"
             onSubmit={async (e) => {
@@ -184,7 +186,7 @@ function FinancePage() {
               Save Transaction
             </button>
           </form>
-        </Panel>
+        </Panel>}
 
         <Panel
           title="Transaction History"

@@ -14,6 +14,7 @@ import {
 } from "@/lib/church-store";
 import { formatDate } from "@/lib/church-data";
 import { toast } from "sonner";
+import { usePermission } from "@/lib/auth";
 
 export const Route = createFileRoute("/courses")({
   head: () => ({
@@ -38,6 +39,8 @@ export const Route = createFileRoute("/courses")({
 });
 
 function CoursesPage() {
+  const canManage = usePermission("manage-courses");
+  const canDelete = usePermission("delete-records");
   const { courses, students, completions } = useChurch();
   const [q, setQ] = useState("");
   const [dateFilter, setDateFilter] = useState(ALL_DATE_FILTER);
@@ -129,7 +132,7 @@ function CoursesPage() {
                   </td>
                   <td className="py-2.5 text-right">
                     <div className="flex justify-end gap-1">
-                      <Button
+                      {canManage && <Button
                         type="button"
                         variant="ghost"
                         size="sm"
@@ -148,8 +151,8 @@ function CoursesPage() {
                       >
                         <Pencil />
                         <span className="sr-only">Edit</span>
-                      </Button>
-                      <Button
+                      </Button>}
+                      {canDelete && <Button
                         type="button"
                         variant="ghost"
                         size="sm"
@@ -169,7 +172,7 @@ function CoursesPage() {
                       >
                         <Trash2 />
                         <span className="sr-only">Delete</span>
-                      </Button>
+                      </Button>}
                     </div>
                   </td>
                 </tr>
@@ -184,7 +187,7 @@ function CoursesPage() {
             </tbody>
           </table>
 
-          <form
+          {canManage && <form
             className="mt-4 grid grid-cols-5 gap-2 rounded-xl glass-inset p-3"
             onSubmit={async (e) => {
               e.preventDefault();
@@ -226,7 +229,7 @@ function CoursesPage() {
             <button className="col-span-5 rounded-xl gradient-brand py-2 text-xs font-medium">
               + Create Course
             </button>
-          </form>
+          </form>}
         </Panel>
 
         <Panel

@@ -1,12 +1,13 @@
 import { Link, useRouterState } from "@tanstack/react-router";
 import type { ReactNode } from "react";
+import { hasPermission, roleLabel, useCurrentRole, usePermission } from "@/lib/auth";
 
 const nav = [
-  { to: "/", glyph: "◈", label: "Overview", mm: "အကျဉ်း" },
-  { to: "/students", glyph: "◔", label: "Students", mm: "ကျောင်းသား" },
-  { to: "/attendance", glyph: "▤", label: "Attendance", mm: "တက်ရောက်မှု" },
-  { to: "/courses", glyph: "▣", label: "Courses", mm: "သင်တန်း" },
-  { to: "/finance", glyph: "₵", label: "Finance", mm: "ငွေစာရင်း" },
+  { to: "/", glyph: "◈", label: "Overview", mm: "အကျဉ်း", permission: "view-dashboard" },
+  { to: "/students", glyph: "◔", label: "Students", mm: "ကျောင်းသား", permission: "view-students" },
+  { to: "/attendance", glyph: "▤", label: "Attendance", mm: "တက်ရောက်မှု", permission: "view-attendance" },
+  { to: "/courses", glyph: "▣", label: "Courses", mm: "သင်တန်း", permission: "view-courses" },
+  { to: "/finance", glyph: "₵", label: "Finance", mm: "ငွေစာရင်း", permission: "view-finance" },
 ] as const;
 
 export function AppShell({
@@ -19,6 +20,8 @@ export function AppShell({
   onSearch?: (v: string) => void;
 }) {
   const pathname = useRouterState({ select: (s) => s.location.pathname });
+  const role = useCurrentRole();
+  const canQuickAdd = usePermission("manage-students");
 
   return (
     <div className="relative flex min-h-screen w-full">
@@ -34,7 +37,7 @@ export function AppShell({
         </div>
 
         <nav className="flex flex-col gap-1">
-          {nav.map((n) => {
+          {nav.filter((n) => hasPermission(role, n.permission)).map((n) => {
             const active = n.to === "/" ? pathname === "/" : pathname.startsWith(n.to);
             return (
               <Link
@@ -84,12 +87,14 @@ export function AppShell({
           </div>
 
           <div className="ml-auto flex items-center gap-3">
-            <Link
-              to="/students" search={{ q: "" }}
-              className="glass rounded-xl px-4 py-2.5 text-sm font-medium flex items-center gap-2"
-            >
-              + Quick Add
-            </Link>
+            {canQuickAdd && (
+              <Link
+                to="/students" search={{ q: "" }}
+                className="glass rounded-xl px-4 py-2.5 text-sm font-medium flex items-center gap-2"
+              >
+                + Quick Add
+              </Link>
+            )}
             <button
               type="button"
               className="glass rounded-xl size-10 grid place-items-center relative text-muted-foreground"
@@ -104,7 +109,7 @@ export function AppShell({
               </div>
               <div className="leading-tight">
                 <p className="text-sm font-medium">Win Hlaing Htun</p>
-                <p className="text-[11px] text-muted-foreground">Administrator</p>
+                <p className="text-[11px] text-muted-foreground">{roleLabel(role)}</p>
               </div>
             </div>
           </div>

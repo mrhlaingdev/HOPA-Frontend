@@ -14,6 +14,7 @@ import {
 } from "@/lib/church-store";
 import { formatDate, initials } from "@/lib/church-data";
 import { toast } from "sonner";
+import { usePermission } from "@/lib/auth";
 
 export const Route = createFileRoute("/students")({
   validateSearch: (s: Record<string, unknown>) => ({ q: typeof s["q"] === "string" ? (s["q"] as string) : "" }),
@@ -47,6 +48,8 @@ const emptyForm = {
 };
 
 function StudentsPage() {
+  const canManage = usePermission("manage-students");
+  const canDelete = usePermission("delete-records");
   const search = Route.useSearch();
   const initialQ = search["q"];
   const { students, attendance, courses, completions } = useChurch();
@@ -120,13 +123,15 @@ function StudentsPage() {
           mm={`${rows.length} of ${students.length} students`}
           className="col-span-8"
           right={
-            <button
-              type="button"
-              onClick={() => setAdding((v) => !v)}
-              className="rounded-xl px-4 py-2 text-xs font-medium gradient-mint text-accent-foreground"
-            >
-              {adding ? "Close" : "+ Add Student"}
-            </button>
+            canManage && (
+              <button
+                type="button"
+                onClick={() => setAdding((v) => !v)}
+                className="rounded-xl px-4 py-2 text-xs font-medium gradient-mint text-accent-foreground"
+              >
+                {adding ? "Close" : "+ Add Student"}
+              </button>
+            )
           }
         >
           {adding && (
@@ -272,7 +277,7 @@ function StudentsPage() {
                         {done}/{courses.length} complete
                       </td>
                       <td className="py-2.5 pr-2 text-right">
-                        <Button
+                        {canManage && <Button
                           type="button"
                           variant="ghost"
                           size="sm"
@@ -285,8 +290,8 @@ function StudentsPage() {
                         >
                           <Pencil />
                           <span className="sr-only">Edit</span>
-                        </Button>
-                        <Button
+                        </Button>}
+                        {canDelete && <Button
                           type="button"
                           variant="destructive"
                           size="sm"
@@ -300,7 +305,7 @@ function StudentsPage() {
                         >
                           <Trash2 />
                           <span className="sr-only">Delete</span>
-                        </Button>
+                        </Button>}
                       </td>
                     </tr>
                   );
@@ -325,7 +330,7 @@ function StudentsPage() {
                 mm="ကျောင်းသား အချက်အလက်"
                 right={
                   <div className="flex items-center gap-1">
-                        <Button
+                        {canManage && <Button
                           type="button"
                           variant="ghost"
                           size="sm"
@@ -335,8 +340,8 @@ function StudentsPage() {
                         >
                           <Pencil />
                           <span className="sr-only">Edit</span>
-                        </Button>
-                        <Button
+                        </Button>}
+                        {canDelete && <Button
                     type="button"
                     variant="destructive"
                     size="sm"
@@ -347,7 +352,7 @@ function StudentsPage() {
                   >
                     <Trash2 />
                     <span className="sr-only">Delete</span>
-                  </Button>
+                  </Button>}
                   </div>
                 }
               >
