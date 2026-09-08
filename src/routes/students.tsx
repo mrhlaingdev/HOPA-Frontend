@@ -1,6 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useMemo, useState } from "react";
-import { Pencil, Trash2 } from "lucide-react";
+import { Download, Pencil, Trash2 } from "lucide-react";
 import { AppShell, Panel } from "@/components/AppShell";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
@@ -15,9 +15,12 @@ import {
 import { formatDate, initials } from "@/lib/church-data";
 import { toast } from "sonner";
 import { usePermission } from "@/lib/auth";
+import { downloadCsv } from "@/lib/utils";
 
 export const Route = createFileRoute("/students")({
-  validateSearch: (s: Record<string, unknown>) => ({ q: typeof s["q"] === "string" ? (s["q"] as string) : "" }),
+  validateSearch: (s: Record<string, unknown>) => ({
+    q: typeof s["q"] === "string" ? (s["q"] as string) : "",
+  }),
   head: () => ({
     meta: [
       { title: "Student Directory — House Of Prayer Assembly Sunday School OS" },
@@ -26,10 +29,14 @@ export const Route = createFileRoute("/students")({
         content:
           "Search Sunday School students by name, filter by grade or age, and open a full profile with parent contact, address and training history.",
       },
-      { property: "og:title", content: "Student Directory — House Of Prayer Assembly Sunday School OS" },
+      {
+        property: "og:title",
+        content: "Student Directory — House Of Prayer Assembly Sunday School OS",
+      },
       {
         property: "og:description",
-        content: "Every Sunday School student, their guardians, attendance rate and completed training.",
+        content:
+          "Every Sunday School student, their guardians, attendance rate and completed training.",
       },
     ],
   }),
@@ -60,8 +67,40 @@ function StudentsPage() {
   const [adding, setAdding] = useState(false);
   const [deleting, setDeleting] = useState(false);
   const [form, setForm] = useState(emptyForm);
+  const [formError, setFormError] = useState("");
   const [editing, setEditing] = useState<(typeof students)[number] | null>(null);
   const [editForm, setEditForm] = useState(emptyForm);
+  const [editError, setEditError] = useState("");
+
+  function validateStudentForm(studentForm: typeof emptyForm) {
+    if (!studentForm.name.trim()) return "Full name is required.";
+    if (!studentForm.parentName.trim()) return "Parent name is required.";
+    if (!studentForm.parentPhone.trim()) return "Parent phone is required.";
+    if (!studentForm.address.trim()) return "Address is required.";
+    if (!studentForm.enrolled) return "Enrollment date is required.";
+    if (!Number.isInteger(studentForm.age) || studentForm.age <= 0)
+      return "Age must be a positive whole number.";
+    if (!Number.isInteger(studentForm.grade) || studentForm.grade <= 0)
+      return "Grade must be a positive whole number.";
+    return "";
+  }
+
+  function exportStudents() {
+    downloadCsv(
+      "student-directory.csv",
+      ["Name", "Myanmar Name", "Age", "Grade", "Parent", "Phone", "Address", "Enrolled"],
+      rows.map((studentRow) => [
+        studentRow.name,
+        studentRow.nameMm,
+        studentRow.age,
+        studentRow.grade,
+        studentRow.parentName,
+        studentRow.parentPhone,
+        studentRow.address,
+        studentRow.enrolled,
+      ]),
+    );
+  }
 
   async function handleDelete(studentId: string) {
     setDeleting(true);
@@ -123,15 +162,27 @@ function StudentsPage() {
           mm={`${rows.length} of ${students.length} students`}
           className="col-span-8"
           right={
-            canManage && (
+            <div className="flex items-center gap-2">
               <button
                 type="button"
-                onClick={() => setAdding((v) => !v)}
-                className="rounded-xl px-4 py-2 text-xs font-medium gradient-mint text-accent-foreground"
+                onClick={exportStudents}
+                className="glass rounded-xl px-3 py-2 text-xs font-medium flex items-center gap-1.5"
               >
-                {adding ? "Close" : "+ Add Student"}
+                <Download className="size-3.5" /> Export CSV
               </button>
-            )
+              {canManage && (
+                <button
+                  type="button"
+                  onClick={() => {
+                    setAdding((v) => !v);
+                    setFormError("");
+                  }}
+                  className="rounded-xl px-4 py-2 text-xs font-medium gradient-mint text-accent-foreground"
+                >
+                  {adding ? "Close" : "+ Add Student"}
+                </button>
+              )}
+            </div>
           }
         >
           {adding && (
@@ -139,7 +190,9 @@ function StudentsPage() {
               className="mb-4 grid grid-cols-4 gap-2 rounded-xl glass-inset p-3"
               onSubmit={async (e) => {
                 e.preventDefault();
-                if (!form.name.trim()) return;
+                const validationError = validateStudentForm(form);
+                setFormError(validationError);
+                if (validationError) return;
                 try {
                   const id = await actions.addStudent(form);
                   if (id) setSelected(id);
@@ -152,6 +205,7 @@ function StudentsPage() {
                 }
               }}
             >
+              {formError && <p className="col-span-4 text-xs text-rose">{formError}</p>}
               <input
                 className="field px-3 py-2 text-xs col-span-2"
                 placeholder="Full name"
@@ -162,6 +216,7 @@ function StudentsPage() {
                 className="field px-3 py-2 text-xs"
                 placeholder="Age"
                 type="number"
+                min="1"
                 value={form.age}
                 onChange={(e) => setForm({ ...form, age: Number(e.target.value) })}
               />
@@ -169,6 +224,7 @@ function StudentsPage() {
                 className="field px-3 py-2 text-xs"
                 placeholder="Grade"
                 type="number"
+                min="1"
                 value={form.grade}
                 onChange={(e) => setForm({ ...form, grade: Number(e.target.value) })}
               />
@@ -203,7 +259,9 @@ function StudentsPage() {
                 placeholder="Search by student name"
                 aria-label="Search by student name"
               />
-              <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground">⌕</span>
+              <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground">
+                ⌕
+              </span>
             </div>
             <select
               value={grade}
@@ -277,35 +335,39 @@ function StudentsPage() {
                         {done}/{courses.length} complete
                       </td>
                       <td className="py-2.5 pr-2 text-right">
-                        {canManage && <Button
-                          type="button"
-                          variant="ghost"
-                          size="sm"
-                          aria-label={`Edit ${s.name}`}
-                          title={`Edit ${s.name}`}
-                          onClick={(event) => {
-                            event.stopPropagation();
-                            startEditing(s);
-                          }}
-                        >
-                          <Pencil />
-                          <span className="sr-only">Edit</span>
-                        </Button>}
-                        {canDelete && <Button
-                          type="button"
-                          variant="destructive"
-                          size="sm"
-                          disabled={deleting}
-                          aria-label={`Delete ${s.name}`}
-                          title={`Delete ${s.name}`}
-                          onClick={(event) => {
-                            event.stopPropagation();
-                            void handleDelete(s.id);
-                          }}
-                        >
-                          <Trash2 />
-                          <span className="sr-only">Delete</span>
-                        </Button>}
+                        {canManage && (
+                          <Button
+                            type="button"
+                            variant="ghost"
+                            size="sm"
+                            aria-label={`Edit ${s.name}`}
+                            title={`Edit ${s.name}`}
+                            onClick={(event) => {
+                              event.stopPropagation();
+                              startEditing(s);
+                            }}
+                          >
+                            <Pencil />
+                            <span className="sr-only">Edit</span>
+                          </Button>
+                        )}
+                        {canDelete && (
+                          <Button
+                            type="button"
+                            variant="destructive"
+                            size="sm"
+                            disabled={deleting}
+                            aria-label={`Delete ${s.name}`}
+                            title={`Delete ${s.name}`}
+                            onClick={(event) => {
+                              event.stopPropagation();
+                              void handleDelete(s.id);
+                            }}
+                          >
+                            <Trash2 />
+                            <span className="sr-only">Delete</span>
+                          </Button>
+                        )}
                       </td>
                     </tr>
                   );
@@ -330,29 +392,33 @@ function StudentsPage() {
                 mm="ကျောင်းသား အချက်အလက်"
                 right={
                   <div className="flex items-center gap-1">
-                        {canManage && <Button
-                          type="button"
-                          variant="ghost"
-                          size="sm"
-                          aria-label={`Edit ${student.name}`}
-                          title={`Edit ${student.name}`}
-                          onClick={() => startEditing(student)}
-                        >
-                          <Pencil />
-                          <span className="sr-only">Edit</span>
-                        </Button>}
-                        {canDelete && <Button
-                    type="button"
-                    variant="destructive"
-                    size="sm"
-                    disabled={deleting}
-                    aria-label={`Delete ${student.name}`}
-                    title={`Delete ${student.name}`}
-                    onClick={() => void handleDelete(student.id)}
-                  >
-                    <Trash2 />
-                    <span className="sr-only">Delete</span>
-                  </Button>}
+                    {canManage && (
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="sm"
+                        aria-label={`Edit ${student.name}`}
+                        title={`Edit ${student.name}`}
+                        onClick={() => startEditing(student)}
+                      >
+                        <Pencil />
+                        <span className="sr-only">Edit</span>
+                      </Button>
+                    )}
+                    {canDelete && (
+                      <Button
+                        type="button"
+                        variant="destructive"
+                        size="sm"
+                        disabled={deleting}
+                        aria-label={`Delete ${student.name}`}
+                        title={`Delete ${student.name}`}
+                        onClick={() => void handleDelete(student.id)}
+                      >
+                        <Trash2 />
+                        <span className="sr-only">Delete</span>
+                      </Button>
+                    )}
                   </div>
                 }
               >
@@ -449,7 +515,9 @@ function StudentsPage() {
             className="grid grid-cols-2 gap-2"
             onSubmit={async (event) => {
               event.preventDefault();
-              if (!editing || !editForm.name.trim()) return;
+              const validationError = validateStudentForm(editForm);
+              setEditError(validationError);
+              if (!editing || validationError) return;
               try {
                 await actions.updateStudent(editing.id, editForm);
                 setEditing(null);
@@ -460,15 +528,60 @@ function StudentsPage() {
               }
             }}
           >
-            <input className="field px-3 py-2 text-xs col-span-2" placeholder="Full name" value={editForm.name} onChange={(e) => setEditForm({ ...editForm, name: e.target.value })} />
-            <input className="field px-3 py-2 text-xs" placeholder="Myanmar name" value={editForm.nameMm} onChange={(e) => setEditForm({ ...editForm, nameMm: e.target.value })} />
-            <input className="field px-3 py-2 text-xs" type="date" value={editForm.enrolled} onChange={(e) => setEditForm({ ...editForm, enrolled: e.target.value })} />
-            <input className="field px-3 py-2 text-xs" type="number" placeholder="Age" value={editForm.age} onChange={(e) => setEditForm({ ...editForm, age: Number(e.target.value) })} />
-            <input className="field px-3 py-2 text-xs" type="number" placeholder="Grade" value={editForm.grade} onChange={(e) => setEditForm({ ...editForm, grade: Number(e.target.value) })} />
-            <input className="field px-3 py-2 text-xs" placeholder="Parent name" value={editForm.parentName} onChange={(e) => setEditForm({ ...editForm, parentName: e.target.value })} />
-            <input className="field px-3 py-2 text-xs" placeholder="Parent phone" value={editForm.parentPhone} onChange={(e) => setEditForm({ ...editForm, parentPhone: e.target.value })} />
-            <input className="field px-3 py-2 text-xs col-span-2" placeholder="Address" value={editForm.address} onChange={(e) => setEditForm({ ...editForm, address: e.target.value })} />
-            <Button type="submit" className="col-span-2">Save changes</Button>
+            {editError && <p className="col-span-2 text-xs text-rose">{editError}</p>}
+            <input
+              className="field px-3 py-2 text-xs col-span-2"
+              placeholder="Full name"
+              value={editForm.name}
+              onChange={(e) => setEditForm({ ...editForm, name: e.target.value })}
+            />
+            <input
+              className="field px-3 py-2 text-xs"
+              placeholder="Myanmar name"
+              value={editForm.nameMm}
+              onChange={(e) => setEditForm({ ...editForm, nameMm: e.target.value })}
+            />
+            <input
+              className="field px-3 py-2 text-xs"
+              type="date"
+              value={editForm.enrolled}
+              onChange={(e) => setEditForm({ ...editForm, enrolled: e.target.value })}
+            />
+            <input
+              className="field px-3 py-2 text-xs"
+              type="number"
+              placeholder="Age"
+              value={editForm.age}
+              onChange={(e) => setEditForm({ ...editForm, age: Number(e.target.value) })}
+            />
+            <input
+              className="field px-3 py-2 text-xs"
+              type="number"
+              placeholder="Grade"
+              value={editForm.grade}
+              onChange={(e) => setEditForm({ ...editForm, grade: Number(e.target.value) })}
+            />
+            <input
+              className="field px-3 py-2 text-xs"
+              placeholder="Parent name"
+              value={editForm.parentName}
+              onChange={(e) => setEditForm({ ...editForm, parentName: e.target.value })}
+            />
+            <input
+              className="field px-3 py-2 text-xs"
+              placeholder="Parent phone"
+              value={editForm.parentPhone}
+              onChange={(e) => setEditForm({ ...editForm, parentPhone: e.target.value })}
+            />
+            <input
+              className="field px-3 py-2 text-xs col-span-2"
+              placeholder="Address"
+              value={editForm.address}
+              onChange={(e) => setEditForm({ ...editForm, address: e.target.value })}
+            />
+            <Button type="submit" className="col-span-2">
+              Save changes
+            </Button>
           </form>
         </DialogContent>
       </Dialog>

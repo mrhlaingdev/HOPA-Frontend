@@ -1,6 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useState } from "react";
-import { Pencil } from "lucide-react";
+import { Download, Pencil } from "lucide-react";
 import { AppShell, Panel } from "@/components/AppShell";
 import { DateFilters } from "@/components/DateFilters";
 import { Button } from "@/components/ui/button";
@@ -15,6 +15,7 @@ import {
 import { formatDate, formatKs, formatShort } from "@/lib/church-data";
 import { toast } from "sonner";
 import { usePermission } from "@/lib/auth";
+import { downloadCsv } from "@/lib/utils";
 
 export const Route = createFileRoute("/finance")({
   head: () => ({
@@ -25,7 +26,10 @@ export const Route = createFileRoute("/finance")({
         content:
           "Record church offerings and expenses, attach voucher or receipt photos, and review the monthly income, expense and net balance report.",
       },
-      { property: "og:title", content: "Petty Cash & Finance — House Of Prayer Assembly Sunday School OS" },
+      {
+        property: "og:title",
+        content: "Petty Cash & Finance — House Of Prayer Assembly Sunday School OS",
+      },
       {
         property: "og:description",
         content: "Income and expense ledger with receipt image uploads and monthly summaries.",
@@ -50,9 +54,11 @@ function FinancePage() {
   const [q, setQ] = useState("");
   const [dateFilter, setDateFilter] = useState(ALL_DATE_FILTER);
   const [form, setForm] = useState(emptyTxn);
+  const [formError, setFormError] = useState("");
   const [viewing, setViewing] = useState<string | null>(null);
   const [editing, setEditing] = useState<(typeof txns)[number] | null>(null);
   const [editForm, setEditForm] = useState(emptyTxn);
+  const [editError, setEditError] = useState("");
 
   const totals = monthlyTotals(txns, dateFilter);
   const rows = totals.rows.filter(
@@ -60,6 +66,28 @@ function FinancePage() {
       t.description.toLowerCase().includes(q.toLowerCase()) ||
       t.category.toLowerCase().includes(q.toLowerCase()),
   );
+
+  const validateTransaction = (transaction: typeof emptyTxn) => {
+    if (!transaction.date) return "Transaction date is required.";
+    if (!transaction.category.trim()) return "Category is required.";
+    if (!transaction.description.trim()) return "Description is required.";
+    if (!Number.isFinite(transaction.amount) || transaction.amount <= 0)
+      return "Amount must be greater than 0.";
+    return "";
+  };
+
+  const exportFinance = () =>
+    downloadCsv(
+      "finance-report.csv",
+      ["Date", "Type", "Category", "Description", "Amount"],
+      rows.map((transaction) => [
+        transaction.date,
+        transaction.type,
+        transaction.category,
+        transaction.description,
+        transaction.amount,
+      ]),
+    );
 
   function onFile(file?: File) {
     if (!file) return;
@@ -82,7 +110,11 @@ function FinancePage() {
           <h1 className="font-display text-2xl font-semibold">Petty Cash &amp; Finance</h1>
           <p className="text-[11px] text-muted-foreground">ငွေစာရင်း စီမံခန့်ခွဲမှု</p>
         </div>
-        <DateFilters value={dateFilter} onChange={setDateFilter} dates={txns.map((txn) => txn.date)} />
+        <DateFilters
+          value={dateFilter}
+          onChange={setDateFilter}
+          dates={txns.map((txn) => txn.date)}
+        />
       </div>
 
       <div className="grid grid-cols-12 gap-4">
@@ -107,95 +139,112 @@ function FinancePage() {
             {formatShort(Math.abs(totals.net))}
           </p>
           <p className="mt-1 text-[11px] text-muted-foreground">
-            {dateFilter.year === "all" ? "All years" : dateFilter.year} · {dateFilter.month === "all" ? "All months" : "Selected month"}
+            {dateFilter.year === "all" ? "All years" : dateFilter.year} ·{" "}
+            {dateFilter.month === "all" ? "All months" : "Selected month"}
           </p>
         </div>
 
-        {canManage && <Panel title="Record Transaction" mm="ငွေသွင်း / ငွေထုတ် မှတ်တမ်း" className="col-span-4">
-          <form
-            className="space-y-2"
-            onSubmit={async (e) => {
-              e.preventDefault();
-              if (!form.description.trim() || !form.amount) return;
-              try {
-                await actions.addTxn({ ...form, receipt: form.receipt });
-                const description = form.description;
-                setForm(emptyTxn);
-                toast.success(`Successfully added ${description}!`);
-              } catch (error) {
-                toast.error(formatApiError(error, "Unable to create transaction"));
-              }
-            }}
-          >
-            <div className="grid grid-cols-2 gap-2">
-              <select
-                value={form.type}
-                onChange={(e) =>
-                  setForm({ ...form, type: e.target.value as "income" | "expense" })
+        {canManage && (
+          <Panel title="Record Transaction" mm="ငွေသွင်း / ငွေထုတ် မှတ်တမ်း" className="col-span-4">
+            <form
+              className="space-y-2"
+              onSubmit={async (e) => {
+                e.preventDefault();
+                const validationError = validateTransaction(form);
+                setFormError(validationError);
+                if (validationError) return;
+                try {
+                  await actions.addTxn({ ...form, receipt: form.receipt });
+                  const description = form.description;
+                  setForm(emptyTxn);
+                  toast.success(`Successfully added ${description}!`);
+                } catch (error) {
+                  toast.error(formatApiError(error, "Unable to create transaction"));
                 }
-                className="field px-3 py-2 text-xs"
-                aria-label="Transaction type"
-              >
-                <option value="income">Income</option>
-                <option value="expense">Expense</option>
-              </select>
-              <input
-                type="date"
-                value={form.date}
-                onChange={(e) => setForm({ ...form, date: e.target.value })}
-                className="field px-3 py-2 text-xs"
-                aria-label="Date"
-              />
-            </div>
-            <input
-              className="field w-full px-3 py-2 text-xs"
-              placeholder="Category (e.g. Donation, Supplies)"
-              value={form.category}
-              onChange={(e) => setForm({ ...form, category: e.target.value })}
-            />
-            <input
-              className="field w-full px-3 py-2 text-xs"
-              placeholder="Description"
-              value={form.description}
-              onChange={(e) => setForm({ ...form, description: e.target.value })}
-            />
-            <input
-              className="field w-full px-3 py-2 text-xs"
-              type="number"
-              placeholder="Amount (Ks)"
-              value={form.amount || ""}
-              onChange={(e) => setForm({ ...form, amount: Number(e.target.value) })}
-            />
-            <label className="block rounded-xl glass-inset p-3 text-xs cursor-pointer">
-              <span className="text-muted-foreground">Upload voucher / receipt photo</span>
-              <input
-                type="file"
-                accept="image/*"
-                className="mt-2 block w-full text-[11px] text-muted-foreground"
-                onChange={(e) => onFile(e.target.files?.[0])}
-              />
-              {form.receipt && (
-                <img
-                  src={form.receipt}
-                  alt="Receipt preview"
-                  className="mt-2 w-full aspect-4/3 rounded-lg object-cover"
+              }}
+            >
+              {formError && <p className="text-xs text-rose">{formError}</p>}
+              <div className="grid grid-cols-2 gap-2">
+                <select
+                  value={form.type}
+                  onChange={(e) =>
+                    setForm({ ...form, type: e.target.value as "income" | "expense" })
+                  }
+                  className="field px-3 py-2 text-xs"
+                  aria-label="Transaction type"
+                >
+                  <option value="income">Income</option>
+                  <option value="expense">Expense</option>
+                </select>
+                <input
+                  type="date"
+                  value={form.date}
+                  onChange={(e) => setForm({ ...form, date: e.target.value })}
+                  className="field px-3 py-2 text-xs"
+                  aria-label="Date"
                 />
-              )}
-            </label>
-            <button className="w-full rounded-xl gradient-brand py-2.5 text-xs font-medium">
-              Save Transaction
-            </button>
-          </form>
-        </Panel>}
+              </div>
+              <input
+                className="field w-full px-3 py-2 text-xs"
+                placeholder="Category (e.g. Donation, Supplies)"
+                value={form.category}
+                onChange={(e) => setForm({ ...form, category: e.target.value })}
+              />
+              <input
+                className="field w-full px-3 py-2 text-xs"
+                placeholder="Description"
+                value={form.description}
+                onChange={(e) => setForm({ ...form, description: e.target.value })}
+              />
+              <input
+                className="field w-full px-3 py-2 text-xs"
+                type="number"
+                min="0.01"
+                step="0.01"
+                placeholder="Amount (Ks)"
+                value={form.amount || ""}
+                onChange={(e) => setForm({ ...form, amount: Number(e.target.value) })}
+              />
+              <label className="block rounded-xl glass-inset p-3 text-xs cursor-pointer">
+                <span className="text-muted-foreground">Upload voucher / receipt photo</span>
+                <input
+                  type="file"
+                  accept="image/*"
+                  className="mt-2 block w-full text-[11px] text-muted-foreground"
+                  onChange={(e) => onFile(e.target.files?.[0])}
+                />
+                {form.receipt && (
+                  <img
+                    src={form.receipt}
+                    alt="Receipt preview"
+                    className="mt-2 w-full aspect-4/3 rounded-lg object-cover"
+                  />
+                )}
+              </label>
+              <button className="w-full rounded-xl gradient-brand py-2.5 text-xs font-medium">
+                Save Transaction
+              </button>
+            </form>
+          </Panel>
+        )}
 
         <Panel
           title="Transaction History"
           mm={`${rows.length} records`}
           className="col-span-8"
           right={
-            <span className="text-[11px] text-muted-foreground">
-              {dateFilter.month === "all" ? "All months" : "Selected month"}
-            </span>
+            <div className="flex items-center gap-2">
+              <span className="text-[11px] text-muted-foreground">
+                {dateFilter.month === "all" ? "All months" : "Selected month"}
+              </span>
+              <button
+                type="button"
+                onClick={exportFinance}
+                className="glass rounded-xl px-3 py-2 text-xs font-medium flex items-center gap-1.5"
+              >
+                <Download className="size-3.5" /> Export CSV
+              </button>
+            </div>
           }
         >
           <table className="w-full text-sm">
@@ -299,7 +348,9 @@ function FinancePage() {
             className="space-y-2"
             onSubmit={async (event) => {
               event.preventDefault();
-              if (!editing || !editForm.description.trim() || !editForm.amount) return;
+              const validationError = validateTransaction(editForm);
+              setEditError(validationError);
+              if (!editing || validationError) return;
               try {
                 await actions.updateTxn(editing.id, editForm);
                 setEditing(null);
@@ -311,22 +362,65 @@ function FinancePage() {
               }
             }}
           >
+            {editError && <p className="text-xs text-rose">{editError}</p>}
             <div className="grid grid-cols-2 gap-2">
-              <select className="field px-3 py-2 text-xs" value={editForm.type} onChange={(e) => setEditForm({ ...editForm, type: e.target.value as "income" | "expense" })}>
+              <select
+                className="field px-3 py-2 text-xs"
+                value={editForm.type}
+                onChange={(e) =>
+                  setEditForm({ ...editForm, type: e.target.value as "income" | "expense" })
+                }
+              >
                 <option value="income">Income</option>
                 <option value="expense">Expense</option>
               </select>
-              <input className="field px-3 py-2 text-xs" type="date" value={editForm.date} onChange={(e) => setEditForm({ ...editForm, date: e.target.value })} />
+              <input
+                className="field px-3 py-2 text-xs"
+                type="date"
+                value={editForm.date}
+                onChange={(e) => setEditForm({ ...editForm, date: e.target.value })}
+              />
             </div>
-            <input className="field w-full px-3 py-2 text-xs" placeholder="Category" value={editForm.category} onChange={(e) => setEditForm({ ...editForm, category: e.target.value })} />
-            <input className="field w-full px-3 py-2 text-xs" placeholder="Description" value={editForm.description} onChange={(e) => setEditForm({ ...editForm, description: e.target.value })} />
-            <input className="field w-full px-3 py-2 text-xs" type="number" placeholder="Amount (Ks)" value={editForm.amount || ""} onChange={(e) => setEditForm({ ...editForm, amount: Number(e.target.value) })} />
+            <input
+              className="field w-full px-3 py-2 text-xs"
+              placeholder="Category"
+              value={editForm.category}
+              onChange={(e) => setEditForm({ ...editForm, category: e.target.value })}
+            />
+            <input
+              className="field w-full px-3 py-2 text-xs"
+              placeholder="Description"
+              value={editForm.description}
+              onChange={(e) => setEditForm({ ...editForm, description: e.target.value })}
+            />
+            <input
+              className="field w-full px-3 py-2 text-xs"
+              type="number"
+              min="0.01"
+              step="0.01"
+              placeholder="Amount (Ks)"
+              value={editForm.amount || ""}
+              onChange={(e) => setEditForm({ ...editForm, amount: Number(e.target.value) })}
+            />
             <label className="block rounded-xl glass-inset p-3 text-xs cursor-pointer">
               <span className="text-muted-foreground">Replace voucher / receipt photo</span>
-              <input type="file" accept="image/*" className="mt-2 block w-full text-[11px] text-muted-foreground" onChange={(e) => onEditFile(e.target.files?.[0])} />
-              {editForm.receipt && <img src={editForm.receipt} alt="Receipt preview" className="mt-2 w-full aspect-4/3 rounded-lg object-cover" />}
+              <input
+                type="file"
+                accept="image/*"
+                className="mt-2 block w-full text-[11px] text-muted-foreground"
+                onChange={(e) => onEditFile(e.target.files?.[0])}
+              />
+              {editForm.receipt && (
+                <img
+                  src={editForm.receipt}
+                  alt="Receipt preview"
+                  className="mt-2 w-full aspect-4/3 rounded-lg object-cover"
+                />
+              )}
             </label>
-            <Button type="submit" className="w-full">Save changes</Button>
+            <Button type="submit" className="w-full">
+              Save changes
+            </Button>
           </form>
         </DialogContent>
       </Dialog>

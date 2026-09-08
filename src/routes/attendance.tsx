@@ -1,6 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useState } from "react";
-import { Pencil } from "lucide-react";
+import { Download, Pencil } from "lucide-react";
 import { AppShell, Panel } from "@/components/AppShell";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
@@ -14,6 +14,7 @@ import {
 } from "@/lib/church-store";
 import { formatDate, initials } from "@/lib/church-data";
 import { toast } from "sonner";
+import { downloadCsv } from "@/lib/utils";
 
 export const Route = createFileRoute("/attendance")({
   head: () => ({
@@ -24,7 +25,10 @@ export const Route = createFileRoute("/attendance")({
         content:
           "Tick off Sunday School attendance week by week and review each student's total attendance and yearly attendance rate.",
       },
-      { property: "og:title", content: "Weekly Attendance — House Of Prayer Assembly Sunday School OS" },
+      {
+        property: "og:title",
+        content: "Weekly Attendance — House Of Prayer Assembly Sunday School OS",
+      },
       {
         property: "og:description",
         content: "Checkbox attendance for each Sunday plus a full attendance history per student.",
@@ -44,6 +48,26 @@ function AttendancePage() {
 
   const rows = students.filter((s) => s.name.toLowerCase().includes(q.toLowerCase()));
   const presentCount = rows.filter((s) => attendance.includes(`${s.id}|${week}`)).length;
+  const exportAttendance = () =>
+    downloadCsv(
+      "attendance-report.csv",
+      [
+        "Student",
+        "Grade",
+        ...recent.map((date) => formatDate(date)),
+        "Total Attended",
+        "Attendance Rate",
+      ],
+      rows.map((student) => [
+        student.name,
+        student.grade,
+        ...recent.map((date) =>
+          attendance.includes(`${student.id}|${date}`) ? "Present" : "Absent",
+        ),
+        attendedCount(attendance, student.id),
+        `${attendanceRate(attendance, student.id)}%`,
+      ]),
+    );
 
   return (
     <AppShell search={q} onSearch={setQ}>
@@ -91,9 +115,7 @@ function AttendancePage() {
                   </div>
                   <span className="text-sm">{s.name}</span>
                   <span className="text-[11px] text-muted-foreground">Grade {s.grade}</span>
-                  <span
-                    className={`ml-auto text-[11px] ${present ? "text-mint" : "text-rose"}`}
-                  >
+                  <span className={`ml-auto text-[11px] ${present ? "text-mint" : "text-rose"}`}>
                     {present ? "Present" : "Absent"}
                   </span>
                   <Button
@@ -120,6 +142,15 @@ function AttendancePage() {
           title="Attendance History"
           mm="Last 10 Sundays · yearly rate"
           className="col-span-6"
+          right={
+            <button
+              type="button"
+              onClick={exportAttendance}
+              className="glass rounded-xl px-3 py-2 text-xs font-medium flex items-center gap-1.5"
+            >
+              <Download className="size-3.5" /> Export CSV
+            </button>
+          }
         >
           <div className="overflow-x-auto">
             <table className="w-full text-xs">
@@ -196,7 +227,10 @@ function AttendancePage() {
             className="space-y-3"
             onSubmit={async (event) => {
               event.preventDefault();
-              if (!editing) return;
+              if (!editing || !editForm.date) {
+                toast.error("Attendance date is required.");
+                return;
+              }
               try {
                 await actions.updateAttendance(editing.id, editForm);
                 setEditing(null);
@@ -207,12 +241,25 @@ function AttendancePage() {
               }
             }}
           >
-            <input className="field w-full px-3 py-2 text-xs" type="date" value={editForm.date} onChange={(e) => setEditForm({ ...editForm, date: e.target.value })} />
+            <input
+              className="field w-full px-3 py-2 text-xs"
+              type="date"
+              required
+              value={editForm.date}
+              onChange={(e) => setEditForm({ ...editForm, date: e.target.value })}
+            />
             <label className="flex items-center gap-2 text-sm">
-              <input type="checkbox" checked={editForm.present} onChange={(e) => setEditForm({ ...editForm, present: e.target.checked })} className="size-4 accent-mint" />
+              <input
+                type="checkbox"
+                checked={editForm.present}
+                onChange={(e) => setEditForm({ ...editForm, present: e.target.checked })}
+                className="size-4 accent-mint"
+              />
               Present
             </label>
-            <Button type="submit" className="w-full">Save changes</Button>
+            <Button type="submit" className="w-full">
+              Save changes
+            </Button>
           </form>
         </DialogContent>
       </Dialog>
