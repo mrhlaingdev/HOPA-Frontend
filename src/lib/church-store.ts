@@ -35,37 +35,61 @@ export function useChurch() {
   return useSyncExternalStore(subscribe, getSnapshot, getSnapshot);
 }
 
-const apiBaseUrl = (import.meta.env.VITE_API_BASE_URL as string | undefined)?.replace(/\/$/, "");
+const API_BASE_URL = (import.meta.env.VITE_API_BASE_URL as string | undefined)?.replace(/\/$/, "");
 
 const API_ENDPOINTS = {
   health: "/api/test",
+  students: "/api/students",
 } as const;
 
 async function checkBackend() {
-  if (!apiBaseUrl) return false;
+  if (!API_BASE_URL) return false;
   try {
-    const response = await fetch(`${apiBaseUrl}${API_ENDPOINTS.health}`);
+    const response = await fetch(`${API_BASE_URL}${API_ENDPOINTS.health}`);
     return response.ok;
   } catch {
     return false;
   }
 }
 
+export async function loadStudents() {
+  if (!API_BASE_URL) return [];
+
+  const response = await fetch(`${API_BASE_URL}${API_ENDPOINTS.students}`);
+  if (!response.ok) throw new Error(`Failed to load students (${response.status})`);
+
+  const data = (await response.json()) as Student[] | { students?: Student[] };
+  const students = Array.isArray(data) ? data : (data.students ?? []);
+  set({ students });
+  return students;
+}
+
 async function loadFromApi() {
-  await checkBackend();
-  set({
-    students: [],
-    attendance: [],
-    courses: [],
-    completions: [],
-    txns: [],
-  });
+  if (await checkBackend()) {
+    try {
+      await loadStudents();
+      return;
+    } catch {
+      return;
+    }
+  }
+  set({ students: [], attendance: [], courses: [], completions: [], txns: [] });
 }
 
 export const actions = {
   async addStudent(s: Omit<Student, "id" | "gradient">) {
-    void s;
-    return "";
+    if (!API_BASE_URL) throw new Error("VITE_API_BASE_URL is not configured");
+
+    const response = await fetch(`${API_BASE_URL}${API_ENDPOINTS.students}`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(s),
+    });
+    if (!response.ok) throw new Error(`Failed to create student (${response.status})`);
+
+    const created = response.status === 204 ? {} : ((await response.json()) as Partial<Student>);
+    const students = await loadStudents();
+    return created.id ?? students.find((student) => student.name === s.name)?.id ?? "";
   },
   async toggleAttendance(studentId: string, day: string) {
     void studentId;

@@ -90,13 +90,17 @@ function StudentsPage() {
           {adding && (
             <form
               className="mb-4 grid grid-cols-4 gap-2 rounded-xl glass-inset p-3"
-              onSubmit={(e) => {
+              onSubmit={async (e) => {
                 e.preventDefault();
                 if (!form.name.trim()) return;
-                const id = actions.addStudent(form);
-                setSelected(id);
-                setForm(emptyForm);
-                setAdding(false);
+                try {
+                  const id = await actions.addStudent(form);
+                  if (id) setSelected(id);
+                  setForm(emptyForm);
+                  setAdding(false);
+                } catch (error) {
+                  console.error("Unable to save student", error);
+                }
               }}
             >
               <input
