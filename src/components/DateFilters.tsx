@@ -1,4 +1,11 @@
 import { MONTH_NAMES, type DateFilter } from "@/lib/church-store";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 
 type DateFiltersProps = {
   value: DateFilter;
@@ -14,32 +21,32 @@ export function DateFilters({ value, onChange, dates }: DateFiltersProps) {
 
   return (
     <div className="flex flex-wrap items-center gap-2">
-      <select
-        value={value.year}
-        onChange={(event) => onChange({ ...value, year: event.target.value })}
-        className="field px-3 py-2 text-xs"
-        aria-label="Select year"
-      >
-        <option value="all">All Years</option>
-        {availableYears.map((year) => (
-          <option key={year} value={year}>
-            {year}
-          </option>
-        ))}
-      </select>
-      <select
-        value={value.month}
-        onChange={(event) => onChange({ ...value, month: event.target.value })}
-        className="field px-3 py-2 text-xs"
-        aria-label="Select month"
-      >
-        <option value="all">All Months</option>
-        {MONTH_NAMES.map((month, index) => (
-          <option key={month} value={String(index + 1).padStart(2, "0")}>
-            {month}
-          </option>
-        ))}
-      </select>
+      <Select value={value.year} onValueChange={(year) => onChange({ ...value, year })}>
+        <SelectTrigger className="field h-auto w-auto px-3 py-2 text-xs" aria-label="Select year">
+          <SelectValue />
+        </SelectTrigger>
+        <SelectContent>
+          <SelectItem value="all">All Years</SelectItem>
+          {availableYears.map((year) => (
+            <SelectItem key={year} value={year}>
+              {year}
+            </SelectItem>
+          ))}
+        </SelectContent>
+      </Select>
+      <Select value={value.month} onValueChange={(month) => onChange({ ...value, month })}>
+        <SelectTrigger className="field h-auto w-auto px-3 py-2 text-xs" aria-label="Select month">
+          <SelectValue />
+        </SelectTrigger>
+        <SelectContent>
+          <SelectItem value="all">All Months</SelectItem>
+          {MONTH_NAMES.map((month, index) => (
+            <SelectItem key={month} value={String(index + 1).padStart(2, "0")}>
+              {month}
+            </SelectItem>
+          ))}
+        </SelectContent>
+      </Select>
     </div>
   );
 }
