@@ -1,4 +1,4 @@
-import { useSyncExternalStore } from "react";
+import { useEffect, useSyncExternalStore } from "react";
 import { toast } from "sonner";
 import { allSundays, type Completion, type Course, type Student, type Txn } from "./church-data";
 
@@ -32,6 +32,7 @@ let state: ChurchState = { students: [], attendance: [], courses: [], completion
 let loadPromise: Promise<void> | undefined;
 
 const listeners = new Set<() => void>();
+const API_TIMEOUT_MS = 10_000;
 
 function set(next: Partial<ChurchState>) {
   state = { ...state, ...next };
@@ -48,9 +49,9 @@ function getSnapshot() {
 }
 
 export function useChurch() {
-  if (typeof window !== "undefined" && !loadPromise) {
-    loadPromise = loadFromApi();
-  }
+  useEffect(() => {
+    if (!loadPromise) loadPromise = loadFromApi();
+  }, []);
   return useSyncExternalStore(subscribe, getSnapshot, getSnapshot);
 }
 
@@ -64,10 +65,25 @@ const API_ENDPOINTS = {
   transactions: "/api/finance",
 } as const;
 
+async function fetchApi(path: string, init?: RequestInit) {
+  const controller = new AbortController();
+  const timeout = setTimeout(() => controller.abort(), API_TIMEOUT_MS);
+  try {
+    return await fetch(`${API_BASE_URL}${path}`, { ...init, signal: controller.signal });
+  } catch (error) {
+    if (error instanceof Error && error.name === "AbortError") {
+      throw new Error("The backend request timed out");
+    }
+    throw error;
+  } finally {
+    clearTimeout(timeout);
+  }
+}
+
 async function checkBackend() {
   if (!API_BASE_URL) return false;
   try {
-    const response = await fetch(`${API_BASE_URL}${API_ENDPOINTS.health}`);
+    const response = await fetchApi(API_ENDPOINTS.health);
     if (!response.ok) await throwApiError(response, "Failed to connect to backend");
     return response.ok;
   } catch (error) {
@@ -90,7 +106,7 @@ async function throwApiError(response: Response, operation: string): Promise<nev
 export async function loadStudents() {
   if (!API_BASE_URL) return [];
 
-  const response = await fetch(`${API_BASE_URL}${API_ENDPOINTS.students}`);
+  const response = await fetchApi(API_ENDPOINTS.students);
   if (!response.ok) await throwApiError(response, "Failed to load students");
 
   const data = (await response.json()) as Student[] | { students?: Student[] };
@@ -102,7 +118,7 @@ export async function loadStudents() {
 async function loadResource<T>(endpoint: string, key: string): Promise<T[]> {
   if (!API_BASE_URL) return [];
 
-  const response = await fetch(`${API_BASE_URL}${endpoint}`);
+  const response = await fetchApi(endpoint);
   if (!response.ok) await throwApiError(response, `Failed to load ${key}`);
 
   const data = (await response.json()) as T[] | Record<string, T[] | undefined>;
@@ -151,7 +167,7 @@ export const actions = {
   async addStudent(s: Omit<Student, "id" | "gradient">) {
     if (!API_BASE_URL) throw new Error("VITE_API_BASE_URL is not configured");
 
-    const response = await fetch(`${API_BASE_URL}${API_ENDPOINTS.students}`, {
+    const response = await fetchApi(API_ENDPOINTS.students, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(s),
@@ -165,7 +181,7 @@ export const actions = {
   async deleteStudent(studentId: string) {
     if (!API_BASE_URL) throw new Error("VITE_API_BASE_URL is not configured");
 
-    const response = await fetch(`${API_BASE_URL}${API_ENDPOINTS.students}/${studentId}`, {
+    const response = await fetchApi(`${API_ENDPOINTS.students}/${studentId}`, {
       method: "DELETE",
     });
     if (!response.ok) await throwApiError(response, "Failed to delete student");
@@ -183,7 +199,7 @@ export const actions = {
   async addCourse(c: Omit<Course, "id" | "active" | "titleMm">) {
     if (!API_BASE_URL) throw new Error("VITE_API_BASE_URL is not configured");
 
-    const response = await fetch(`${API_BASE_URL}${API_ENDPOINTS.courses}`, {
+    const response = await fetchApi(API_ENDPOINTS.courses, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(c),
@@ -195,7 +211,7 @@ export const actions = {
   async deleteCourse(courseId: string) {
     if (!API_BASE_URL) throw new Error("VITE_API_BASE_URL is not configured");
 
-    const response = await fetch(`${API_BASE_URL}${API_ENDPOINTS.courses}/${courseId}`, {
+    const response = await fetchApi(`${API_ENDPOINTS.courses}/${courseId}`, {
       method: "DELETE",
     });
     if (!response.ok) await throwApiError(response, "Failed to delete course");
@@ -218,7 +234,7 @@ export const actions = {
   async addTxn(t: Omit<Txn, "id">) {
     if (!API_BASE_URL) throw new Error("VITE_API_BASE_URL is not configured");
 
-    const response = await fetch(`${API_BASE_URL}${API_ENDPOINTS.transactions}`, {
+    const response = await fetchApi(API_ENDPOINTS.transactions, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(t),
@@ -236,7 +252,7 @@ export const actions = {
 async function updateResource(endpoint: string, id: string, value: unknown, key: string) {
   if (!API_BASE_URL) throw new Error("VITE_API_BASE_URL is not configured");
 
-  const response = await fetch(`${API_BASE_URL}${endpoint}/${id}`, {
+  const response = await fetchApi(`${endpoint}/${id}`, {
     method: "PUT",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify(value),

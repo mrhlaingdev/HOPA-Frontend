@@ -1,5 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { useEffect, useMemo, useState } from "react";
+import { useMemo, useState } from "react";
 import { Pencil, Trash2 } from "lucide-react";
 import { AppShell, Panel } from "@/components/AppShell";
 import { DateFilters } from "@/components/DateFilters";
@@ -9,7 +9,6 @@ import {
   ALL_DATE_FILTER,
   actions,
   formatApiError,
-  loadCourses,
   matchesDate,
   useChurch,
 } from "@/lib/church-store";
@@ -51,12 +50,6 @@ function CoursesPage() {
   });
   const [editing, setEditing] = useState<(typeof courses)[number] | null>(null);
   const [editForm, setEditForm] = useState(form);
-
-  useEffect(() => {
-    void loadCourses().catch((error) => {
-      toast.error(formatApiError(error, "Unable to load courses"));
-    });
-  }, []);
 
   const rows = useMemo(
     () =>
