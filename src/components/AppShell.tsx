@@ -1,11 +1,24 @@
 import { Link, useRouterState } from "@tanstack/react-router";
 import type { ReactNode } from "react";
-import { hasPermission, roleLabel, useCurrentRole, usePermission } from "@/lib/auth";
+import {
+  hasPermission,
+  roleLabel,
+  roles,
+  setCurrentRole,
+  useCurrentRole,
+  usePermission,
+} from "@/lib/auth";
 
 const nav = [
   { to: "/", glyph: "◈", label: "Overview", mm: "အကျဉ်း", permission: "view-dashboard" },
   { to: "/students", glyph: "◔", label: "Students", mm: "ကျောင်းသား", permission: "view-students" },
-  { to: "/attendance", glyph: "▤", label: "Attendance", mm: "တက်ရောက်မှု", permission: "view-attendance" },
+  {
+    to: "/attendance",
+    glyph: "▤",
+    label: "Attendance",
+    mm: "တက်ရောက်မှု",
+    permission: "view-attendance",
+  },
   { to: "/courses", glyph: "▣", label: "Courses", mm: "သင်တန်း", permission: "view-courses" },
   { to: "/finance", glyph: "₵", label: "Finance", mm: "ငွေစာရင်း", permission: "view-finance" },
 ] as const;
@@ -37,24 +50,26 @@ export function AppShell({
         </div>
 
         <nav className="flex flex-col gap-1">
-          {nav.filter((n) => hasPermission(role, n.permission)).map((n) => {
-            const active = n.to === "/" ? pathname === "/" : pathname.startsWith(n.to);
-            return (
-              <Link
-                key={n.to}
-                to={n.to}
-                className={
-                  active
-                    ? "flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium border border-primary/40 bg-linear-[120deg] from-primary/35 to-accent/20"
-                    : "flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm text-muted-foreground transition-colors hover:text-foreground hover:bg-white/5"
-                }
-              >
-                <span className={active ? "text-accent" : "opacity-50"}>{n.glyph}</span>
-                {n.label}
-                <span className="ml-auto text-[10px] opacity-60">{n.mm}</span>
-              </Link>
-            );
-          })}
+          {nav
+            .filter((n) => hasPermission(role, n.permission))
+            .map((n) => {
+              const active = n.to === "/" ? pathname === "/" : pathname.startsWith(n.to);
+              return (
+                <Link
+                  key={n.to}
+                  to={n.to}
+                  className={
+                    active
+                      ? "flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium border border-primary/40 bg-linear-[120deg] from-primary/35 to-accent/20"
+                      : "flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm text-muted-foreground transition-colors hover:text-foreground hover:bg-white/5"
+                  }
+                >
+                  <span className={active ? "text-accent" : "opacity-50"}>{n.glyph}</span>
+                  {n.label}
+                  <span className="ml-auto text-[10px] opacity-60">{n.mm}</span>
+                </Link>
+              );
+            })}
         </nav>
 
         <div className="mt-auto glass rounded-2xl p-4">
@@ -89,7 +104,8 @@ export function AppShell({
           <div className="ml-auto flex items-center gap-3">
             {canQuickAdd && (
               <Link
-                to="/students" search={{ q: "" }}
+                to="/students"
+                search={{ q: "" }}
                 className="glass rounded-xl px-4 py-2.5 text-sm font-medium flex items-center gap-2"
               >
                 + Quick Add
@@ -103,6 +119,30 @@ export function AppShell({
               🔔
               <span className="absolute top-1.5 right-1.5 size-2 rounded-full bg-rose" />
             </button>
+            <div
+              className="glass rounded-xl p-1 flex items-center gap-1"
+              aria-label="UAT role switcher"
+              role="group"
+            >
+              {roles.map((availableRole) => {
+                const active = role === availableRole;
+                return (
+                  <button
+                    key={availableRole}
+                    type="button"
+                    aria-pressed={active}
+                    onClick={() => setCurrentRole(availableRole)}
+                    className={
+                      active
+                        ? "rounded-lg bg-primary px-2.5 py-1.5 text-[11px] font-semibold text-primary-foreground"
+                        : "rounded-lg px-2.5 py-1.5 text-[11px] text-muted-foreground transition-colors hover:bg-white/10 hover:text-foreground"
+                    }
+                  >
+                    {roleLabel(availableRole)}
+                  </button>
+                );
+              })}
+            </div>
             <div className="flex items-center gap-2.5 pl-1">
               <div className="size-9 rounded-full grid place-items-center gradient-violet text-xs font-semibold">
                 MK
