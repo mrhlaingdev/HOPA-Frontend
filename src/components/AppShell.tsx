@@ -1,5 +1,7 @@
 import { Link, useRouterState } from "@tanstack/react-router";
-import type { ReactNode } from "react";
+import { Bell, Check } from "lucide-react";
+import { useEffect, useState, type ReactNode } from "react";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import {
   hasPermission,
   roleLabel,
@@ -22,6 +24,115 @@ const nav = [
   { to: "/courses", glyph: "▣", label: "Courses", mm: "သင်တန်း", permission: "view-courses" },
   { to: "/finance", glyph: "₵", label: "Finance", mm: "ငွေစာရင်း", permission: "view-finance" },
 ] as const;
+
+const notificationStorageKey = "hopa-read-notifications";
+const notifications = [
+  {
+    id: "student-registered",
+    title: "New student registered",
+    detail: "Thazin Moe joined Grade 4 Sunday School.",
+    timestamp: "2 min ago",
+  },
+  {
+    id: "fee-payment-recorded",
+    title: "Fee payment recorded",
+    detail: "A payment of $45.00 was added to the finance ledger.",
+    timestamp: "18 min ago",
+  },
+  {
+    id: "system-update",
+    title: "System update available",
+    detail: "The attendance reporting workflow has been updated.",
+    timestamp: "1 hr ago",
+  },
+] as const;
+
+function NotificationBell() {
+  const [readNotificationIds, setReadNotificationIds] = useState<string[]>([]);
+
+  useEffect(() => {
+    const storedIds = window.localStorage.getItem(notificationStorageKey);
+    if (storedIds) {
+      try {
+        setReadNotificationIds(JSON.parse(storedIds) as string[]);
+      } catch {
+        window.localStorage.removeItem(notificationStorageKey);
+      }
+    }
+  }, []);
+
+  const unreadNotifications = notifications.filter(
+    (notification) => !readNotificationIds.includes(notification.id),
+  );
+
+  const markAsRead = (notificationId: string) => {
+    const nextReadIds = [...new Set([...readNotificationIds, notificationId])];
+    setReadNotificationIds(nextReadIds);
+    window.localStorage.setItem(notificationStorageKey, JSON.stringify(nextReadIds));
+  };
+
+  return (
+    <Popover>
+      <PopoverTrigger asChild>
+        <button
+          type="button"
+          className="glass rounded-xl size-10 grid place-items-center relative text-muted-foreground transition-colors hover:text-foreground"
+          aria-label={`${unreadNotifications.length} unread notifications`}
+        >
+          <Bell className="size-4" />
+          {unreadNotifications.length > 0 && (
+            <span className="absolute -top-1 -right-1 min-w-4 h-4 rounded-full bg-rose px-1 text-[10px] leading-4 text-white">
+              {unreadNotifications.length > 9 ? "9+" : unreadNotifications.length}
+            </span>
+          )}
+        </button>
+      </PopoverTrigger>
+      <PopoverContent align="end" className="w-80 p-0">
+        <div className="flex items-center justify-between border-b border-border/60 px-4 py-3">
+          <div>
+            <p className="text-sm font-semibold">Notifications</p>
+            <p className="text-[11px] text-muted-foreground">
+              {unreadNotifications.length} unread alert{unreadNotifications.length === 1 ? "" : "s"}
+            </p>
+          </div>
+          <Bell className="size-4 text-muted-foreground" />
+        </div>
+        {unreadNotifications.length === 0 ? (
+          <div className="px-4 py-8 text-center">
+            <Check className="mx-auto size-6 text-emerald-400" />
+            <p className="mt-2 text-sm font-medium">No new notifications</p>
+            <p className="mt-1 text-xs text-muted-foreground">You&apos;re all caught up.</p>
+          </div>
+        ) : (
+          <div className="divide-y divide-border/50">
+            {unreadNotifications.map((notification) => (
+              <div key={notification.id} className="px-4 py-3">
+                <div className="flex items-start justify-between gap-3">
+                  <div className="min-w-0">
+                    <p className="text-sm font-medium">{notification.title}</p>
+                    <p className="mt-1 text-xs leading-relaxed text-muted-foreground">
+                      {notification.detail}
+                    </p>
+                    <p className="mt-2 text-[10px] text-muted-foreground">
+                      {notification.timestamp}
+                    </p>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => markAsRead(notification.id)}
+                    className="shrink-0 text-[11px] font-medium text-primary hover:underline"
+                  >
+                    Mark as Read
+                  </button>
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+      </PopoverContent>
+    </Popover>
+  );
+}
 
 export function AppShell({
   children,
@@ -111,14 +222,7 @@ export function AppShell({
                 + Quick Add
               </Link>
             )}
-            <button
-              type="button"
-              className="glass rounded-xl size-10 grid place-items-center relative text-muted-foreground"
-              aria-label="Notifications"
-            >
-              🔔
-              <span className="absolute top-1.5 right-1.5 size-2 rounded-full bg-rose" />
-            </button>
+            <NotificationBell />
             <div
               className="glass rounded-xl p-1 flex items-center gap-1"
               aria-label="UAT role switcher"
