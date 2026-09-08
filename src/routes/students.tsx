@@ -1,10 +1,12 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useMemo, useState } from "react";
-import { Trash2 } from "lucide-react";
+import { Pencil, Trash2 } from "lucide-react";
 import { AppShell, Panel } from "@/components/AppShell";
 import { Button } from "@/components/ui/button";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { attendanceRate, attendedCount, allSundays, actions, useChurch } from "@/lib/church-store";
 import { formatDate, initials } from "@/lib/church-data";
+import { toast } from "sonner";
 
 export const Route = createFileRoute("/students")({
   validateSearch: (s: Record<string, unknown>) => ({ q: typeof s["q"] === "string" ? (s["q"] as string) : "" }),
@@ -48,6 +50,8 @@ function StudentsPage() {
   const [adding, setAdding] = useState(false);
   const [deleting, setDeleting] = useState(false);
   const [form, setForm] = useState(emptyForm);
+  const [editing, setEditing] = useState<(typeof students)[number] | null>(null);
+  const [editForm, setEditForm] = useState(emptyForm);
 
   async function handleDelete(studentId: string) {
     setDeleting(true);
@@ -59,6 +63,20 @@ function StudentsPage() {
     } finally {
       setDeleting(false);
     }
+  }
+
+  function startEditing(student: (typeof students)[number]) {
+    setEditing(student);
+    setEditForm({
+      name: student.name,
+      nameMm: student.nameMm,
+      age: student.age,
+      grade: student.grade,
+      parentName: student.parentName,
+      parentPhone: student.parentPhone,
+      address: student.address,
+      enrolled: student.enrolled,
+    });
   }
 
   const rows = useMemo(
@@ -245,6 +263,20 @@ function StudentsPage() {
                       <td className="py-2.5 pr-2 text-right">
                         <Button
                           type="button"
+                          variant="ghost"
+                          size="sm"
+                          aria-label={`Edit ${s.name}`}
+                          title={`Edit ${s.name}`}
+                          onClick={(event) => {
+                            event.stopPropagation();
+                            startEditing(s);
+                          }}
+                        >
+                          <Pencil />
+                          <span className="sr-only">Edit</span>
+                        </Button>
+                        <Button
+                          type="button"
                           variant="destructive"
                           size="sm"
                           disabled={deleting}
@@ -281,7 +313,19 @@ function StudentsPage() {
                 title="Student Profile"
                 mm="ကျောင်းသား အချက်အလက်"
                 right={
-                  <Button
+                  <div className="flex items-center gap-1">
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          size="sm"
+                          aria-label={`Edit ${student.name}`}
+                          title={`Edit ${student.name}`}
+                          onClick={() => startEditing(student)}
+                        >
+                          <Pencil />
+                          <span className="sr-only">Edit</span>
+                        </Button>
+                        <Button
                     type="button"
                     variant="destructive"
                     size="sm"
@@ -293,6 +337,7 @@ function StudentsPage() {
                     <Trash2 />
                     <span className="sr-only">Delete</span>
                   </Button>
+                  </div>
                 }
               >
                 <div className="flex items-center gap-3">
@@ -378,6 +423,38 @@ function StudentsPage() {
           )}
         </div>
       </div>
+
+      <Dialog open={!!editing} onOpenChange={(open) => !open && setEditing(null)}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Edit Student</DialogTitle>
+          </DialogHeader>
+          <form
+            className="grid grid-cols-2 gap-2"
+            onSubmit={async (event) => {
+              event.preventDefault();
+              if (!editing || !editForm.name.trim()) return;
+              try {
+                await actions.updateStudent(editing.id, editForm);
+                setEditing(null);
+                toast.success("Student updated successfully");
+              } catch (error) {
+                toast.error(error instanceof Error ? error.message : "Unable to update student");
+              }
+            }}
+          >
+            <input className="field px-3 py-2 text-xs col-span-2" placeholder="Full name" value={editForm.name} onChange={(e) => setEditForm({ ...editForm, name: e.target.value })} />
+            <input className="field px-3 py-2 text-xs" placeholder="Myanmar name" value={editForm.nameMm} onChange={(e) => setEditForm({ ...editForm, nameMm: e.target.value })} />
+            <input className="field px-3 py-2 text-xs" type="date" value={editForm.enrolled} onChange={(e) => setEditForm({ ...editForm, enrolled: e.target.value })} />
+            <input className="field px-3 py-2 text-xs" type="number" placeholder="Age" value={editForm.age} onChange={(e) => setEditForm({ ...editForm, age: Number(e.target.value) })} />
+            <input className="field px-3 py-2 text-xs" type="number" placeholder="Grade" value={editForm.grade} onChange={(e) => setEditForm({ ...editForm, grade: Number(e.target.value) })} />
+            <input className="field px-3 py-2 text-xs" placeholder="Parent name" value={editForm.parentName} onChange={(e) => setEditForm({ ...editForm, parentName: e.target.value })} />
+            <input className="field px-3 py-2 text-xs" placeholder="Parent phone" value={editForm.parentPhone} onChange={(e) => setEditForm({ ...editForm, parentPhone: e.target.value })} />
+            <input className="field px-3 py-2 text-xs col-span-2" placeholder="Address" value={editForm.address} onChange={(e) => setEditForm({ ...editForm, address: e.target.value })} />
+            <Button type="submit" className="col-span-2">Save changes</Button>
+          </form>
+        </DialogContent>
+      </Dialog>
     </AppShell>
   );
 }

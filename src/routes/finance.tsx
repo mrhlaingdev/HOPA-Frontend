@@ -1,8 +1,12 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useMemo, useState } from "react";
+import { Pencil } from "lucide-react";
 import { AppShell, Panel } from "@/components/AppShell";
+import { Button } from "@/components/ui/button";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { CURRENT_MONTH, actions, monthOf, monthlyTotals, useChurch } from "@/lib/church-store";
 import { formatDate, formatKs, formatShort } from "@/lib/church-data";
+import { toast } from "sonner";
 
 export const Route = createFileRoute("/finance")({
   head: () => ({
@@ -38,6 +42,8 @@ function FinancePage() {
   const [month, setMonth] = useState(CURRENT_MONTH);
   const [form, setForm] = useState(emptyTxn);
   const [viewing, setViewing] = useState<string | null>(null);
+  const [editing, setEditing] = useState<(typeof txns)[number] | null>(null);
+  const [editForm, setEditForm] = useState(emptyTxn);
 
   const months = useMemo(
     () => Array.from(new Set(txns.map((t) => monthOf(t.date)))).sort().reverse(),
@@ -54,6 +60,13 @@ function FinancePage() {
     if (!file) return;
     const reader = new FileReader();
     reader.onload = () => setForm((f) => ({ ...f, receipt: String(reader.result) }));
+    reader.readAsDataURL(file);
+  }
+
+  function onEditFile(file?: File) {
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = () => setEditForm((f) => ({ ...f, receipt: String(reader.result) }));
     reader.readAsDataURL(file);
   }
 
@@ -185,6 +198,7 @@ function FinancePage() {
                 <th className="text-left font-medium py-2">Description</th>
                 <th className="text-right font-medium py-2">Amount</th>
                 <th className="text-right font-medium py-2">Receipt</th>
+                <th className="py-2" aria-label="Actions" />
               </tr>
             </thead>
             <tbody className="divide-y divide-white/5">
@@ -204,7 +218,7 @@ function FinancePage() {
                     {t.amount.toLocaleString("en-US")}
                   </td>
                   <td className="py-2.5">
-                    <div className="flex justify-end">
+                    <div className="flex items-center justify-end gap-2">
                       {t.receipt ? (
                         <button type="button" onClick={() => setViewing(t.receipt!)}>
                           <img
@@ -217,13 +231,34 @@ function FinancePage() {
                       ) : (
                         <span className="text-[11px] text-muted-foreground">—</span>
                       )}
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="sm"
+                        aria-label={`Edit ${t.description}`}
+                        title={`Edit ${t.description}`}
+                        onClick={() => {
+                          setEditing(t);
+                          setEditForm({
+                            date: t.date,
+                            type: t.type,
+                            category: t.category,
+                            description: t.description,
+                            amount: t.amount,
+                            receipt: t.receipt,
+                          });
+                        }}
+                      >
+                        <Pencil />
+                        <span className="sr-only">Edit</span>
+                      </Button>
                     </div>
                   </td>
                 </tr>
               ))}
               {rows.length === 0 && (
                 <tr>
-                  <td colSpan={5} className="py-8 text-center text-xs text-muted-foreground">
+                  <td colSpan={6} className="py-8 text-center text-xs text-muted-foreground">
                     No transactions for this month.
                   </td>
                 </tr>
@@ -246,6 +281,45 @@ function FinancePage() {
           />
         </div>
       )}
+
+      <Dialog open={!!editing} onOpenChange={(open) => !open && setEditing(null)}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Edit Transaction</DialogTitle>
+          </DialogHeader>
+          <form
+            className="space-y-2"
+            onSubmit={async (event) => {
+              event.preventDefault();
+              if (!editing || !editForm.description.trim() || !editForm.amount) return;
+              try {
+                await actions.updateTxn(editing.id, editForm);
+                setEditing(null);
+                toast.success("Transaction updated successfully");
+              } catch (error) {
+                toast.error(error instanceof Error ? error.message : "Unable to update transaction");
+              }
+            }}
+          >
+            <div className="grid grid-cols-2 gap-2">
+              <select className="field px-3 py-2 text-xs" value={editForm.type} onChange={(e) => setEditForm({ ...editForm, type: e.target.value as "income" | "expense" })}>
+                <option value="income">Income</option>
+                <option value="expense">Expense</option>
+              </select>
+              <input className="field px-3 py-2 text-xs" type="date" value={editForm.date} onChange={(e) => setEditForm({ ...editForm, date: e.target.value })} />
+            </div>
+            <input className="field w-full px-3 py-2 text-xs" placeholder="Category" value={editForm.category} onChange={(e) => setEditForm({ ...editForm, category: e.target.value })} />
+            <input className="field w-full px-3 py-2 text-xs" placeholder="Description" value={editForm.description} onChange={(e) => setEditForm({ ...editForm, description: e.target.value })} />
+            <input className="field w-full px-3 py-2 text-xs" type="number" placeholder="Amount (Ks)" value={editForm.amount || ""} onChange={(e) => setEditForm({ ...editForm, amount: Number(e.target.value) })} />
+            <label className="block rounded-xl glass-inset p-3 text-xs cursor-pointer">
+              <span className="text-muted-foreground">Replace voucher / receipt photo</span>
+              <input type="file" accept="image/*" className="mt-2 block w-full text-[11px] text-muted-foreground" onChange={(e) => onEditFile(e.target.files?.[0])} />
+              {editForm.receipt && <img src={editForm.receipt} alt="Receipt preview" className="mt-2 w-full aspect-4/3 rounded-lg object-cover" />}
+            </label>
+            <Button type="submit" className="w-full">Save changes</Button>
+          </form>
+        </DialogContent>
+      </Dialog>
     </AppShell>
   );
 }

@@ -40,6 +40,9 @@ const API_BASE_URL = (import.meta.env.VITE_API_BASE_URL as string | undefined)?.
 const API_ENDPOINTS = {
   health: "/api/test",
   students: "/api/students",
+  courses: "/api/courses",
+  attendance: "/api/attendance",
+  transactions: "/api/finance",
 } as const;
 
 async function checkBackend() {
@@ -64,10 +67,45 @@ export async function loadStudents() {
   return students;
 }
 
+async function loadResource<T>(endpoint: string, key: string): Promise<T[]> {
+  if (!API_BASE_URL) return [];
+
+  const response = await fetch(`${API_BASE_URL}${endpoint}`);
+  if (!response.ok) throw new Error(`Failed to load ${key} (${response.status})`);
+
+  const data = (await response.json()) as T[] | Record<string, T[] | undefined>;
+  return Array.isArray(data) ? data : (data[key] ?? []);
+}
+
+export async function loadCourses() {
+  const courses = await loadResource<Course>(API_ENDPOINTS.courses, "courses");
+  set({ courses });
+  return courses;
+}
+
+export async function loadAttendance() {
+  const records = await loadResource<
+    string | { studentId: string; date: string; present?: boolean }
+  >(API_ENDPOINTS.attendance, "attendance");
+  const attendance = records.flatMap((record) => {
+    if (typeof record === "string") return [record];
+    return record.present === false ? [] : [`${record.studentId}|${record.date}`];
+  });
+  set({ attendance });
+  return attendance;
+}
+
+export async function loadTransactions() {
+  const txns = await loadResource<Txn>(API_ENDPOINTS.transactions, "transactions");
+  set({ txns });
+  return txns;
+}
+
 async function loadFromApi() {
   if (await checkBackend()) {
     try {
       await loadStudents();
+      await Promise.all([loadCourses(), loadAttendance(), loadTransactions()]);
       return;
     } catch {
       return;
@@ -101,12 +139,24 @@ export const actions = {
 
     await loadStudents();
   },
+  async updateStudent(studentId: string, student: Partial<Omit<Student, "id" | "gradient">>) {
+    await updateResource(API_ENDPOINTS.students, studentId, student, "student");
+    await loadStudents();
+  },
   async toggleAttendance(studentId: string, day: string) {
     void studentId;
     void day;
   },
   async addCourse(c: Omit<Course, "id" | "active" | "titleMm">) {
     void c;
+  },
+  async updateCourse(courseId: string, course: Partial<Omit<Course, "id">>) {
+    await updateResource(API_ENDPOINTS.courses, courseId, course, "course");
+    await loadCourses();
+  },
+  async updateAttendance(studentId: string, attendance: { date: string; present: boolean }) {
+    await updateResource(API_ENDPOINTS.attendance, studentId, attendance, "attendance");
+    await loadAttendance();
   },
   async toggleCompletion(courseId: string, studentId: string, date: string) {
     void courseId;
@@ -116,7 +166,22 @@ export const actions = {
   async addTxn(t: Omit<Txn, "id">) {
     void t;
   },
+  async updateTxn(txnId: string, txn: Partial<Omit<Txn, "id">>) {
+    await updateResource(API_ENDPOINTS.transactions, txnId, txn, "transaction");
+    await loadTransactions();
+  },
 };
+
+async function updateResource(endpoint: string, id: string, value: unknown, key: string) {
+  if (!API_BASE_URL) throw new Error("VITE_API_BASE_URL is not configured");
+
+  const response = await fetch(`${API_BASE_URL}${endpoint}/${id}`, {
+    method: "PUT",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(value),
+  });
+  if (!response.ok) throw new Error(`Failed to update ${key} (${response.status})`);
+}
 
 /* ---------- derived helpers ---------- */
 

@@ -1,8 +1,12 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useMemo, useState } from "react";
+import { Pencil } from "lucide-react";
 import { AppShell, Panel } from "@/components/AppShell";
+import { Button } from "@/components/ui/button";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { actions, useChurch } from "@/lib/church-store";
 import { formatDate } from "@/lib/church-data";
+import { toast } from "sonner";
 
 export const Route = createFileRoute("/courses")({
   head: () => ({
@@ -33,6 +37,8 @@ function CoursesPage() {
     time: "10:30",
     instructor: "",
   });
+  const [editing, setEditing] = useState<(typeof courses)[number] | null>(null);
+  const [editForm, setEditForm] = useState(form);
 
   const rows = useMemo(
     () =>
@@ -75,6 +81,7 @@ function CoursesPage() {
                 <th className="text-left font-medium py-2">Time</th>
                 <th className="text-left font-medium py-2">Instructor</th>
                 <th className="text-right font-medium py-2">Completed</th>
+                <th className="py-2" aria-label="Actions" />
               </tr>
             </thead>
             <tbody className="divide-y divide-white/5">
@@ -98,11 +105,33 @@ function CoursesPage() {
                   <td className="py-2.5 text-right text-mint">
                     {completions.filter((x) => x.courseId === c.id).length}/{students.length}
                   </td>
+                  <td className="py-2.5 text-right">
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="sm"
+                      aria-label={`Edit ${c.title}`}
+                      title={`Edit ${c.title}`}
+                      onClick={(event) => {
+                        event.stopPropagation();
+                        setEditing(c);
+                        setEditForm({
+                          title: c.title,
+                          date: c.date,
+                          time: c.time,
+                          instructor: c.instructor,
+                        });
+                      }}
+                    >
+                      <Pencil />
+                      <span className="sr-only">Edit</span>
+                    </Button>
+                  </td>
                 </tr>
               ))}
               {rows.length === 0 && (
                 <tr>
-                  <td colSpan={5} className="py-8 text-center text-xs text-muted-foreground">
+                  <td colSpan={6} className="py-8 text-center text-xs text-muted-foreground">
                     No courses match this search.
                   </td>
                 </tr>
@@ -179,6 +208,34 @@ function CoursesPage() {
           </ul>
         </Panel>
       </div>
+
+      <Dialog open={!!editing} onOpenChange={(open) => !open && setEditing(null)}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Edit Course</DialogTitle>
+          </DialogHeader>
+          <form
+            className="grid grid-cols-2 gap-2"
+            onSubmit={async (event) => {
+              event.preventDefault();
+              if (!editing || !editForm.title.trim()) return;
+              try {
+                await actions.updateCourse(editing.id, editForm);
+                setEditing(null);
+                toast.success("Course updated successfully");
+              } catch (error) {
+                toast.error(error instanceof Error ? error.message : "Unable to update course");
+              }
+            }}
+          >
+            <input className="field col-span-2 px-3 py-2 text-xs" placeholder="Course name" value={editForm.title} onChange={(e) => setEditForm({ ...editForm, title: e.target.value })} />
+            <input className="field px-3 py-2 text-xs" type="date" value={editForm.date} onChange={(e) => setEditForm({ ...editForm, date: e.target.value })} />
+            <input className="field px-3 py-2 text-xs" type="time" value={editForm.time} onChange={(e) => setEditForm({ ...editForm, time: e.target.value })} />
+            <input className="field col-span-2 px-3 py-2 text-xs" placeholder="Instructor" value={editForm.instructor} onChange={(e) => setEditForm({ ...editForm, instructor: e.target.value })} />
+            <Button type="submit" className="col-span-2">Save changes</Button>
+          </form>
+        </DialogContent>
+      </Dialog>
     </AppShell>
   );
 }

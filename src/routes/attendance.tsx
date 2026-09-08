@@ -1,8 +1,12 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useState } from "react";
+import { Pencil } from "lucide-react";
 import { AppShell, Panel } from "@/components/AppShell";
+import { Button } from "@/components/ui/button";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { actions, allSundays, attendanceRate, attendedCount, useChurch } from "@/lib/church-store";
 import { formatDate, initials } from "@/lib/church-data";
+import { toast } from "sonner";
 
 export const Route = createFileRoute("/attendance")({
   head: () => ({
@@ -27,6 +31,8 @@ function AttendancePage() {
   const { students, attendance } = useChurch();
   const [week, setWeek] = useState(allSundays[allSundays.length - 1]);
   const [q, setQ] = useState("");
+  const [editing, setEditing] = useState<(typeof students)[number] | null>(null);
+  const [editForm, setEditForm] = useState({ date: week, present: false });
   const recent = allSundays.slice(-10);
 
   const rows = students.filter((s) => s.name.toLowerCase().includes(q.toLowerCase()));
@@ -83,6 +89,20 @@ function AttendancePage() {
                   >
                     {present ? "Present" : "Absent"}
                   </span>
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="sm"
+                    aria-label={`Edit attendance for ${s.name}`}
+                    title={`Edit attendance for ${s.name}`}
+                    onClick={() => {
+                      setEditing(s);
+                      setEditForm({ date: week!, present });
+                    }}
+                  >
+                    <Pencil />
+                    <span className="sr-only">Edit</span>
+                  </Button>
                 </li>
               );
             })}
@@ -106,6 +126,7 @@ function AttendancePage() {
                   ))}
                   <th className="text-right font-medium py-2">Total</th>
                   <th className="text-right font-medium py-2">Rate</th>
+                  <th className="py-2" aria-label="Actions" />
                 </tr>
               </thead>
               <tbody className="divide-y divide-white/5">
@@ -132,6 +153,25 @@ function AttendancePage() {
                     <td className="py-2 text-right text-mint">
                       {attendanceRate(attendance, s.id)}%
                     </td>
+                    <td className="py-2 text-right">
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="sm"
+                        aria-label={`Edit attendance for ${s.name}`}
+                        title={`Edit attendance for ${s.name}`}
+                        onClick={() => {
+                          setEditing(s);
+                          setEditForm({
+                            date: week!,
+                            present: attendance.includes(`${s.id}|${week}`),
+                          });
+                        }}
+                      >
+                        <Pencil />
+                        <span className="sr-only">Edit</span>
+                      </Button>
+                    </td>
                   </tr>
                 ))}
               </tbody>
@@ -139,6 +179,35 @@ function AttendancePage() {
           </div>
         </Panel>
       </div>
+
+      <Dialog open={!!editing} onOpenChange={(open) => !open && setEditing(null)}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Edit Attendance{editing ? ` · ${editing.name}` : ""}</DialogTitle>
+          </DialogHeader>
+          <form
+            className="space-y-3"
+            onSubmit={async (event) => {
+              event.preventDefault();
+              if (!editing) return;
+              try {
+                await actions.updateAttendance(editing.id, editForm);
+                setEditing(null);
+                toast.success("Attendance updated successfully");
+              } catch (error) {
+                toast.error(error instanceof Error ? error.message : "Unable to update attendance");
+              }
+            }}
+          >
+            <input className="field w-full px-3 py-2 text-xs" type="date" value={editForm.date} onChange={(e) => setEditForm({ ...editForm, date: e.target.value })} />
+            <label className="flex items-center gap-2 text-sm">
+              <input type="checkbox" checked={editForm.present} onChange={(e) => setEditForm({ ...editForm, present: e.target.checked })} className="size-4 accent-mint" />
+              Present
+            </label>
+            <Button type="submit" className="w-full">Save changes</Button>
+          </form>
+        </DialogContent>
+      </Dialog>
     </AppShell>
   );
 }
