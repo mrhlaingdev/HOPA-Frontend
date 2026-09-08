@@ -76,13 +76,16 @@ function NotificationBell() {
       <PopoverTrigger asChild>
         <button
           type="button"
-          className="relative grid size-9 place-items-center text-muted-foreground transition-colors hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent/60"
+          className="relative grid place-items-center p-0 text-[20px] leading-none text-[#f4c542] transition-opacity hover:opacity-80 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent/60"
           aria-label={`${unreadNotifications.length} unread notifications`}
         >
-          <Bell className="size-5" strokeWidth={1.8} />
+          <span aria-hidden="true">🔔</span>
           {unreadNotifications.length > 0 && (
-            <span className="absolute right-0.5 top-0.5 min-w-3.5 h-3.5 rounded-full bg-rose px-1 text-[9px] font-semibold leading-3.5 text-white shadow-sm shadow-black/30">
-              {unreadNotifications.length > 9 ? "9+" : unreadNotifications.length}
+            <span
+              aria-label={`${unreadNotifications.length} unread notifications`}
+              className="absolute right-0 top-0 size-1.5 rounded-full bg-rose shadow-sm shadow-black/40"
+            >
+              <span className="sr-only">{unreadNotifications.length} unread notifications</span>
             </span>
           )}
         </button>
