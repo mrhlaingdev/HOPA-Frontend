@@ -1,5 +1,24 @@
 import { useSyncExternalStore } from "react";
+import { toast } from "sonner";
 import { allSundays, type Completion, type Course, type Student, type Txn } from "./church-data";
+
+export class ApiRequestError extends Error {
+  constructor(
+    public readonly status: number,
+    public readonly operation: string,
+    public readonly detail: string,
+  ) {
+    super(detail);
+    this.name = "ApiRequestError";
+  }
+}
+
+export function formatApiError(error: unknown, fallback: string) {
+  if (error instanceof ApiRequestError) {
+    return `Error (${error.status}): ${error.operation} - ${error.detail}`;
+  }
+  return `Error: ${error instanceof Error ? error.message : fallback}`;
+}
 
 export type ChurchState = {
   students: Student[];
@@ -49,17 +68,30 @@ async function checkBackend() {
   if (!API_BASE_URL) return false;
   try {
     const response = await fetch(`${API_BASE_URL}${API_ENDPOINTS.health}`);
+    if (!response.ok) await throwApiError(response, "Failed to connect to backend");
     return response.ok;
-  } catch {
+  } catch (error) {
+    toast.error(formatApiError(error, "Unable to connect to backend"));
     return false;
   }
+}
+
+async function throwApiError(response: Response, operation: string): Promise<never> {
+  let detail = response.statusText || "Request failed";
+  try {
+    const data = (await response.json()) as { error?: string; message?: string };
+    detail = data.error || data.message || detail;
+  } catch {
+    // Keep the HTTP status text when the backend does not return JSON.
+  }
+  throw new ApiRequestError(response.status, operation, detail);
 }
 
 export async function loadStudents() {
   if (!API_BASE_URL) return [];
 
   const response = await fetch(`${API_BASE_URL}${API_ENDPOINTS.students}`);
-  if (!response.ok) throw new Error(`Failed to load students (${response.status})`);
+  if (!response.ok) await throwApiError(response, "Failed to load students");
 
   const data = (await response.json()) as Student[] | { students?: Student[] };
   const students = Array.isArray(data) ? data : (data.students ?? []);
@@ -71,7 +103,7 @@ async function loadResource<T>(endpoint: string, key: string): Promise<T[]> {
   if (!API_BASE_URL) return [];
 
   const response = await fetch(`${API_BASE_URL}${endpoint}`);
-  if (!response.ok) throw new Error(`Failed to load ${key} (${response.status})`);
+  if (!response.ok) await throwApiError(response, `Failed to load ${key}`);
 
   const data = (await response.json()) as T[] | Record<string, T[] | undefined>;
   return Array.isArray(data) ? data : (data[key] ?? []);
@@ -107,7 +139,8 @@ async function loadFromApi() {
       await loadStudents();
       await Promise.all([loadCourses(), loadAttendance(), loadTransactions()]);
       return;
-    } catch {
+    } catch (error) {
+      toast.error(formatApiError(error, "Unable to load church data"));
       return;
     }
   }
@@ -123,7 +156,7 @@ export const actions = {
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(s),
     });
-    if (!response.ok) throw new Error(`Failed to create student (${response.status})`);
+    if (!response.ok) await throwApiError(response, "Failed to create student");
 
     const created = response.status === 204 ? {} : ((await response.json()) as Partial<Student>);
     const students = await loadStudents();
@@ -135,7 +168,7 @@ export const actions = {
     const response = await fetch(`${API_BASE_URL}${API_ENDPOINTS.students}/${studentId}`, {
       method: "DELETE",
     });
-    if (!response.ok) throw new Error(`Failed to delete student (${response.status})`);
+    if (!response.ok) await throwApiError(response, "Failed to delete student");
 
     await loadStudents();
   },
@@ -155,7 +188,7 @@ export const actions = {
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(c),
     });
-    if (!response.ok) throw new Error(`Failed to create course (${response.status})`);
+    if (!response.ok) await throwApiError(response, "Failed to create course");
 
     await loadCourses();
   },
@@ -165,7 +198,7 @@ export const actions = {
     const response = await fetch(`${API_BASE_URL}${API_ENDPOINTS.courses}/${courseId}`, {
       method: "DELETE",
     });
-    if (!response.ok) throw new Error(`Failed to delete course (${response.status})`);
+    if (!response.ok) await throwApiError(response, "Failed to delete course");
 
     await loadCourses();
   },
@@ -183,7 +216,16 @@ export const actions = {
     void date;
   },
   async addTxn(t: Omit<Txn, "id">) {
-    void t;
+    if (!API_BASE_URL) throw new Error("VITE_API_BASE_URL is not configured");
+
+    const response = await fetch(`${API_BASE_URL}${API_ENDPOINTS.transactions}`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(t),
+    });
+    if (!response.ok) await throwApiError(response, "Failed to create transaction");
+
+    await loadTransactions();
   },
   async updateTxn(txnId: string, txn: Partial<Omit<Txn, "id">>) {
     await updateResource(API_ENDPOINTS.transactions, txnId, txn, "transaction");
@@ -199,7 +241,7 @@ async function updateResource(endpoint: string, id: string, value: unknown, key:
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify(value),
   });
-  if (!response.ok) throw new Error(`Failed to update ${key} (${response.status})`);
+  if (!response.ok) await throwApiError(response, `Failed to update ${key}`);
 }
 
 /* ---------- derived helpers ---------- */

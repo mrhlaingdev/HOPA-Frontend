@@ -4,7 +4,7 @@ import { Pencil, Trash2 } from "lucide-react";
 import { AppShell, Panel } from "@/components/AppShell";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { actions, loadCourses, useChurch } from "@/lib/church-store";
+import { actions, formatApiError, loadCourses, useChurch } from "@/lib/church-store";
 import { formatDate } from "@/lib/church-data";
 import { toast } from "sonner";
 
@@ -45,7 +45,7 @@ function CoursesPage() {
 
   useEffect(() => {
     void loadCourses().catch((error) => {
-      toast.error(error instanceof Error ? error.message : "Unable to load courses");
+      toast.error(formatApiError(error, "Unable to load courses"));
     });
   }, []);
 
@@ -148,11 +148,9 @@ function CoursesPage() {
                           try {
                             await actions.deleteCourse(c.id);
                             if (selected === c.id) setSelected("");
-                            toast.success("Course deleted successfully");
+                            toast.success("Successfully deleted record!");
                           } catch (error) {
-                            toast.error(
-                              error instanceof Error ? error.message : "Unable to delete course",
-                            );
+                            toast.error(formatApiError(error, "Unable to delete course"));
                           }
                         }}
                       >
@@ -180,10 +178,11 @@ function CoursesPage() {
               if (!form.title.trim()) return;
               try {
                 await actions.addCourse(form);
+                const courseName = form.title;
                 setForm({ title: "", date: "2026-09-13", time: "10:30", instructor: "" });
-                toast.success("Course created successfully");
+                toast.success(`Successfully added ${courseName}!`);
               } catch (error) {
-                toast.error(error instanceof Error ? error.message : "Unable to create course");
+                toast.error(formatApiError(error, "Unable to create course"));
               }
             }}
           >
@@ -260,10 +259,12 @@ function CoursesPage() {
               if (!editing || !editForm.title.trim()) return;
               try {
                 await actions.updateCourse(editing.id, editForm);
+                const courseName = editForm.title;
                 setEditing(null);
-                toast.success("Course updated successfully");
+                setEditForm({ title: "", date: "2026-09-13", time: "10:30", instructor: "" });
+                toast.success(`Successfully updated ${courseName}!`);
               } catch (error) {
-                toast.error(error instanceof Error ? error.message : "Unable to update course");
+                toast.error(formatApiError(error, "Unable to update course"));
               }
             }}
           >

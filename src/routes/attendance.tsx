@@ -4,7 +4,14 @@ import { Pencil } from "lucide-react";
 import { AppShell, Panel } from "@/components/AppShell";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { actions, allSundays, attendanceRate, attendedCount, useChurch } from "@/lib/church-store";
+import {
+  actions,
+  allSundays,
+  attendanceRate,
+  attendedCount,
+  formatApiError,
+  useChurch,
+} from "@/lib/church-store";
 import { formatDate, initials } from "@/lib/church-data";
 import { toast } from "sonner";
 
@@ -193,9 +200,10 @@ function AttendancePage() {
               try {
                 await actions.updateAttendance(editing.id, editForm);
                 setEditing(null);
-                toast.success("Attendance updated successfully");
+                setEditForm({ date: week!, present: false });
+                toast.success(`Successfully updated ${editing.name}!`);
               } catch (error) {
-                toast.error(error instanceof Error ? error.message : "Unable to update attendance");
+                toast.error(formatApiError(error, "Unable to update attendance"));
               }
             }}
           >

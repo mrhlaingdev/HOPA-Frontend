@@ -4,7 +4,14 @@ import { Pencil } from "lucide-react";
 import { AppShell, Panel } from "@/components/AppShell";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { CURRENT_MONTH, actions, monthOf, monthlyTotals, useChurch } from "@/lib/church-store";
+import {
+  CURRENT_MONTH,
+  actions,
+  formatApiError,
+  monthOf,
+  monthlyTotals,
+  useChurch,
+} from "@/lib/church-store";
 import { formatDate, formatKs, formatShort } from "@/lib/church-data";
 import { toast } from "sonner";
 
@@ -102,12 +109,18 @@ function FinancePage() {
         <Panel title="Record Transaction" mm="ငွေသွင်း / ငွေထုတ် မှတ်တမ်း" className="col-span-4">
           <form
             className="space-y-2"
-            onSubmit={(e) => {
+            onSubmit={async (e) => {
               e.preventDefault();
               if (!form.description.trim() || !form.amount) return;
-              actions.addTxn({ ...form, receipt: form.receipt });
-              setMonth(monthOf(form.date));
-              setForm(emptyTxn);
+              try {
+                await actions.addTxn({ ...form, receipt: form.receipt });
+                const description = form.description;
+                setMonth(monthOf(form.date));
+                setForm(emptyTxn);
+                toast.success(`Successfully added ${description}!`);
+              } catch (error) {
+                toast.error(formatApiError(error, "Unable to create transaction"));
+              }
             }}
           >
             <div className="grid grid-cols-2 gap-2">
@@ -295,9 +308,11 @@ function FinancePage() {
               try {
                 await actions.updateTxn(editing.id, editForm);
                 setEditing(null);
-                toast.success("Transaction updated successfully");
+                const description = editForm.description;
+                setEditForm(emptyTxn);
+                toast.success(`Successfully updated ${description}!`);
               } catch (error) {
-                toast.error(error instanceof Error ? error.message : "Unable to update transaction");
+                toast.error(formatApiError(error, "Unable to update transaction"));
               }
             }}
           >

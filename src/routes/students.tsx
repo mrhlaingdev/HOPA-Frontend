@@ -4,7 +4,14 @@ import { Pencil, Trash2 } from "lucide-react";
 import { AppShell, Panel } from "@/components/AppShell";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { attendanceRate, attendedCount, allSundays, actions, useChurch } from "@/lib/church-store";
+import {
+  attendanceRate,
+  attendedCount,
+  allSundays,
+  actions,
+  formatApiError,
+  useChurch,
+} from "@/lib/church-store";
 import { formatDate, initials } from "@/lib/church-data";
 import { toast } from "sonner";
 
@@ -58,8 +65,10 @@ function StudentsPage() {
     try {
       await actions.deleteStudent(studentId);
       if (selected === studentId) setSelected("");
+      toast.success("Successfully deleted record!");
     } catch (error) {
       console.error("Unable to delete student", error);
+      toast.error(formatApiError(error, "Unable to delete student"));
     } finally {
       setDeleting(false);
     }
@@ -131,8 +140,10 @@ function StudentsPage() {
                   if (id) setSelected(id);
                   setForm(emptyForm);
                   setAdding(false);
+                  toast.success(`Successfully added ${form.name}!`);
                 } catch (error) {
                   console.error("Unable to save student", error);
+                  toast.error(formatApiError(error, "Unable to create student"));
                 }
               }}
             >
@@ -437,9 +448,10 @@ function StudentsPage() {
               try {
                 await actions.updateStudent(editing.id, editForm);
                 setEditing(null);
-                toast.success("Student updated successfully");
+                setEditForm(emptyForm);
+                toast.success(`Successfully updated ${editForm.name}!`);
               } catch (error) {
-                toast.error(error instanceof Error ? error.message : "Unable to update student");
+                toast.error(formatApiError(error, "Unable to update student"));
               }
             }}
           >
