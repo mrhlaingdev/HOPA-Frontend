@@ -1,10 +1,10 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { useMemo, useState } from "react";
-import { Pencil } from "lucide-react";
+import { useEffect, useMemo, useState } from "react";
+import { Pencil, Trash2 } from "lucide-react";
 import { AppShell, Panel } from "@/components/AppShell";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { actions, useChurch } from "@/lib/church-store";
+import { actions, loadCourses, useChurch } from "@/lib/church-store";
 import { formatDate } from "@/lib/church-data";
 import { toast } from "sonner";
 
@@ -17,7 +17,10 @@ export const Route = createFileRoute("/courses")({
         content:
           "Create Sunday School courses with instructor, date and time, then track which students completed each training and when.",
       },
-      { property: "og:title", content: "Courses & Training — House Of Prayer Assembly Sunday School OS" },
+      {
+        property: "og:title",
+        content: "Courses & Training — House Of Prayer Assembly Sunday School OS",
+      },
       {
         property: "og:description",
         content: "Course schedule and per-student completion tracker, searchable by title or date.",
@@ -39,6 +42,12 @@ function CoursesPage() {
   });
   const [editing, setEditing] = useState<(typeof courses)[number] | null>(null);
   const [editForm, setEditForm] = useState(form);
+
+  useEffect(() => {
+    void loadCourses().catch((error) => {
+      toast.error(error instanceof Error ? error.message : "Unable to load courses");
+    });
+  }, []);
 
   const rows = useMemo(
     () =>
@@ -106,26 +115,51 @@ function CoursesPage() {
                     {completions.filter((x) => x.courseId === c.id).length}/{students.length}
                   </td>
                   <td className="py-2.5 text-right">
-                    <Button
-                      type="button"
-                      variant="ghost"
-                      size="sm"
-                      aria-label={`Edit ${c.title}`}
-                      title={`Edit ${c.title}`}
-                      onClick={(event) => {
-                        event.stopPropagation();
-                        setEditing(c);
-                        setEditForm({
-                          title: c.title,
-                          date: c.date,
-                          time: c.time,
-                          instructor: c.instructor,
-                        });
-                      }}
-                    >
-                      <Pencil />
-                      <span className="sr-only">Edit</span>
-                    </Button>
+                    <div className="flex justify-end gap-1">
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="sm"
+                        aria-label={`Edit ${c.title}`}
+                        title={`Edit ${c.title}`}
+                        onClick={(event) => {
+                          event.stopPropagation();
+                          setEditing(c);
+                          setEditForm({
+                            title: c.title,
+                            date: c.date,
+                            time: c.time,
+                            instructor: c.instructor,
+                          });
+                        }}
+                      >
+                        <Pencil />
+                        <span className="sr-only">Edit</span>
+                      </Button>
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="sm"
+                        aria-label={`Delete ${c.title}`}
+                        title={`Delete ${c.title}`}
+                        onClick={async (event) => {
+                          event.stopPropagation();
+                          if (!window.confirm(`Delete ${c.title}?`)) return;
+                          try {
+                            await actions.deleteCourse(c.id);
+                            if (selected === c.id) setSelected("");
+                            toast.success("Course deleted successfully");
+                          } catch (error) {
+                            toast.error(
+                              error instanceof Error ? error.message : "Unable to delete course",
+                            );
+                          }
+                        }}
+                      >
+                        <Trash2 />
+                        <span className="sr-only">Delete</span>
+                      </Button>
+                    </div>
                   </td>
                 </tr>
               ))}
@@ -141,11 +175,16 @@ function CoursesPage() {
 
           <form
             className="mt-4 grid grid-cols-5 gap-2 rounded-xl glass-inset p-3"
-            onSubmit={(e) => {
+            onSubmit={async (e) => {
               e.preventDefault();
               if (!form.title.trim()) return;
-              actions.addCourse(form);
-              setForm({ title: "", date: "2026-09-13", time: "10:30", instructor: "" });
+              try {
+                await actions.addCourse(form);
+                setForm({ title: "", date: "2026-09-13", time: "10:30", instructor: "" });
+                toast.success("Course created successfully");
+              } catch (error) {
+                toast.error(error instanceof Error ? error.message : "Unable to create course");
+              }
             }}
           >
             <input
@@ -228,11 +267,33 @@ function CoursesPage() {
               }
             }}
           >
-            <input className="field col-span-2 px-3 py-2 text-xs" placeholder="Course name" value={editForm.title} onChange={(e) => setEditForm({ ...editForm, title: e.target.value })} />
-            <input className="field px-3 py-2 text-xs" type="date" value={editForm.date} onChange={(e) => setEditForm({ ...editForm, date: e.target.value })} />
-            <input className="field px-3 py-2 text-xs" type="time" value={editForm.time} onChange={(e) => setEditForm({ ...editForm, time: e.target.value })} />
-            <input className="field col-span-2 px-3 py-2 text-xs" placeholder="Instructor" value={editForm.instructor} onChange={(e) => setEditForm({ ...editForm, instructor: e.target.value })} />
-            <Button type="submit" className="col-span-2">Save changes</Button>
+            <input
+              className="field col-span-2 px-3 py-2 text-xs"
+              placeholder="Course name"
+              value={editForm.title}
+              onChange={(e) => setEditForm({ ...editForm, title: e.target.value })}
+            />
+            <input
+              className="field px-3 py-2 text-xs"
+              type="date"
+              value={editForm.date}
+              onChange={(e) => setEditForm({ ...editForm, date: e.target.value })}
+            />
+            <input
+              className="field px-3 py-2 text-xs"
+              type="time"
+              value={editForm.time}
+              onChange={(e) => setEditForm({ ...editForm, time: e.target.value })}
+            />
+            <input
+              className="field col-span-2 px-3 py-2 text-xs"
+              placeholder="Instructor"
+              value={editForm.instructor}
+              onChange={(e) => setEditForm({ ...editForm, instructor: e.target.value })}
+            />
+            <Button type="submit" className="col-span-2">
+              Save changes
+            </Button>
           </form>
         </DialogContent>
       </Dialog>

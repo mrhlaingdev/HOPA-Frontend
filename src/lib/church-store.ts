@@ -148,7 +148,26 @@ export const actions = {
     void day;
   },
   async addCourse(c: Omit<Course, "id" | "active" | "titleMm">) {
-    void c;
+    if (!API_BASE_URL) throw new Error("VITE_API_BASE_URL is not configured");
+
+    const response = await fetch(`${API_BASE_URL}${API_ENDPOINTS.courses}`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(c),
+    });
+    if (!response.ok) throw new Error(`Failed to create course (${response.status})`);
+
+    await loadCourses();
+  },
+  async deleteCourse(courseId: string) {
+    if (!API_BASE_URL) throw new Error("VITE_API_BASE_URL is not configured");
+
+    const response = await fetch(`${API_BASE_URL}${API_ENDPOINTS.courses}/${courseId}`, {
+      method: "DELETE",
+    });
+    if (!response.ok) throw new Error(`Failed to delete course (${response.status})`);
+
+    await loadCourses();
   },
   async updateCourse(courseId: string, course: Partial<Omit<Course, "id">>) {
     await updateResource(API_ENDPOINTS.courses, courseId, course, "course");
