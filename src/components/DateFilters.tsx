@@ -13,6 +13,14 @@ type DateFiltersProps = {
   dates: string[];
 };
 
+function normalizeMonth(value: string | number | undefined) {
+  if (value === "all") return "all";
+  const month = Number(value);
+  return Number.isInteger(month) && month >= 1 && month <= 12
+    ? String(month).padStart(2, "0")
+    : "all";
+}
+
 export function DateFilters({ value, onChange, dates }: DateFiltersProps) {
   const safeValue = value ?? ALL_DATE_FILTER;
   const safeDates = Array.isArray(dates) ? dates : [];
@@ -26,11 +34,10 @@ export function DateFilters({ value, onChange, dates }: DateFiltersProps) {
   ).sort((a, b) => b.localeCompare(a));
   const selectedYear =
     safeValue.year === "all" || years.includes(safeValue.year) ? safeValue.year : "all";
-  const selectedMonth = MONTH_NAMES[safeValue.month ? Number(safeValue.month) - 1 : -1]
-    ? String(Number(safeValue.month)).padStart(2, "0") === safeValue.month
-      ? safeValue.month
-      : "all"
-    : "all";
+  const selectedMonth = normalizeMonth(safeValue.month);
+  const onMonthChange = (month: string) => {
+    onChange({ ...safeValue, month: normalizeMonth(month) });
+  };
 
   return (
     <div className="flex flex-wrap items-center gap-2">
@@ -47,7 +54,7 @@ export function DateFilters({ value, onChange, dates }: DateFiltersProps) {
           ))}
         </SelectContent>
       </Select>
-      <Select value={selectedMonth} onValueChange={(month) => onChange({ ...safeValue, month })}>
+      <Select value={selectedMonth} onValueChange={onMonthChange}>
         <SelectTrigger className="field h-auto w-auto px-3 py-2 text-xs" aria-label="Select month">
           <SelectValue />
         </SelectTrigger>

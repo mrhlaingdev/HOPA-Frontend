@@ -35,26 +35,51 @@ export const Route = createFileRoute("/")({
 });
 
 function Overview() {
-  const { students, courses, attendance, completions, txns } = useChurch();
+  const {
+    students: storedStudents,
+    courses: storedCourses,
+    attendance: storedAttendance,
+    completions: storedCompletions,
+    txns: storedTxns,
+  } = useChurch();
+  const students = storedStudents?.filter(Boolean) || [];
+  const courses = storedCourses?.filter(Boolean) || [];
+  const attendance = storedAttendance?.filter(Boolean) || [];
+  const completions = storedCompletions?.filter(Boolean) || [];
+  const txns = storedTxns?.filter(Boolean) || [];
   const [q, setQ] = useState("");
   const [dateFilter, setDateFilter] = useState(ALL_DATE_FILTER);
-  const filteredStudents = students.filter((student) => matchesDate(student.enrolled, dateFilter));
-  const filteredCourses = courses.filter((course) => matchesDate(course.date, dateFilter));
-  const completedInPeriod = completions.filter((completion) =>
-    matchesDate(completion.date, dateFilter),
-  ).length;
-  const filteredAttendance = attendance.filter((record) =>
-    matchesDate(record.split("|")[1] ?? "", dateFilter),
+  const filteredStudents = students.filter(
+    (student) => student?.enrolled && matchesDate(student.enrolled, dateFilter),
   );
-  const month = monthlyTotals(txns, dateFilter);
-  const recentWeeks = Array.from(new Set(attendance.map((record) => record.split("|")[1] ?? "")))
+  const filteredCourses = courses.filter(
+    (course) => course?.date && matchesDate(course.date, dateFilter),
+  );
+  const completedInPeriod = completions.filter(
+    (completion) => completion?.date && matchesDate(completion.date, dateFilter),
+  ).length;
+  const filteredAttendance = attendance.filter(
+    (record) => record?.includes("|") && matchesDate(record.split("|")[1] ?? "", dateFilter),
+  );
+  const month = monthlyTotals(txns || [], dateFilter) || {
+    income: 0,
+    expense: 0,
+    net: 0,
+    rows: [],
+  };
+  const recentWeeks = Array.from(
+    new Set(attendance?.map((record) => record?.split("|")[1] ?? "") || []),
+  )
     .filter((date) => matchesDate(date, dateFilter))
     .sort()
     .slice(-7);
+  const lastWeek = recentWeeks[recentWeeks.length - 1];
 
   const filtered = useMemo(
     () =>
-      filteredStudents.filter((s) => s.name.toLowerCase().includes(q.toLowerCase())).slice(0, 3),
+      filteredStudents
+        .filter((s) => s?.name?.toLowerCase?.().includes(q.toLowerCase()))
+        .slice(0, 3),
     [filteredStudents, q],
   );
 
@@ -93,7 +118,7 @@ function Overview() {
             တနင်္ဂနွေကျောင်း ကျောင်းသားစုစုပေါင်း
           </p>
           <div className="mt-4 flex h-10 items-end gap-1.5">
-            {weeklyCounts.map((c, i) => (
+            {weeklyCounts?.map((c, i) => (
               <div
                 key={recentWeeks[i]}
                 className="flex-1 rounded-t bg-accent"
@@ -119,8 +144,8 @@ function Overview() {
               Net Balance <span className="opacity-60">· လက်ကျန်</span>
             </p>
             <p className="mt-1 text-2xl font-display font-bold text-mint">
-              {month.net >= 0 ? "+ " : "− "}
-              {formatShort(Math.abs(month.net))}
+              {(month?.net || 0) >= 0 ? "+ " : "− "}
+              {formatShort(Math.abs(month?.net || 0))}
             </p>
             <p className="mt-1 text-[11px] text-muted-foreground">Income − Expense</p>
           </div>
@@ -128,7 +153,7 @@ function Overview() {
 
         <div className="glass rounded-2xl col-span-4 p-5">
           <p className="text-muted-foreground text-sm">Monthly Income</p>
-          <p className="mt-1 text-3xl font-display font-bold">{formatShort(month.income)}</p>
+          <p className="mt-1 text-3xl font-display font-bold">{formatShort(month?.income || 0)}</p>
           <div className="mt-3 flex items-center gap-2">
             <span className="size-2.5 rounded-full bg-mint" />
             <span className="text-[11px] text-muted-foreground">Donations &amp; offerings</span>
@@ -137,7 +162,7 @@ function Overview() {
 
         <div className="glass rounded-2xl col-span-4 p-5">
           <p className="text-muted-foreground text-sm">Monthly Expenses</p>
-          <p className="mt-1 text-3xl font-display font-bold">{formatShort(month.expense)}</p>
+          <p className="mt-1 text-3xl font-display font-bold">{formatShort(month?.expense || 0)}</p>
           <div className="mt-3 flex items-center gap-2">
             <span className="size-2.5 rounded-full bg-rose" />
             <span className="text-[11px] text-muted-foreground">Supplies &amp; utilities</span>
@@ -232,7 +257,9 @@ function Overview() {
           className="col-span-7"
           right={
             <span className="text-[11px] text-muted-foreground">
-              Last 7 Sundays · {formatDate(recentWeeks[0]!)} – {formatDate(recentWeeks[6]!)}
+              {recentWeeks.length > 0
+                ? `Last 7 Sundays · ${formatDate(recentWeeks[0]!)} – ${formatDate(lastWeek!)}`
+                : "No attendance data for this period"}
             </span>
           }
         >
@@ -270,16 +297,16 @@ function Overview() {
           right={
             <div className="flex gap-2">
               <span className="rounded-full bg-mint/15 text-mint text-[11px] px-3 py-1">
-                Income {formatShort(month.income)}
+                Income {formatShort(month?.income || 0)}
               </span>
               <span className="rounded-full bg-rose/15 text-rose text-[11px] px-3 py-1">
-                Expense {formatShort(month.expense)}
+                Expense {formatShort(month?.expense || 0)}
               </span>
             </div>
           }
         >
           <div className="grid grid-cols-4 gap-3">
-            {month.rows
+            {(month?.rows || [])
               .filter((t) => t.receipt)
               .slice(0, 4)
               .map((t) => (
@@ -298,6 +325,11 @@ function Overview() {
                   </p>
                 </div>
               ))}
+            {(month?.rows || []).filter((t) => t.receipt).length === 0 && (
+              <p className="col-span-4 py-6 text-center text-xs text-muted-foreground">
+                No receipts for the selected period.
+              </p>
+            )}
           </div>
         </Panel>
       </div>
