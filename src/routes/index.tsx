@@ -51,9 +51,10 @@ function Overview() {
   const txns = storedTxns?.filter(Boolean) || [];
   const [q, setQ] = useState("");
   const [dateFilter, setDateFilter] = useState(ALL_DATE_FILTER);
-  const filteredStudents = students.filter(
-    (student) => student?.enrolled && matchesDate(student.enrolled, dateFilter),
-  );
+
+  // Total Students အတွက် Filter မခံဘဲ စနစ်ထဲရှိသမျှ ကျောင်းသားအကုန်လုံးကို ယူပါမည်
+  const filteredStudents = students;
+
   const filteredCourses = courses.filter(
     (course) => course?.date && matchesDate(course.date, dateFilter),
   );
@@ -77,12 +78,13 @@ function Overview() {
     .slice(-7);
   const lastWeek = recentWeeks[recentWeeks.length - 1];
 
+  // Student Directory တွင် ပြသရန် စနစ်ထဲရှိ ကျောင်းသားများထဲမှ ရှာဖွေပါမည်
   const filtered = useMemo(
     () =>
-      filteredStudents
+      students
         .filter((s) => s?.name?.toLowerCase?.().includes(q.toLowerCase()))
-        .slice(0, 3),
-    [filteredStudents, q],
+        .slice(0, 5),
+    [students, q],
   );
 
   const weeklyCounts = recentWeeks.map(
@@ -101,10 +103,10 @@ function Overview() {
           value={dateFilter}
           onChange={setDateFilter}
           dates={[
-            ...students.map((student) => student.enrolled),
-            ...courses.map((course) => course.date),
-            ...txns.map((txn) => txn.date),
-            ...completions.map((completion) => completion.date),
+            ...students.map((student) => student.enrolled).filter(Boolean),
+            ...courses.map((course) => course.date).filter(Boolean),
+            ...txns.map((txn) => txn.date).filter(Boolean),
+            ...completions.map((completion) => completion.date).filter(Boolean),
           ]}
         />
       </div>
