@@ -55,7 +55,7 @@ export function useChurch() {
   return useSyncExternalStore(subscribe, getSnapshot, getSnapshot);
 }
 
-const API_BASE_URL = (import.meta.env.VITE_API_BASE_URL as string | undefined)?.replace(/\/$/, "");
+export const API_BASE_URL = (import.meta.env.VITE_API_BASE_URL as string | undefined)?.replace(/\/$/, "");
 
 const API_ENDPOINTS = {
   health: "/api/test",

@@ -12,6 +12,7 @@ export type Permission =
   | "manage-students"
   | "manage-courses"
   | "manage-finance"
+  | "view-audit-logs"
   | "delete-records";
 
 const rolePermissions: Record<Role, readonly Permission[]> = {
@@ -24,6 +25,7 @@ const rolePermissions: Record<Role, readonly Permission[]> = {
     "manage-students",
     "manage-courses",
     "manage-finance",
+    "view-audit-logs",
     "delete-records",
   ],
   STAFF: [

@@ -7,6 +7,7 @@ const routePermissions: Array<{ prefix: string; permission: Permission }> = [
   { prefix: "/students", permission: "view-students" },
   { prefix: "/attendance", permission: "view-attendance" },
   { prefix: "/courses", permission: "view-courses" },
+  { prefix: "/audit-logs", permission: "view-audit-logs" },
 ];
 
 function permissionForPath(pathname: string): Permission {
