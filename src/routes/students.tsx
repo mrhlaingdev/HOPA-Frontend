@@ -208,54 +208,12 @@ function StudentsPage() {
               }}
             >
               {formError && <p className="col-span-4 text-xs text-rose">{formError}</p>}
-              <input
-                className="field px-3 py-2 text-xs col-span-2"
-                placeholder="Full name"
-                required
-                value={form.name}
-                onChange={(e) => setForm({ ...form, name: e.target.value })}
-              />
-              <input
-                className="field px-3 py-2 text-xs"
-                placeholder="Age"
-                type="number"
-                min="1"
-                step="1"
-                required
-                value={form.age}
-                onChange={(e) => setForm({ ...form, age: Number(e.target.value) })}
-              />
-              <input
-                className="field px-3 py-2 text-xs"
-                placeholder="Grade"
-                type="number"
-                min="1"
-                step="1"
-                required
-                value={form.grade}
-                onChange={(e) => setForm({ ...form, grade: Number(e.target.value) })}
-              />
-              <input
-                className="field px-3 py-2 text-xs"
-                placeholder="Parent name"
-                required
-                value={form.parentName}
-                onChange={(e) => setForm({ ...form, parentName: e.target.value })}
-              />
-              <input
-                className="field px-3 py-2 text-xs"
-                placeholder="Parent phone"
-                required
-                value={form.parentPhone}
-                onChange={(e) => setForm({ ...form, parentPhone: e.target.value })}
-              />
-              <input
-                className="field px-3 py-2 text-xs"
-                placeholder="Address"
-                required
-                value={form.address}
-                onChange={(e) => setForm({ ...form, address: e.target.value })}
-              />
+              <label className="col-span-2 text-xs font-medium" htmlFor="student-name">Student Name<input id="student-name" className="field mt-1 w-full px-3 py-2 text-xs" placeholder="e.g. Thazin Moe" required value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} /></label>
+              <label className="text-xs font-medium" htmlFor="student-age">Age<input id="student-age" className="field mt-1 w-full px-3 py-2 text-xs" placeholder="e.g. 8" type="number" min="1" step="1" required value={form.age} onChange={(e) => setForm({ ...form, age: Number(e.target.value) })} /></label>
+              <label className="text-xs font-medium" htmlFor="student-grade">Grade / Class<input id="student-grade" className="field mt-1 w-full px-3 py-2 text-xs" placeholder="e.g. Grade 2" type="number" min="1" step="1" required value={form.grade} onChange={(e) => setForm({ ...form, grade: Number(e.target.value) })} /></label>
+              <label className="text-xs font-medium" htmlFor="student-parent-name">Parent Name<input id="student-parent-name" className="field mt-1 w-full px-3 py-2 text-xs" placeholder="e.g. May Thu" required value={form.parentName} onChange={(e) => setForm({ ...form, parentName: e.target.value })} /></label>
+              <label className="text-xs font-medium" htmlFor="student-parent-phone">Parent Phone<input id="student-parent-phone" className="field mt-1 w-full px-3 py-2 text-xs" placeholder="e.g. 09 123 456 789" required value={form.parentPhone} onChange={(e) => setForm({ ...form, parentPhone: e.target.value })} /></label>
+              <label className="text-xs font-medium" htmlFor="student-address">Address<input id="student-address" className="field mt-1 w-full px-3 py-2 text-xs" placeholder="e.g. North Branch" required value={form.address} onChange={(e) => setForm({ ...form, address: e.target.value })} /></label>
               <button className="rounded-xl gradient-brand text-xs font-medium py-2">Save</button>
             </form>
           )}
@@ -547,67 +505,14 @@ function StudentsPage() {
             }}
           >
             {editError && <p className="col-span-2 text-xs text-rose">{editError}</p>}
-            <input
-              className="field px-3 py-2 text-xs col-span-2"
-              placeholder="Full name"
-              value={editForm.name}
-              required
-              onChange={(e) => setEditForm({ ...editForm, name: e.target.value })}
-            />
-            <input
-              className="field px-3 py-2 text-xs"
-              placeholder="Myanmar name"
-              value={editForm.nameMm}
-              onChange={(e) => setEditForm({ ...editForm, nameMm: e.target.value })}
-            />
-            <input
-              className="field px-3 py-2 text-xs"
-              type="date"
-              value={editForm.enrolled}
-              required
-              onChange={(e) => setEditForm({ ...editForm, enrolled: e.target.value })}
-            />
-            <input
-              className="field px-3 py-2 text-xs"
-              type="number"
-              placeholder="Age"
-              min="1"
-              step="1"
-              required
-              value={editForm.age}
-              onChange={(e) => setEditForm({ ...editForm, age: Number(e.target.value) })}
-            />
-            <input
-              className="field px-3 py-2 text-xs"
-              type="number"
-              placeholder="Grade"
-              min="1"
-              step="1"
-              required
-              value={editForm.grade}
-              onChange={(e) => setEditForm({ ...editForm, grade: Number(e.target.value) })}
-            />
-            <input
-              className="field px-3 py-2 text-xs"
-              placeholder="Parent name"
-              required
-              value={editForm.parentName}
-              onChange={(e) => setEditForm({ ...editForm, parentName: e.target.value })}
-            />
-            <input
-              className="field px-3 py-2 text-xs"
-              placeholder="Parent phone"
-              required
-              value={editForm.parentPhone}
-              onChange={(e) => setEditForm({ ...editForm, parentPhone: e.target.value })}
-            />
-            <input
-              className="field px-3 py-2 text-xs col-span-2"
-              placeholder="Address"
-              required
-              value={editForm.address}
-              onChange={(e) => setEditForm({ ...editForm, address: e.target.value })}
-            />
+            <label className="col-span-2 text-xs font-medium" htmlFor="edit-student-name">Student Name<input id="edit-student-name" className="field mt-1 w-full px-3 py-2 text-xs" placeholder="e.g. Thazin Moe" value={editForm.name} required onChange={(e) => setEditForm({ ...editForm, name: e.target.value })} /></label>
+            <label className="text-xs font-medium" htmlFor="edit-student-name-mm">Myanmar Name<input id="edit-student-name-mm" className="field mt-1 w-full px-3 py-2 text-xs" placeholder="Optional Myanmar name" value={editForm.nameMm} onChange={(e) => setEditForm({ ...editForm, nameMm: e.target.value })} /></label>
+            <label className="text-xs font-medium" htmlFor="edit-student-enrolled">Enrollment Date<input id="edit-student-enrolled" className="field mt-1 w-full px-3 py-2 text-xs" type="date" value={editForm.enrolled} required onChange={(e) => setEditForm({ ...editForm, enrolled: e.target.value })} /></label>
+            <label className="text-xs font-medium" htmlFor="edit-student-age">Age<input id="edit-student-age" className="field mt-1 w-full px-3 py-2 text-xs" type="number" placeholder="e.g. 8" min="1" step="1" required value={editForm.age} onChange={(e) => setEditForm({ ...editForm, age: Number(e.target.value) })} /></label>
+            <label className="text-xs font-medium" htmlFor="edit-student-grade">Grade / Class<input id="edit-student-grade" className="field mt-1 w-full px-3 py-2 text-xs" type="number" placeholder="e.g. Grade 2" min="1" step="1" required value={editForm.grade} onChange={(e) => setEditForm({ ...editForm, grade: Number(e.target.value) })} /></label>
+            <label className="text-xs font-medium" htmlFor="edit-student-parent-name">Parent Name<input id="edit-student-parent-name" className="field mt-1 w-full px-3 py-2 text-xs" placeholder="e.g. May Thu" required value={editForm.parentName} onChange={(e) => setEditForm({ ...editForm, parentName: e.target.value })} /></label>
+            <label className="text-xs font-medium" htmlFor="edit-student-parent-phone">Parent Phone<input id="edit-student-parent-phone" className="field mt-1 w-full px-3 py-2 text-xs" placeholder="e.g. 09 123 456 789" required value={editForm.parentPhone} onChange={(e) => setEditForm({ ...editForm, parentPhone: e.target.value })} /></label>
+            <label className="col-span-2 text-xs font-medium" htmlFor="edit-student-address">Address<input id="edit-student-address" className="field mt-1 w-full px-3 py-2 text-xs" placeholder="e.g. North Branch" required value={editForm.address} onChange={(e) => setEditForm({ ...editForm, address: e.target.value })} /></label>
             <Button type="submit" className="col-span-2">
               Save changes
             </Button>

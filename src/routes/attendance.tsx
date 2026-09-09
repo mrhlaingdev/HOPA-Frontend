@@ -251,13 +251,10 @@ function AttendancePage() {
               }
             }}
           >
-            <input
-              className="field w-full px-3 py-2 text-xs"
-              type="date"
-              required
-              value={editForm.date}
-              onChange={(e) => setEditForm({ ...editForm, date: e.target.value })}
-            />
+            <label className="block text-xs font-medium" htmlFor="attendance-date">
+              Attendance Date
+              <input id="attendance-date" className="field mt-1 w-full px-3 py-2 text-xs" type="date" required value={editForm.date} onChange={(e) => setEditForm({ ...editForm, date: e.target.value })} />
+            </label>
             <label className="flex items-center gap-2 text-sm">
               <input
                 type="checkbox"
