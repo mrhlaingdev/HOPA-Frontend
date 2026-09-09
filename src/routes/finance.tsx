@@ -182,17 +182,20 @@ function FinancePage() {
                   onChange={(e) => setForm({ ...form, date: e.target.value })}
                   className="field px-3 py-2 text-xs"
                   aria-label="Date"
+                  required
                 />
               </div>
               <input
                 className="field w-full px-3 py-2 text-xs"
                 placeholder="Category (e.g. Donation, Supplies)"
+                required
                 value={form.category}
                 onChange={(e) => setForm({ ...form, category: e.target.value })}
               />
               <input
                 className="field w-full px-3 py-2 text-xs"
                 placeholder="Description"
+                required
                 value={form.description}
                 onChange={(e) => setForm({ ...form, description: e.target.value })}
               />
@@ -201,6 +204,7 @@ function FinancePage() {
                 type="number"
                 min="0.01"
                 step="0.01"
+                required
                 placeholder="Amount (Ks)"
                 value={form.amount || ""}
                 onChange={(e) => setForm({ ...form, amount: Number(e.target.value) })}
@@ -378,18 +382,21 @@ function FinancePage() {
                 className="field px-3 py-2 text-xs"
                 type="date"
                 value={editForm.date}
+                required
                 onChange={(e) => setEditForm({ ...editForm, date: e.target.value })}
               />
             </div>
             <input
               className="field w-full px-3 py-2 text-xs"
               placeholder="Category"
+              required
               value={editForm.category}
               onChange={(e) => setEditForm({ ...editForm, category: e.target.value })}
             />
             <input
               className="field w-full px-3 py-2 text-xs"
               placeholder="Description"
+              required
               value={editForm.description}
               onChange={(e) => setEditForm({ ...editForm, description: e.target.value })}
             />
@@ -398,6 +405,7 @@ function FinancePage() {
               type="number"
               min="0.01"
               step="0.01"
+              required
               placeholder="Amount (Ks)"
               value={editForm.amount || ""}
               onChange={(e) => setEditForm({ ...editForm, amount: Number(e.target.value) })}

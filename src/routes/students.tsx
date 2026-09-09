@@ -209,6 +209,7 @@ function StudentsPage() {
               <input
                 className="field px-3 py-2 text-xs col-span-2"
                 placeholder="Full name"
+                required
                 value={form.name}
                 onChange={(e) => setForm({ ...form, name: e.target.value })}
               />
@@ -217,6 +218,8 @@ function StudentsPage() {
                 placeholder="Age"
                 type="number"
                 min="1"
+                step="1"
+                required
                 value={form.age}
                 onChange={(e) => setForm({ ...form, age: Number(e.target.value) })}
               />
@@ -225,24 +228,29 @@ function StudentsPage() {
                 placeholder="Grade"
                 type="number"
                 min="1"
+                step="1"
+                required
                 value={form.grade}
                 onChange={(e) => setForm({ ...form, grade: Number(e.target.value) })}
               />
               <input
                 className="field px-3 py-2 text-xs"
                 placeholder="Parent name"
+                required
                 value={form.parentName}
                 onChange={(e) => setForm({ ...form, parentName: e.target.value })}
               />
               <input
                 className="field px-3 py-2 text-xs"
                 placeholder="Parent phone"
+                required
                 value={form.parentPhone}
                 onChange={(e) => setForm({ ...form, parentPhone: e.target.value })}
               />
               <input
                 className="field px-3 py-2 text-xs"
                 placeholder="Address"
+                required
                 value={form.address}
                 onChange={(e) => setForm({ ...form, address: e.target.value })}
               />
@@ -533,6 +541,7 @@ function StudentsPage() {
               className="field px-3 py-2 text-xs col-span-2"
               placeholder="Full name"
               value={editForm.name}
+              required
               onChange={(e) => setEditForm({ ...editForm, name: e.target.value })}
             />
             <input
@@ -545,12 +554,16 @@ function StudentsPage() {
               className="field px-3 py-2 text-xs"
               type="date"
               value={editForm.enrolled}
+              required
               onChange={(e) => setEditForm({ ...editForm, enrolled: e.target.value })}
             />
             <input
               className="field px-3 py-2 text-xs"
               type="number"
               placeholder="Age"
+              min="1"
+              step="1"
+              required
               value={editForm.age}
               onChange={(e) => setEditForm({ ...editForm, age: Number(e.target.value) })}
             />
@@ -558,24 +571,30 @@ function StudentsPage() {
               className="field px-3 py-2 text-xs"
               type="number"
               placeholder="Grade"
+              min="1"
+              step="1"
+              required
               value={editForm.grade}
               onChange={(e) => setEditForm({ ...editForm, grade: Number(e.target.value) })}
             />
             <input
               className="field px-3 py-2 text-xs"
               placeholder="Parent name"
+              required
               value={editForm.parentName}
               onChange={(e) => setEditForm({ ...editForm, parentName: e.target.value })}
             />
             <input
               className="field px-3 py-2 text-xs"
               placeholder="Parent phone"
+              required
               value={editForm.parentPhone}
               onChange={(e) => setEditForm({ ...editForm, parentPhone: e.target.value })}
             />
             <input
               className="field px-3 py-2 text-xs col-span-2"
               placeholder="Address"
+              required
               value={editForm.address}
               onChange={(e) => setEditForm({ ...editForm, address: e.target.value })}
             />

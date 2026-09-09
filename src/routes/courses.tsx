@@ -1,6 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useMemo, useState } from "react";
-import { Pencil, Trash2 } from "lucide-react";
+import { Download, Pencil, Trash2 } from "lucide-react";
 import { AppShell, Panel } from "@/components/AppShell";
 import { DateFilters } from "@/components/DateFilters";
 import { Button } from "@/components/ui/button";
@@ -15,6 +15,7 @@ import {
 import { formatDate } from "@/lib/church-data";
 import { toast } from "sonner";
 import { usePermission } from "@/lib/auth";
+import { downloadCsv } from "@/lib/utils";
 
 export const Route = createFileRoute("/courses")({
   head: () => ({
@@ -53,6 +54,33 @@ function CoursesPage() {
   });
   const [editing, setEditing] = useState<(typeof courses)[number] | null>(null);
   const [editForm, setEditForm] = useState(form);
+  const [formError, setFormError] = useState("");
+  const [editError, setEditError] = useState("");
+
+  function validateCourse(courseForm: typeof form) {
+    if (!courseForm.title.trim()) return "Course name is required.";
+    if (!courseForm.date) return "Course date is required.";
+    if (!courseForm.time) return "Course time is required.";
+    if (!courseForm.instructor.trim()) return "Instructor is required.";
+    return "";
+  }
+
+  function exportCourses() {
+    downloadCsv(
+      "courses-report.csv",
+      ["Course", "Date", "Time", "Instructor", "Completed", "Students"],
+      rows.map((courseRow) => [
+        courseRow.title,
+        courseRow.date,
+        courseRow.time,
+        courseRow.instructor,
+        completions.filter(
+          (completion) => completion.courseId === courseRow.id && matchesDate(completion.date, dateFilter),
+        ).length,
+        students.length,
+      ]),
+    );
+  }
 
   const rows = useMemo(
     () =>
@@ -87,13 +115,22 @@ function CoursesPage() {
           mm={`${rows.length} courses`}
           className="col-span-7"
           right={
-            <input
-              value={q}
-              onChange={(e) => setQ(e.target.value)}
-              className="field px-3 py-2 text-xs"
-              placeholder="Search by title or date…"
-              aria-label="Search courses"
-            />
+            <div className="flex items-center gap-2">
+              <button
+                type="button"
+                onClick={exportCourses}
+                className="glass rounded-xl px-3 py-2 text-xs font-medium flex items-center gap-1.5"
+              >
+                <Download className="size-3.5" /> Export CSV
+              </button>
+              <input
+                value={q}
+                onChange={(e) => setQ(e.target.value)}
+                className="field px-3 py-2 text-xs"
+                placeholder="Search by title or date…"
+                aria-label="Search courses"
+              />
+            </div>
           }
         >
           <table className="w-full text-sm">
@@ -191,7 +228,12 @@ function CoursesPage() {
             className="mt-4 grid grid-cols-5 gap-2 rounded-xl glass-inset p-3"
             onSubmit={async (e) => {
               e.preventDefault();
-              if (!form.title.trim()) return;
+              const validationError = validateCourse(form);
+              setFormError(validationError);
+              if (validationError) {
+                toast.error(validationError);
+                return;
+              }
               try {
                 await actions.addCourse(form);
                 const courseName = form.title;
@@ -202,27 +244,32 @@ function CoursesPage() {
               }
             }}
           >
+            {formError && <p className="col-span-5 text-xs text-rose">{formError}</p>}
             <input
               className="field px-3 py-2 text-xs col-span-2"
               placeholder="Course name"
+              required
               value={form.title}
               onChange={(e) => setForm({ ...form, title: e.target.value })}
             />
             <input
               className="field px-3 py-2 text-xs"
               type="date"
+              required
               value={form.date}
               onChange={(e) => setForm({ ...form, date: e.target.value })}
             />
             <input
               className="field px-3 py-2 text-xs"
               type="time"
+              required
               value={form.time}
               onChange={(e) => setForm({ ...form, time: e.target.value })}
             />
             <input
               className="field px-3 py-2 text-xs"
               placeholder="Instructor"
+              required
               value={form.instructor}
               onChange={(e) => setForm({ ...form, instructor: e.target.value })}
             />
@@ -272,7 +319,12 @@ function CoursesPage() {
             className="grid grid-cols-2 gap-2"
             onSubmit={async (event) => {
               event.preventDefault();
-              if (!editing || !editForm.title.trim()) return;
+              const validationError = validateCourse(editForm);
+              setEditError(validationError);
+              if (!editing || validationError) {
+                if (validationError) toast.error(validationError);
+                return;
+              }
               try {
                 await actions.updateCourse(editing.id, editForm);
                 const courseName = editForm.title;
@@ -284,27 +336,32 @@ function CoursesPage() {
               }
             }}
           >
+            {editError && <p className="col-span-2 text-xs text-rose">{editError}</p>}
             <input
               className="field col-span-2 px-3 py-2 text-xs"
               placeholder="Course name"
+              required
               value={editForm.title}
               onChange={(e) => setEditForm({ ...editForm, title: e.target.value })}
             />
             <input
               className="field px-3 py-2 text-xs"
               type="date"
+              required
               value={editForm.date}
               onChange={(e) => setEditForm({ ...editForm, date: e.target.value })}
             />
             <input
               className="field px-3 py-2 text-xs"
               type="time"
+              required
               value={editForm.time}
               onChange={(e) => setEditForm({ ...editForm, time: e.target.value })}
             />
             <input
               className="field col-span-2 px-3 py-2 text-xs"
               placeholder="Instructor"
+              required
               value={editForm.instructor}
               onChange={(e) => setEditForm({ ...editForm, instructor: e.target.value })}
             />
