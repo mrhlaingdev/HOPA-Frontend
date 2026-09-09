@@ -206,15 +206,6 @@ export function AppShell({
               );
             })}
         </nav>
-
-        <div className="mt-auto glass rounded-2xl p-4">
-          <p className="text-sm font-medium">Grace Chapel</p>
-          <p className="text-[11px] text-muted-foreground">North Branch · 2026</p>
-          <div className="mt-3 h-1.5 rounded-full bg-white/10">
-            <div className="h-full w-3/4 rounded-full gradient-brand" />
-          </div>
-          <p className="mt-2 text-[10px] text-muted-foreground">82% of storage used</p>
-        </div>
       </aside>
 
       {mobileNavOpen && (
