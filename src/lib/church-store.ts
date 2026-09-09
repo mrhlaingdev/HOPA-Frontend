@@ -102,11 +102,17 @@ async function fetchApi(path: string, init?: RequestInit) {
 
   headers.set("X-User-Role", getCurrentRole());
   headers.set("X-Role", getCurrentRole());
-  if (token && !headers.has("Authorization")) {
-    headers.set("Authorization", token.startsWith("Bearer ") ? token : `Bearer ${token}`);
-  }
 
   try {
+    if (!headers.has("Authorization")) {
+      if (!token) {
+        throw new Error(
+          "Authentication token is required. Configure VITE_API_TOKEN or sign in again.",
+        );
+      }
+      headers.set("Authorization", token.startsWith("Bearer ") ? token : `Bearer ${token}`);
+    }
+
     return await fetch(`${API_BASE_URL}${path}`, {
       ...init,
       credentials: "include",
