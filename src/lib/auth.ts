@@ -83,6 +83,10 @@ export function useCurrentRole() {
   return useSyncExternalStore(subscribe, getSnapshot, getSnapshot);
 }
 
+export function getCurrentRole() {
+  return currentRole;
+}
+
 export function setCurrentRole(role: Role) {
   currentRole = role;
   if (typeof window !== "undefined") window.localStorage.setItem(ROLE_STORAGE_KEY, role);

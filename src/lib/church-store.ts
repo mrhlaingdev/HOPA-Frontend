@@ -9,6 +9,7 @@ import {
   type Teacher,
   type Txn,
 } from "./church-data";
+import { getCurrentRole } from "./auth";
 
 export class ApiRequestError extends Error {
   constructor(
@@ -90,8 +91,28 @@ const API_ENDPOINTS = {
 async function fetchApi(path: string, init?: RequestInit) {
   const controller = new AbortController();
   const timeout = setTimeout(() => controller.abort(), API_TIMEOUT_MS);
+  const headers = new Headers(init?.headers);
+  const configuredToken = import.meta.env.VITE_API_TOKEN as string | undefined;
+  const storedToken =
+    typeof window !== "undefined"
+      ? window.localStorage.getItem("hopa-auth-token") ??
+        window.localStorage.getItem("access-token")
+      : null;
+  const token = configuredToken || storedToken;
+
+  headers.set("X-User-Role", getCurrentRole());
+  headers.set("X-Role", getCurrentRole());
+  if (token && !headers.has("Authorization")) {
+    headers.set("Authorization", token.startsWith("Bearer ") ? token : `Bearer ${token}`);
+  }
+
   try {
-    return await fetch(`${API_BASE_URL}${path}`, { ...init, signal: controller.signal });
+    return await fetch(`${API_BASE_URL}${path}`, {
+      ...init,
+      credentials: "include",
+      headers,
+      signal: controller.signal,
+    });
   } catch (error) {
     if (error instanceof Error && error.name === "AbortError") {
       throw new Error("The backend request timed out");
