@@ -1,5 +1,5 @@
 import { Link, useRouterState } from "@tanstack/react-router";
-import { Bell, Check } from "lucide-react";
+import { Bell, Check, Menu, X } from "lucide-react";
 import { useEffect, useState, type ReactNode } from "react";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import {
@@ -167,6 +167,7 @@ export function AppShell({
   const pathname = useRouterState({ select: (s) => s.location.pathname });
   const role = useCurrentRole();
   const canQuickAdd = usePermission("manage-students");
+  const [mobileNavOpen, setMobileNavOpen] = useState(false);
 
   return (
     <div className="relative flex min-h-screen w-full">
@@ -214,15 +215,61 @@ export function AppShell({
         </div>
       </aside>
 
+      {mobileNavOpen && (
+        <button
+          type="button"
+          aria-label="Close navigation"
+          className="fixed inset-0 z-40 bg-black/60 lg:hidden"
+          onClick={() => setMobileNavOpen(false)}
+        />
+      )}
+      <aside
+        className={`fixed inset-y-0 left-0 z-50 flex w-[min(82vw,18rem)] flex-col gap-6 bg-[rgb(20_24_48_/_0.98)] p-5 shadow-2xl shadow-black/50 backdrop-blur-xl transition-transform duration-200 lg:hidden ${mobileNavOpen ? "translate-x-0" : "-translate-x-full"}`}
+        aria-hidden={!mobileNavOpen}
+      >
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-3 px-2">
+            <div className="grid size-10 place-items-center rounded-xl gradient-brand font-display text-lg font-bold text-primary-foreground">L</div>
+            <div>
+              <p className="font-display font-semibold leading-tight">House Of Prayer Assembly</p>
+              <p className="text-[11px] tracking-wide text-muted-foreground">Sunday School OS</p>
+            </div>
+          </div>
+          <button type="button" className="grid size-9 place-items-center rounded-xl text-muted-foreground hover:bg-white/10 hover:text-foreground" aria-label="Close navigation" onClick={() => setMobileNavOpen(false)}>
+            <X className="size-5" />
+          </button>
+        </div>
+        <nav className="flex flex-col gap-1">
+          {nav.filter((item) => hasPermission(role, item.permission)).map((item) => {
+            const active = item.to === "/" ? pathname === "/" : pathname.startsWith(item.to);
+            return (
+              <Link
+                key={item.to}
+                to={item.to}
+                onClick={() => setMobileNavOpen(false)}
+                className={active ? "flex items-center gap-3 rounded-xl border border-primary/40 bg-linear-[120deg] from-primary/35 to-accent/20 px-3 py-2.5 text-sm font-medium" : "flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm text-muted-foreground hover:bg-white/5 hover:text-foreground"}
+              >
+                <span className={active ? "text-accent" : "opacity-50"}>{item.glyph}</span>
+                {item.label}
+                <span className="ml-auto text-[10px] opacity-60">{item.mm}</span>
+              </Link>
+            );
+          })}
+        </nav>
+      </aside>
+
       <main className="flex-1 min-w-0 flex flex-col">
-        <header className="glass rounded-2xl mx-5 mt-5 px-5 py-3.5 flex items-center gap-4">
+        <header className="glass mx-3 mt-3 flex items-center gap-3 rounded-2xl px-3 py-3 sm:mx-5 sm:mt-5 sm:px-5 sm:py-3.5">
+          <button type="button" className="grid size-10 shrink-0 place-items-center rounded-xl text-muted-foreground hover:bg-white/10 hover:text-foreground lg:hidden" aria-label="Open navigation" aria-expanded={mobileNavOpen} onClick={() => setMobileNavOpen(true)}>
+            <Menu className="size-5" />
+          </button>
           <div className="flex items-center gap-2">
             <div className="relative">
               <input
                 value={search ?? ""}
                 onChange={(e) => onSearch?.(e.target.value)}
                 readOnly={!onSearch}
-                className="field w-64 pl-9 pr-3 py-2.5 text-sm"
+                className="field w-[min(48vw,16rem)] pl-9 pr-3 py-2.5 text-sm sm:w-64"
                 placeholder="Search students, courses, receipts…"
                 aria-label="Global search"
               />
@@ -230,7 +277,7 @@ export function AppShell({
                 ⌕
               </span>
             </div>
-            <span className="text-[11px] text-muted-foreground">ရှာဖွေရန်</span>
+            <span className="hidden text-[11px] text-muted-foreground sm:inline">ရှာဖွေရန်</span>
           </div>
 
           <div className="ml-auto flex items-center gap-3">
@@ -249,6 +296,7 @@ export function AppShell({
               aria-label="UAT role switcher"
               role="group"
             >
+              <div className="hidden sm:flex items-center gap-1">
               {roles.map((availableRole) => {
                 const active = role === availableRole;
                 return (
@@ -267,8 +315,9 @@ export function AppShell({
                   </button>
                 );
               })}
+              </div>
             </div>
-            <div className="flex items-center gap-2.5 pl-1">
+            <div className="hidden items-center gap-2.5 pl-1 sm:flex">
               <div className="size-9 rounded-full grid place-items-center gradient-violet text-xs font-semibold">
                 MK
               </div>
@@ -280,7 +329,7 @@ export function AppShell({
           </div>
         </header>
 
-        <div className="p-5">{children}</div>
+        <div className="p-3 sm:p-5">{children}</div>
       </main>
     </div>
   );

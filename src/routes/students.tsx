@@ -1,7 +1,9 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useMemo, useState } from "react";
-import { Download, Pencil, Trash2 } from "lucide-react";
+import { Download, Pencil, Trash2, UsersRound } from "lucide-react";
 import { AppShell, Panel } from "@/components/AppShell";
+import { EmptyState } from "@/components/EmptyState";
+import { Skeleton } from "@/components/ui/skeleton";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import {
@@ -59,7 +61,7 @@ function StudentsPage() {
   const canDelete = usePermission("delete-records");
   const search = Route.useSearch();
   const initialQ = search["q"];
-  const { students, attendance, courses, completions } = useChurch();
+  const { students, attendance, courses, completions, isLoading } = useChurch();
   const [q, setQ] = useState(initialQ);
   const [grade, setGrade] = useState("all");
   const [ageBand, setAgeBand] = useState("all");
@@ -160,7 +162,7 @@ function StudentsPage() {
         <Panel
           title="Student Directory"
           mm={`${rows.length} of ${students.length} students`}
-          className="col-span-8"
+          className="col-span-12 lg:col-span-8"
           right={
             <div className="flex items-center gap-2">
               <button
@@ -297,8 +299,15 @@ function StudentsPage() {
             </select>
           </div>
 
-          <div className="mt-3 overflow-hidden rounded-xl">
-            <table className="w-full text-sm">
+          <div className="mt-3 overflow-x-auto rounded-xl">
+            {isLoading ? (
+              <div className="space-y-3 p-3">
+                {[1, 2, 3, 4].map((row) => <Skeleton key={row} className="h-12 w-full" />)}
+              </div>
+            ) : rows.length === 0 ? (
+              <EmptyState icon={UsersRound} description="Add a student or adjust your search filters to see records here." />
+            ) : (
+            <table className="min-w-[42rem] w-full text-sm">
               <thead>
                 <tr className="text-[10px] uppercase tracking-[0.14em] text-muted-foreground border-b border-white/10">
                   <th className="text-left font-medium py-2 pl-2">Name</th>
@@ -389,6 +398,7 @@ function StudentsPage() {
                 )}
               </tbody>
             </table>
+            )}
           </div>
         </Panel>
 

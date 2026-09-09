@@ -1,7 +1,9 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useState } from "react";
-import { Download, Pencil } from "lucide-react";
+import { Download, Pencil, WalletCards } from "lucide-react";
 import { AppShell, Panel } from "@/components/AppShell";
+import { EmptyState } from "@/components/EmptyState";
+import { Skeleton } from "@/components/ui/skeleton";
 import { DateFilters } from "@/components/DateFilters";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
@@ -50,7 +52,7 @@ const emptyTxn = {
 
 function FinancePage() {
   const canManage = usePermission("manage-finance");
-  const { txns } = useChurch();
+  const { txns, isLoading } = useChurch();
   const [q, setQ] = useState("");
   const [dateFilter, setDateFilter] = useState(ALL_DATE_FILTER);
   const [form, setForm] = useState(emptyTxn);
@@ -145,7 +147,7 @@ function FinancePage() {
         </div>
 
         {canManage && (
-          <Panel title="Record Transaction" mm="ငွေသွင်း / ငွေထုတ် မှတ်တမ်း" className="col-span-4">
+          <Panel title="Record Transaction" mm="ငွေသွင်း / ငွေထုတ် မှတ်တမ်း" className="col-span-12 lg:col-span-4">
             <form
               className="space-y-2"
               onSubmit={async (e) => {
@@ -235,7 +237,7 @@ function FinancePage() {
         <Panel
           title="Transaction History"
           mm={`${rows.length} records`}
-          className="col-span-8"
+          className="col-span-12 lg:col-span-8"
           right={
             <div className="flex items-center gap-2">
               <span className="text-[11px] text-muted-foreground">
@@ -251,7 +253,11 @@ function FinancePage() {
             </div>
           }
         >
-          <table className="w-full text-sm">
+          {isLoading ? (
+            <div className="space-y-3 py-2">{[1, 2, 3, 4].map((row) => <Skeleton key={row} className="h-11 w-full" />)}</div>
+          ) : rows.length === 0 ? (
+            <EmptyState icon={WalletCards} description="No transactions are available for the selected period." />
+          ) : <div className="overflow-x-auto"><table className="min-w-[42rem] w-full text-sm">
             <thead>
               <tr className="text-[10px] uppercase tracking-[0.14em] text-muted-foreground border-b border-white/10">
                 <th className="text-left font-medium py-2">Date</th>
@@ -325,7 +331,7 @@ function FinancePage() {
                 </tr>
               )}
             </tbody>
-          </table>
+          </table></div>}
         </Panel>
       </div>
 

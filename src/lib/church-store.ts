@@ -26,9 +26,17 @@ export type ChurchState = {
   courses: Course[];
   completions: Completion[];
   txns: Txn[];
+  isLoading: boolean;
 };
 
-let state: ChurchState = { students: [], attendance: [], courses: [], completions: [], txns: [] };
+let state: ChurchState = {
+  students: [],
+  attendance: [],
+  courses: [],
+  completions: [],
+  txns: [],
+  isLoading: true,
+};
 let loadPromise: Promise<void> | undefined;
 
 const listeners = new Set<() => void>();
@@ -150,17 +158,18 @@ export async function loadTransactions() {
 }
 
 async function loadFromApi() {
-  if (await checkBackend()) {
-    try {
+  try {
+    if (await checkBackend()) {
       await loadStudents();
       await Promise.all([loadCourses(), loadAttendance(), loadTransactions()]);
       return;
-    } catch (error) {
-      toast.error(formatApiError(error, "Unable to load church data"));
-      return;
     }
+    set({ students: [], attendance: [], courses: [], completions: [], txns: [] });
+  } catch (error) {
+    toast.error(formatApiError(error, "Unable to load church data"));
+  } finally {
+    set({ isLoading: false });
   }
-  set({ students: [], attendance: [], courses: [], completions: [], txns: [] });
 }
 
 export const actions = {

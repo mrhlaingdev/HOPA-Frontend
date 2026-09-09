@@ -1,7 +1,9 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useMemo, useState } from "react";
-import { Download, Pencil, Trash2 } from "lucide-react";
+import { BookOpen, Download, Pencil, Trash2 } from "lucide-react";
 import { AppShell, Panel } from "@/components/AppShell";
+import { EmptyState } from "@/components/EmptyState";
+import { Skeleton } from "@/components/ui/skeleton";
 import { DateFilters } from "@/components/DateFilters";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
@@ -42,7 +44,7 @@ export const Route = createFileRoute("/courses")({
 function CoursesPage() {
   const canManage = usePermission("manage-courses");
   const canDelete = usePermission("delete-records");
-  const { courses, students, completions } = useChurch();
+  const { courses, students, completions, isLoading } = useChurch();
   const [q, setQ] = useState("");
   const [dateFilter, setDateFilter] = useState(ALL_DATE_FILTER);
   const [selected, setSelected] = useState(courses[0]?.id ?? "");
@@ -113,7 +115,7 @@ function CoursesPage() {
         <Panel
           title="Course Schedule"
           mm={`${rows.length} courses`}
-          className="col-span-7"
+          className="col-span-12 lg:col-span-7"
           right={
             <div className="flex items-center gap-2">
               <button
@@ -133,7 +135,11 @@ function CoursesPage() {
             </div>
           }
         >
-          <table className="w-full text-sm">
+          {isLoading ? (
+            <div className="space-y-3 py-2">{[1, 2, 3, 4].map((row) => <Skeleton key={row} className="h-12 w-full" />)}</div>
+          ) : rows.length === 0 ? (
+            <EmptyState icon={BookOpen} description="Create a course or adjust your filters to see the schedule." />
+          ) : <div className="overflow-x-auto"><table className="min-w-[42rem] w-full text-sm">
             <thead>
               <tr className="text-[10px] uppercase tracking-[0.14em] text-muted-foreground border-b border-white/10">
                 <th className="text-left font-medium py-2">Course</th>
@@ -222,7 +228,7 @@ function CoursesPage() {
                 </tr>
               )}
             </tbody>
-          </table>
+          </table></div>}
 
           {canManage && <form
             className="mt-4 grid grid-cols-5 gap-2 rounded-xl glass-inset p-3"
@@ -282,7 +288,7 @@ function CoursesPage() {
         <Panel
           title={course ? `Completion · ${course.title}` : "Completion"}
           mm={course ? `${formatDate(course.date)} · ${course.time} · ${course.instructor}` : ""}
-          className="col-span-5"
+          className="col-span-12 lg:col-span-5"
         >
           <ul className="divide-y divide-white/5">
             {course &&

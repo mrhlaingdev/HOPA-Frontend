@@ -1,7 +1,9 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useState } from "react";
-import { Download, Pencil } from "lucide-react";
+import { CalendarCheck2, Download, Pencil } from "lucide-react";
 import { AppShell, Panel } from "@/components/AppShell";
+import { EmptyState } from "@/components/EmptyState";
+import { Skeleton } from "@/components/ui/skeleton";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import {
@@ -39,7 +41,7 @@ export const Route = createFileRoute("/attendance")({
 });
 
 function AttendancePage() {
-  const { students, attendance } = useChurch();
+  const { students, attendance, isLoading } = useChurch();
   const [week, setWeek] = useState(allSundays[allSundays.length - 1]);
   const [q, setQ] = useState("");
   const [editing, setEditing] = useState<(typeof students)[number] | null>(null);
@@ -78,7 +80,7 @@ function AttendancePage() {
         <Panel
           title="Check-in Sheet"
           mm={`${presentCount} of ${rows.length} present · ${formatDate(week!)}`}
-          className="col-span-6"
+          className="col-span-12 lg:col-span-6"
           right={
             <select
               value={week}
@@ -94,7 +96,11 @@ function AttendancePage() {
             </select>
           }
         >
-          <ul className="divide-y divide-white/5">
+          {isLoading ? (
+            <div className="space-y-3 py-2">{[1, 2, 3, 4].map((row) => <Skeleton key={row} className="h-10 w-full" />)}</div>
+          ) : rows.length === 0 ? (
+            <EmptyState icon={CalendarCheck2} description="Attendance will appear here once students are available." />
+          ) : <ul className="divide-y divide-white/5">
             {rows.map((s) => {
               const key = `${s.id}|${week}`;
               const present = attendance.includes(key);
@@ -135,13 +141,13 @@ function AttendancePage() {
                 </li>
               );
             })}
-          </ul>
+          </ul>}
         </Panel>
 
         <Panel
           title="Attendance History"
           mm="Last 10 Sundays · yearly rate"
-          className="col-span-6"
+          className="col-span-12 lg:col-span-6"
           right={
             <button
               type="button"
@@ -153,7 +159,11 @@ function AttendancePage() {
           }
         >
           <div className="overflow-x-auto">
-            <table className="w-full text-xs">
+            {isLoading ? (
+              <div className="space-y-3 py-2">{[1, 2, 3, 4].map((row) => <Skeleton key={row} className="h-9 w-full" />)}</div>
+            ) : rows.length === 0 ? (
+              <EmptyState icon={CalendarCheck2} description="No attendance data is available for this view yet." />
+            ) : <table className="min-w-[44rem] w-full text-xs">
               <thead>
                 <tr className="text-[10px] text-muted-foreground border-b border-white/10">
                   <th className="text-left font-medium py-2">Student</th>
@@ -213,7 +223,7 @@ function AttendancePage() {
                   </tr>
                 ))}
               </tbody>
-            </table>
+            </table>}
           </div>
         </Panel>
       </div>

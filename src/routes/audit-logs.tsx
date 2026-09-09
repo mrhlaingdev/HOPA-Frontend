@@ -1,7 +1,9 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useEffect, useMemo, useState } from "react";
-import { Search } from "lucide-react";
+import { ClipboardList, Search } from "lucide-react";
 import { AppShell, Panel } from "@/components/AppShell";
+import { EmptyState } from "@/components/EmptyState";
+import { Skeleton } from "@/components/ui/skeleton";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { roleLabel, useCurrentRole } from "@/lib/auth";
 import { API_BASE_URL } from "@/lib/church-store";
@@ -119,11 +121,11 @@ function AuditLogsPage() {
               {actions.map((item) => <option key={item} value={item}>{item}</option>)}
             </select>
           </div>
-          {status === "loading" && <p className="py-12 text-center text-sm text-muted-foreground">Loading activity logs…</p>}
+          {status === "loading" && <div className="space-y-3 py-3">{[1, 2, 3, 4].map((row) => <Skeleton key={row} className="h-12 w-full" />)}</div>}
           {status === "error" && <p className="py-12 text-center text-sm text-rose">Unable to load activity logs. Please try again.</p>}
-          {status === "ready" && filteredLogs.length === 0 && <p className="py-12 text-center text-sm text-muted-foreground">No activity logs match your filters.</p>}
+          {status === "ready" && filteredLogs.length === 0 && <EmptyState icon={ClipboardList} description={logs.length === 0 ? "Activity will appear here as administrators use the system." : "Try clearing a filter to see more activity."} />}
           {status === "ready" && filteredLogs.length > 0 && (
-            <Table>
+            <div className="overflow-x-auto"><Table className="min-w-[52rem]">
               <TableHeader>
                 <TableRow><TableHead>User ID / Role</TableHead><TableHead>Action</TableHead><TableHead>Resource</TableHead><TableHead>Details</TableHead><TableHead className="whitespace-nowrap">Timestamp</TableHead></TableRow>
               </TableHeader>
@@ -139,7 +141,7 @@ function AuditLogsPage() {
                   </TableRow>;
                 })}
               </TableBody>
-            </Table>
+            </Table></div>
           )}
         </Panel>
       </div>
