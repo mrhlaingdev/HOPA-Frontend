@@ -15,7 +15,7 @@ export const Route = createFileRoute("/teachers")({
   component: TeachersPage,
 });
 
-const emptyForm = { name: "", phone: "", email: "", specialty: "", active: true };
+const emptyForm = { name: "", phone: "", email: "", specialization: "", active: true };
 type TeacherForm = typeof emptyForm;
 
 function TeachersPage() {
@@ -31,7 +31,7 @@ function TeachersPage() {
   const rows = useMemo(
     () =>
       teachers.filter((teacher) =>
-        [teacher.name, teacher.email, teacher.phone, teacher.specialty].some((value) =>
+        [teacher.name, teacher.email, teacher.phone, teacher.specialization].some((value) =>
           value.toLowerCase().includes(q.toLowerCase()),
         ),
       ),
@@ -51,7 +51,7 @@ function TeachersPage() {
       name: teacher.name,
       phone: teacher.phone,
       email: teacher.email,
-      specialty: teacher.specialty,
+      specialization: teacher.specialization,
       active: teacher.active ?? true,
     });
     setError("");
@@ -82,12 +82,12 @@ function TeachersPage() {
   function exportTeachers() {
     downloadCsv(
       "teacher-directory.csv",
-      ["Name", "Phone", "Email", "Specialty", "Status"],
+      ["Name", "Phone", "Email", "specialization", "Status"],
       rows.map((teacher) => [
         teacher.name,
         teacher.phone,
         teacher.email,
-        teacher.specialty,
+        teacher.specialization,
         teacher.active === false ? "Inactive" : "Active",
       ]),
     );
@@ -145,7 +145,7 @@ function TeachersPage() {
               <thead>
                 <tr className="border-b border-white/10 text-left text-[10px] uppercase tracking-[0.14em] text-muted-foreground">
                   <th className="py-2">Name</th>
-                  <th className="py-2">Specialty</th>
+                  <th className="py-2">specialization</th>
                   <th className="py-2">Phone</th>
                   <th className="py-2">Email</th>
                   <th className="py-2">Status</th>
@@ -156,7 +156,7 @@ function TeachersPage() {
                 {rows.map((teacher) => (
                   <tr key={teacher.id}>
                     <td className="py-2.5 font-medium">{teacher.name}</td>
-                    <td className="py-2.5 text-muted-foreground">{teacher.specialty || "—"}</td>
+                    <td className="py-2.5 text-muted-foreground">{teacher.specialization || "—"}</td>
                     <td className="py-2.5 text-muted-foreground">{teacher.phone}</td>
                     <td className="py-2.5 text-muted-foreground">{teacher.email || "—"}</td>
                     <td className="py-2.5 text-xs text-mint">
@@ -242,12 +242,12 @@ function TeachersPage() {
               />
             </label>
             <label className="col-span-2 text-xs font-medium">
-              Specialty
+              specialization
               <input
                 className="field mt-1 w-full px-3 py-2 text-xs"
                 placeholder="e.g. Bible Studies"
-                value={form.specialty}
-                onChange={(event) => setForm({ ...form, specialty: event.target.value })}
+                value={form.specialization}
+                onChange={(event) => setForm({ ...form, specialization: event.target.value })}
               />
             </label>
             <label className="col-span-2 flex items-center gap-2 text-xs font-medium">

@@ -27,7 +27,7 @@ export type Teacher = {
   name: string;
   phone: string;
   email: string;
-  specialty: string;
+  specialization: string;
   active?: boolean;
 };
 
