@@ -44,7 +44,7 @@ export const Route = createFileRoute("/courses")({
 function CoursesPage() {
   const canManage = usePermission("manage-courses");
   const canDelete = usePermission("delete-records");
-  const { courses, students, completions, isLoading } = useChurch();
+  const { courses, students, teachers, completions, isLoading } = useChurch();
   const [q, setQ] = useState("");
   const [dateFilter, setDateFilter] = useState(ALL_DATE_FILTER);
   const [selected, setSelected] = useState(courses[0]?.id ?? "");
@@ -53,6 +53,7 @@ function CoursesPage() {
     date: "2026-09-13",
     time: "10:30",
     instructor: "",
+    teacherId: "",
   });
   const [editing, setEditing] = useState<(typeof courses)[number] | null>(null);
   const [editForm, setEditForm] = useState(form);
@@ -96,6 +97,7 @@ function CoursesPage() {
   );
 
   const course = rows.find((c) => c.id === selected) ?? rows[0];
+  const teacherName = (teacherId?: string) => teachers.find((teacher) => teacher.id === teacherId)?.name ?? "Unassigned";
 
   return (
     <AppShell search={q} onSearch={setQ}>
@@ -145,7 +147,7 @@ function CoursesPage() {
                 <th className="text-left font-medium py-2">Course</th>
                 <th className="text-left font-medium py-2">Date</th>
                 <th className="text-left font-medium py-2">Time</th>
-                <th className="text-left font-medium py-2">Instructor</th>
+                <th className="text-left font-medium py-2">Teacher</th>
                 <th className="text-right font-medium py-2">Completed</th>
                 <th className="py-2" aria-label="Actions" />
               </tr>
@@ -167,7 +169,7 @@ function CoursesPage() {
                   </td>
                   <td className="py-2.5 text-muted-foreground">{formatDate(c.date)}</td>
                   <td className="py-2.5 text-muted-foreground">{c.time}</td>
-                  <td className="py-2.5 text-muted-foreground">{c.instructor}</td>
+                  <td className="py-2.5 text-muted-foreground">{teacherName(c.teacherId)}</td>
                   <td className="py-2.5 text-right text-mint">
                     {completions.filter(
                       (x) => x.courseId === c.id && matchesDate(x.date, dateFilter),
@@ -189,6 +191,7 @@ function CoursesPage() {
                             date: c.date,
                             time: c.time,
                             instructor: c.instructor,
+                            teacherId: c.teacherId ?? "",
                           });
                         }}
                       >
@@ -243,7 +246,7 @@ function CoursesPage() {
               try {
                 await actions.addCourse(form);
                 const courseName = form.title;
-                setForm({ title: "", date: "2026-09-13", time: "10:30", instructor: "" });
+                setForm({ title: "", date: "2026-09-13", time: "10:30", instructor: "", teacherId: "" });
                 toast.success(`Successfully added ${courseName}!`);
               } catch (error) {
                 toast.error(formatApiError(error, "Unable to create course"));
@@ -255,6 +258,7 @@ function CoursesPage() {
             <label className="text-xs font-medium" htmlFor="course-date">Course Date<input id="course-date" className="field mt-1 w-full px-3 py-2 text-xs" type="date" required value={form.date} onChange={(e) => setForm({ ...form, date: e.target.value })} /></label>
             <label className="text-xs font-medium" htmlFor="course-time">Start Time<input id="course-time" className="field mt-1 w-full px-3 py-2 text-xs" type="time" required value={form.time} onChange={(e) => setForm({ ...form, time: e.target.value })} /></label>
             <label className="text-xs font-medium" htmlFor="course-instructor">Instructor<input id="course-instructor" className="field mt-1 w-full px-3 py-2 text-xs" placeholder="e.g. Pastor John" required value={form.instructor} onChange={(e) => setForm({ ...form, instructor: e.target.value })} /></label>
+            <label className="col-span-2 text-xs font-medium" htmlFor="course-teacher">Assigned Teacher<select id="course-teacher" className="field mt-1 w-full px-3 py-2 text-xs" value={form.teacherId} onChange={(e) => setForm({ ...form, teacherId: e.target.value })}><option value="">Unassigned</option>{teachers.filter((teacher) => teacher.active !== false).map((teacher) => <option key={teacher.id} value={teacher.id}>{teacher.name}</option>)}</select></label>
             <button className="col-span-5 rounded-xl gradient-brand py-2 text-xs font-medium">
               + Create Course
             </button>
@@ -311,7 +315,7 @@ function CoursesPage() {
                 await actions.updateCourse(editing.id, editForm);
                 const courseName = editForm.title;
                 setEditing(null);
-                setEditForm({ title: "", date: "2026-09-13", time: "10:30", instructor: "" });
+                setEditForm({ title: "", date: "2026-09-13", time: "10:30", instructor: "", teacherId: "" });
                 toast.success(`Successfully updated ${courseName}!`);
               } catch (error) {
                 toast.error(formatApiError(error, "Unable to update course"));
@@ -323,6 +327,7 @@ function CoursesPage() {
             <label className="text-xs font-medium" htmlFor="edit-course-date">Course Date<input id="edit-course-date" className="field mt-1 w-full px-3 py-2 text-xs" type="date" required value={editForm.date} onChange={(e) => setEditForm({ ...editForm, date: e.target.value })} /></label>
             <label className="text-xs font-medium" htmlFor="edit-course-time">Start Time<input id="edit-course-time" className="field mt-1 w-full px-3 py-2 text-xs" type="time" required value={editForm.time} onChange={(e) => setEditForm({ ...editForm, time: e.target.value })} /></label>
             <label className="col-span-2 text-xs font-medium" htmlFor="edit-course-instructor">Instructor<input id="edit-course-instructor" className="field mt-1 w-full px-3 py-2 text-xs" placeholder="e.g. Pastor John" required value={editForm.instructor} onChange={(e) => setEditForm({ ...editForm, instructor: e.target.value })} /></label>
+            <label className="col-span-2 text-xs font-medium" htmlFor="edit-course-teacher">Assigned Teacher<select id="edit-course-teacher" className="field mt-1 w-full px-3 py-2 text-xs" value={editForm.teacherId} onChange={(e) => setEditForm({ ...editForm, teacherId: e.target.value })}><option value="">Unassigned</option>{teachers.filter((teacher) => teacher.active !== false).map((teacher) => <option key={teacher.id} value={teacher.id}>{teacher.name}</option>)}</select></label>
             <Button type="submit" className="col-span-2">
               Save changes
             </Button>

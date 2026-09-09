@@ -1,6 +1,14 @@
 import { useEffect, useSyncExternalStore } from "react";
 import { toast } from "sonner";
-import { allSundays, type Completion, type Course, type Student, type Txn } from "./church-data";
+import {
+  allSundays,
+  type Completion,
+  type Course,
+  type Staff,
+  type Student,
+  type Teacher,
+  type Txn,
+} from "./church-data";
 
 export class ApiRequestError extends Error {
   constructor(
@@ -24,6 +32,8 @@ export type ChurchState = {
   students: Student[];
   attendance: string[]; // `${studentId}|${sunday}`
   courses: Course[];
+  teachers: Teacher[];
+  staff: Staff[];
   completions: Completion[];
   txns: Txn[];
   isLoading: boolean;
@@ -33,6 +43,8 @@ let state: ChurchState = {
   students: [],
   attendance: [],
   courses: [],
+  teachers: [],
+  staff: [],
   completions: [],
   txns: [],
   isLoading: true,
@@ -69,6 +81,8 @@ const API_ENDPOINTS = {
   health: "/api/test",
   students: "/api/students",
   courses: "/api/courses",
+  teachers: "/api/teachers",
+  staff: "/api/staff",
   attendance: "/api/attendance",
   transactions: "/api/finance",
 } as const;
@@ -139,6 +153,18 @@ export async function loadCourses() {
   return courses;
 }
 
+export async function loadTeachers() {
+  const teachers = await loadResource<Teacher>(API_ENDPOINTS.teachers, "teachers");
+  set({ teachers });
+  return teachers;
+}
+
+export async function loadStaff() {
+  const staff = await loadResource<Staff>(API_ENDPOINTS.staff, "staff");
+  set({ staff });
+  return staff;
+}
+
 export async function loadAttendance() {
   const records = await loadResource<
     string | { studentId: string; date: string; present?: boolean }
@@ -161,10 +187,10 @@ async function loadFromApi() {
   try {
     if (await checkBackend()) {
       await loadStudents();
-      await Promise.all([loadCourses(), loadAttendance(), loadTransactions()]);
+      await Promise.all([loadCourses(), loadTeachers(), loadStaff(), loadAttendance(), loadTransactions()]);
       return;
     }
-    set({ students: [], attendance: [], courses: [], completions: [], txns: [] });
+    set({ students: [], attendance: [], courses: [], teachers: [], staff: [], completions: [], txns: [] });
   } catch (error) {
     toast.error(formatApiError(error, "Unable to load church data"));
   } finally {
@@ -231,6 +257,30 @@ export const actions = {
     await updateResource(API_ENDPOINTS.courses, courseId, course, "course");
     await loadCourses();
   },
+  async addTeacher(teacher: Omit<Teacher, "id">) {
+    await createResource(API_ENDPOINTS.teachers, teacher, "teacher");
+    await loadTeachers();
+  },
+  async updateTeacher(teacherId: string, teacher: Partial<Omit<Teacher, "id">>) {
+    await updateResource(API_ENDPOINTS.teachers, teacherId, teacher, "teacher");
+    await loadTeachers();
+  },
+  async deleteTeacher(teacherId: string) {
+    await deleteResource(API_ENDPOINTS.teachers, teacherId, "teacher");
+    await loadTeachers();
+  },
+  async addStaff(staff: Omit<Staff, "id">) {
+    await createResource(API_ENDPOINTS.staff, staff, "staff member");
+    await loadStaff();
+  },
+  async updateStaff(staffId: string, staff: Partial<Omit<Staff, "id">>) {
+    await updateResource(API_ENDPOINTS.staff, staffId, staff, "staff member");
+    await loadStaff();
+  },
+  async deleteStaff(staffId: string) {
+    await deleteResource(API_ENDPOINTS.staff, staffId, "staff member");
+    await loadStaff();
+  },
   async updateAttendance(studentId: string, attendance: { date: string; present: boolean }) {
     await updateResource(API_ENDPOINTS.attendance, studentId, attendance, "attendance");
     await loadAttendance();
@@ -267,6 +317,22 @@ async function updateResource(endpoint: string, id: string, value: unknown, key:
     body: JSON.stringify(value),
   });
   if (!response.ok) await throwApiError(response, `Failed to update ${key}`);
+}
+
+async function createResource(endpoint: string, value: unknown, key: string) {
+  if (!API_BASE_URL) throw new Error("VITE_API_BASE_URL is not configured");
+  const response = await fetchApi(endpoint, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(value),
+  });
+  if (!response.ok) await throwApiError(response, `Failed to create ${key}`);
+}
+
+async function deleteResource(endpoint: string, id: string, key: string) {
+  if (!API_BASE_URL) throw new Error("VITE_API_BASE_URL is not configured");
+  const response = await fetchApi(`${endpoint}/${id}`, { method: "DELETE" });
+  if (!response.ok) await throwApiError(response, `Failed to delete ${key}`);
 }
 
 /* ---------- derived helpers ---------- */

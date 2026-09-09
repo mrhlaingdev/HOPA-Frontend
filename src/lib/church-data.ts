@@ -18,7 +18,27 @@ export type Course = {
   date: string;
   time: string;
   instructor: string;
+  teacherId?: string;
   active: boolean;
+};
+
+export type Teacher = {
+  id: string;
+  name: string;
+  phone: string;
+  email: string;
+  specialty: string;
+  active?: boolean;
+};
+
+export type Staff = {
+  id: string;
+  name: string;
+  position: string;
+  phone: string;
+  email: string;
+  salary: number;
+  active?: boolean;
 };
 
 export type Completion = {

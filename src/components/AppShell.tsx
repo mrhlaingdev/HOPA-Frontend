@@ -22,6 +22,8 @@ const nav = [
     permission: "view-attendance",
   },
   { to: "/courses", glyph: "▣", label: "Courses", mm: "သင်တန်း", permission: "view-courses" },
+  { to: "/teachers", glyph: "♙", label: "Teachers", mm: "ဆရာများ", permission: "view-teachers" },
+  { to: "/staff", glyph: "♟", label: "Staff", mm: "ဝန်ထမ်း", permission: "view-staff" },
   { to: "/finance", glyph: "₵", label: "Finance", mm: "ငွေစာရင်း", permission: "view-finance" },
   { to: "/audit-logs", glyph: "≋", label: "Activity Logs", mm: "မှတ်တမ်း", permission: "view-audit-logs" },
 ] as const;

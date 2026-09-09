@@ -14,7 +14,9 @@ import { Route as AttendanceRouteImport } from './routes/attendance'
 import { Route as AuditLogsRouteImport } from './routes/audit-logs'
 import { Route as CoursesRouteImport } from './routes/courses'
 import { Route as FinanceRouteImport } from './routes/finance'
+import { Route as StaffRouteImport } from './routes/staff'
 import { Route as StudentsRouteImport } from './routes/students'
+import { Route as TeachersRouteImport } from './routes/teachers'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
@@ -41,9 +43,19 @@ const FinanceRoute = FinanceRouteImport.update({
   path: '/finance',
   getParentRoute: () => rootRouteImport,
 } as any)
+const StaffRoute = StaffRouteImport.update({
+  id: '/staff',
+  path: '/staff',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const StudentsRoute = StudentsRouteImport.update({
   id: '/students',
   path: '/students',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const TeachersRoute = TeachersRouteImport.update({
+  id: '/teachers',
+  path: '/teachers',
   getParentRoute: () => rootRouteImport,
 } as any)
 
@@ -53,7 +65,9 @@ export interface FileRoutesByFullPath {
   '/audit-logs': typeof AuditLogsRoute
   '/courses': typeof CoursesRoute
   '/finance': typeof FinanceRoute
+  '/staff': typeof StaffRoute
   '/students': typeof StudentsRoute
+  '/teachers': typeof TeachersRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -61,7 +75,9 @@ export interface FileRoutesByTo {
   '/audit-logs': typeof AuditLogsRoute
   '/courses': typeof CoursesRoute
   '/finance': typeof FinanceRoute
+  '/staff': typeof StaffRoute
   '/students': typeof StudentsRoute
+  '/teachers': typeof TeachersRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -70,15 +86,31 @@ export interface FileRoutesById {
   '/audit-logs': typeof AuditLogsRoute
   '/courses': typeof CoursesRoute
   '/finance': typeof FinanceRoute
+  '/staff': typeof StaffRoute
   '/students': typeof StudentsRoute
+  '/teachers': typeof TeachersRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
   fullPaths:
-    '/' | '/attendance' | '/audit-logs' | '/courses' | '/finance' | '/students'
+    | '/'
+    | '/attendance'
+    | '/audit-logs'
+    | '/courses'
+    | '/finance'
+    | '/staff'
+    | '/students'
+    | '/teachers'
   fileRoutesByTo: FileRoutesByTo
   to:
-    '/' | '/attendance' | '/audit-logs' | '/courses' | '/finance' | '/students'
+    | '/'
+    | '/attendance'
+    | '/audit-logs'
+    | '/courses'
+    | '/finance'
+    | '/staff'
+    | '/students'
+    | '/teachers'
   id:
     | '__root__'
     | '/'
@@ -86,7 +118,9 @@ export interface FileRouteTypes {
     | '/audit-logs'
     | '/courses'
     | '/finance'
+    | '/staff'
     | '/students'
+    | '/teachers'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -95,7 +129,9 @@ export interface RootRouteChildren {
   AuditLogsRoute: typeof AuditLogsRoute
   CoursesRoute: typeof CoursesRoute
   FinanceRoute: typeof FinanceRoute
+  StaffRoute: typeof StaffRoute
   StudentsRoute: typeof StudentsRoute
+  TeachersRoute: typeof TeachersRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -135,11 +171,25 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof FinanceRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/staff': {
+      id: '/staff'
+      path: '/staff'
+      fullPath: '/staff'
+      preLoaderRoute: typeof StaffRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/students': {
       id: '/students'
       path: '/students'
       fullPath: '/students'
       preLoaderRoute: typeof StudentsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/teachers': {
+      id: '/teachers'
+      path: '/teachers'
+      fullPath: '/teachers'
+      preLoaderRoute: typeof TeachersRouteImport
       parentRoute: typeof rootRouteImport
     }
   }
@@ -151,7 +201,9 @@ const rootRouteChildren: RootRouteChildren = {
   AuditLogsRoute: AuditLogsRoute,
   CoursesRoute: CoursesRoute,
   FinanceRoute: FinanceRoute,
+  StaffRoute: StaffRoute,
   StudentsRoute: StudentsRoute,
+  TeachersRoute: TeachersRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
