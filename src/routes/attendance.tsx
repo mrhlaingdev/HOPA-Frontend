@@ -42,7 +42,16 @@ export const Route = createFileRoute("/attendance")({
 
 function AttendancePage() {
   const { students, attendance, isLoading } = useChurch();
-  const [week, setWeek] = useState(allSundays[allSundays.length - 1]);
+  // ယနေ့ သို့မဟုတ် ယနေ့ထက် မကျော်သော အနီးစပ်ဆုံး တနင်္ဂနွေနေ့ရက်စွဲကို ရှာယူမည်
+  const getInitialSunday = () => {
+  const today = new Date().toISOString().split("T")[0] ?? "";
+  const pastSundays = allSundays.filter((date) => date <= today);
+  return pastSundays.length > 0 
+    ? (pastSundays[pastSundays.length - 1] ?? "") 
+    : (allSundays[0] ?? "");
+};
+
+  const [week, setWeek] = useState<string>(getInitialSunday());
   const [q, setQ] = useState("");
   const [editing, setEditing] = useState<(typeof students)[number] | null>(null);
   const [editForm, setEditForm] = useState({ date: week, present: false });
