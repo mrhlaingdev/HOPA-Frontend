@@ -52,15 +52,17 @@ function Overview() {
   const [q, setQ] = useState("");
   const [dateFilter, setDateFilter] = useState(ALL_DATE_FILTER);
 
-  // Total Students အတွက် Filter မခံဘဲ စနစ်ထဲရှိသမျှ ကျောင်းသားအကုန်လုံးကို ယူပါမည်
+  // Total Students အတွက် စနစ်ထဲရှိသမျှ ကျောင်းသားအကုန်လုံးကို ယူပါမည်
   const filteredStudents = students;
 
-  const filteredCourses = courses.filter(
-    (course) => course?.date && matchesDate(course.date, dateFilter),
-  );
+  // Active Courses အတွက် Archived မဖြစ်သေးသော သင်တန်းများကို ရေတွက်ပါမည်
+  /* Line 59 ကို ဒီအတိုင်း လဲပေးပါ */
+  const activeCoursesCount = courses.filter((c) => !(c as any)?.archived).length;
+
   const completedInPeriod = completions.filter(
     (completion) => completion?.date && matchesDate(completion.date, dateFilter),
   ).length;
+
   const filteredAttendance = attendance.filter(
     (record) => record?.includes("|") && matchesDate(record.split("|")[1] ?? "", dateFilter),
   );
@@ -137,10 +139,10 @@ function Overview() {
           <div className="glass rounded-2xl p-5 flex flex-col">
             <p className="text-muted-foreground text-sm">Active Courses</p>
             <p className="mt-1 text-3xl font-display font-bold">
-              {filteredCourses.filter((c) => c.active).length}
+              {activeCoursesCount}
             </p>
             <p className="mt-auto text-[11px] text-muted-foreground">
-              {filteredCourses.length} in selected period
+              {courses.length} total courses in system
             </p>
           </div>
           <div className="glass rounded-2xl p-5 flex flex-col justify-center">
