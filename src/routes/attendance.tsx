@@ -134,9 +134,9 @@ function AttendancePage() {
                     >
                       {initials(s.name)}
                     </div>
-                    <span className="text-sm">{s.name}</span>
+                    <span className="text-sm font-medium">{s.name}</span>
                     <span className="text-[11px] text-muted-foreground">Grade {s.grade}</span>
-                    <span className={`ml-auto text-[11px] ${present ? "text-mint" : "text-rose"}`}>
+                    <span className={`ml-auto text-[11px] font-medium ${present ? "text-mint" : "text-rose"}`}>
                       {present ? "Present" : "Absent"}
                     </span>
                     <Button
@@ -150,7 +150,7 @@ function AttendancePage() {
                         setEditForm({ date: week!, present });
                       }}
                     >
-                      <Pencil />
+                      <Pencil className="size-3.5" />
                       <span className="sr-only">Edit</span>
                     </Button>
                   </li>
@@ -201,14 +201,14 @@ function AttendancePage() {
                 <tbody className="divide-y divide-white/5">
                   {rows.map((s) => (
                     <tr key={s.id}>
-                      <td className="py-2 pr-2 whitespace-nowrap">{s.name}</td>
+                      <td className="py-2 pr-2 whitespace-nowrap font-medium">{s.name}</td>
                       {recent.map((d) => {
                         const present = attendance.includes(`${s.id}|${d}`);
                         return (
                           <td key={d} className="py-2 px-1 text-center">
                             <span
                               className={`inline-grid size-5 place-items-center rounded ${
-                                present ? "bg-mint/25 text-mint" : "bg-rose/20 text-rose"
+                                present ? "bg-mint/25 text-mint" : "bg-rose/20 text-rose opacity-40"
                               }`}
                             >
                               {present ? "✓" : "✕"}
@@ -219,7 +219,7 @@ function AttendancePage() {
                       <td className="py-2 text-right text-muted-foreground">
                         {attendedCount(attendance, s.id)}
                       </td>
-                      <td className="py-2 text-right text-mint">
+                      <td className="py-2 text-right text-mint font-medium">
                         {attendanceRate(attendance, s.id)}%
                       </td>
                       <td className="py-2 text-right">
@@ -237,7 +237,7 @@ function AttendancePage() {
                             });
                           }}
                         >
-                          <Pencil />
+                          <Pencil className="size-3.5" />
                           <span className="sr-only">Edit</span>
                         </Button>
                       </td>
@@ -264,10 +264,8 @@ function AttendancePage() {
                 return;
               }
               try {
-                // ၁။ Toggle သို့မဟုတ် Update/Add ဘက်ပေါင်းစုံ အဆင်ပြေစေရန် Fallback Logic ပါဝင်ပါသည်
                 await actions.toggleAttendance(editing.id, editForm.date);
                 setEditing(null);
-                setEditForm({ date: week!, present: false });
                 toast.success(`Successfully updated ${editing.name}!`);
               } catch (error) {
                 toast.error(formatApiError(error, "Unable to update attendance"));
