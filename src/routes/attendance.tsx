@@ -46,7 +46,7 @@ function AttendancePage() {
   const [q, setQ] = useState("");
   const [editing, setEditing] = useState<(typeof students)[number] | null>(null);
   const [editForm, setEditForm] = useState({ date: week, present: false });
-  const recent = allSundays.slice(-10);
+  const recent = allSundays;
 
   const rows = students.filter((s) => s.name.toLowerCase().includes(q.toLowerCase()));
   const presentCount = rows.filter((s) => attendance.includes(`${s.id}|${week}`)).length;
