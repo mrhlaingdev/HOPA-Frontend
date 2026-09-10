@@ -114,17 +114,17 @@ const recent = currentIndex !== -1
           className="col-span-12 lg:col-span-6"
           right={
             <select
-              value={week}
-              onChange={(e) => setWeek(e.target.value)}
-              className="field px-3 py-2 text-xs"
-              aria-label="Select Sunday"
-            >
-              {[...allSundays].reverse().map((d) => (
-                <option key={d} value={d}>
-                  {formatDate(d)}
-                </option>
-              ))}
-            </select>
+             value={week}
+             onChange={(e) => setWeek(e.target.value)}
+             className="field px-3 py-2 text-xs bg-slate-900 text-white border border-slate-700 rounded-md focus:outline-none"
+             aria-label="Select Sunday"
+>
+            {[...allSundays].reverse().map((d) => (
+            <option key={d} value={d} className="bg-slate-900 text-white">
+            {formatDate(d)}
+            </option>
+            ))}
+           </select>
           }
         >
           {isLoading ? (
