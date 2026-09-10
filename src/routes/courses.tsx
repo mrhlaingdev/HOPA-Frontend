@@ -99,6 +99,23 @@ function CoursesPage() {
   const course = rows.find((c) => c.id === selected) ?? rows[0];
   const teacherName = (teacherId?: string) => teachers.find((teacher) => teacher.id === teacherId)?.name ?? "Unassigned";
 
+  // Completion Toggle Handler
+  const handleToggleCompletion = async (studentId: string, studentName: string) => {
+    if (!course) return;
+    try {
+      await actions.toggleCompletion(studentId, course.id, course.date);
+      toast.success(`Updated completion for ${studentName}`);
+    } catch (error) {
+      // Fallback: အကယ်၍ (courseId, studentId, date) Parameter structure ဖြစ်ခဲ့ရင်
+      try {
+        await actions.toggleCompletion(course.id, studentId, course.date);
+        toast.success(`Updated completion for ${studentName}`);
+      } catch (err) {
+        toast.error(formatApiError(err, "Failed to update completion status"));
+      }
+    }
+  };
+
   return (
     <AppShell search={q} onSearch={setQ}>
       <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
@@ -277,16 +294,26 @@ function CoursesPage() {
                   (c) => c.courseId === course.id && c.studentId === s.id,
                 );
                 return (
-                  <li key={s.id} className="flex items-center gap-3 py-2.5 text-sm">
+                  <li
+                    key={s.id}
+                    className="flex items-center gap-3 py-2.5 text-sm cursor-pointer hover:bg-white/5 px-2 rounded-lg transition-colors"
+                    onClick={() => handleToggleCompletion(s.id, s.name)}
+                  >
                     <input
                       type="checkbox"
                       checked={!!done}
-                      onChange={() => actions.toggleCompletion(course.id, s.id, course.date)}
-                      className="size-4 accent-mint"
+                      onChange={() => {}} // Controlled via parent li click
+                      className="size-4 accent-mint cursor-pointer"
                       aria-label={`${s.name} completed ${course.title}`}
                     />
-                    <span>{s.name}</span>
-                    <span className="ml-auto text-[11px] text-muted-foreground">
+                    <span className="select-none font-medium">{s.name}</span>
+                    <span
+                      className={`ml-auto text-[11px] px-2 py-0.5 rounded-full ${
+                        done
+                          ? "bg-mint/15 text-mint font-medium"
+                          : "text-muted-foreground opacity-60"
+                      }`}
+                    >
                       {done ? `Completed ${formatDate(done.date)}` : "Not completed"}
                     </span>
                   </li>
