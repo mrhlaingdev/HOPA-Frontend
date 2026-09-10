@@ -1,7 +1,6 @@
 import { useEffect, useSyncExternalStore } from "react";
 import { toast } from "sonner";
 import {
-  allSundays,
   type Completion,
   type Course,
   type Staff,
@@ -428,4 +427,20 @@ export function monthlyTotals(txns: Txn[], filter: DateFilter) {
   const expense = rows.filter((t) => t.type === "expense").reduce((a, t) => a + t.amount, 0);
   return { income, expense, net: income - expense, rows };
 }
-export { allSundays };
+export const generateSundays = (): string[] => {
+  const sundays: string[] = [];
+  const start = new Date("2024-01-01");
+  const end = new Date();
+  end.setMonth(end.getMonth() + 6);
+
+  const current = new Date(start);
+  while (current <= end) {
+    if (current.getDay() === 0) {
+      sundays.push(current.toISOString().split("T")[0]!);
+    }
+    current.setDate(current.getDate() + 1);
+  }
+  return sundays;
+};
+
+export const allSundays = generateSundays();
