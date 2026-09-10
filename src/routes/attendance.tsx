@@ -72,9 +72,16 @@ function AttendancePage() {
       ]),
     );
 
-  const handleToggleAttendance = async (studentId: string, studentName: string) => {
+  const handleToggleAttendance = async (
+    studentId: string,
+    studentName: string,
+    currentlyPresent: boolean,
+  ) => {
     try {
-      await actions.toggleAttendance(studentId, week!);
+      await actions.updateAttendance(studentId, {
+        date: week!,
+        present: !currentlyPresent,
+      });
       toast.success(`Updated attendance for ${studentName}`);
     } catch (error) {
       toast.error(formatApiError(error, "Failed to update attendance"));
@@ -124,7 +131,7 @@ function AttendancePage() {
                     <input
                       type="checkbox"
                       checked={present}
-                      onChange={() => handleToggleAttendance(s.id, s.name)}
+                      onChange={() => handleToggleAttendance(s.id, s.name, present)}
                       className="size-4 accent-mint cursor-pointer"
                       aria-label={`${s.name} present`}
                     />
@@ -264,7 +271,10 @@ function AttendancePage() {
                 return;
               }
               try {
-                await actions.toggleAttendance(editing.id, editForm.date);
+                await actions.updateAttendance(editing.id, {
+                  date: editForm.date,
+                  present: editForm.present,
+                });
                 setEditing(null);
                 toast.success(`Successfully updated ${editing.name}!`);
               } catch (error) {
