@@ -46,7 +46,12 @@ function AttendancePage() {
   const [q, setQ] = useState("");
   const [editing, setEditing] = useState<(typeof students)[number] | null>(null);
   const [editForm, setEditForm] = useState({ date: week, present: false });
-  const recent = allSundays;
+  
+const currentIndex = week ? allSundays.indexOf(week) : -1;
+const todayStr = new Date().toISOString().split("T")[0] ?? "";
+const recent = currentIndex !== -1 
+  ? allSundays.slice(Math.max(0, currentIndex - 9), currentIndex + 1)
+  : allSundays.filter((d) => d <= todayStr).slice(-10);
 
   const rows = students.filter((s) => s.name.toLowerCase().includes(q.toLowerCase()));
   const presentCount = rows.filter((s) => attendance.includes(`${s.id}|${week}`)).length;
