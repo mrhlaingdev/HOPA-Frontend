@@ -76,7 +76,7 @@ export function useChurch() {
   return useSyncExternalStore(subscribe, getSnapshot, getSnapshot);
 }
 
-export const API_BASE_URL = (import.meta.env.VITE_API_BASE_URL as string | undefined)?.replace(/\/$/, "");
+export const API_BASE_URL = ((import.meta as any).env.VITE_API_BASE_URL as string | undefined)?.replace(/\/$/, "");
 
 const API_ENDPOINTS = {
   health: "/api/test",
@@ -92,7 +92,7 @@ async function fetchApi(path: string, init?: RequestInit) {
   const controller = new AbortController();
   const timeout = setTimeout(() => controller.abort(), API_TIMEOUT_MS);
   const headers = new Headers(init?.headers);
-  const configuredToken = import.meta.env.VITE_API_TOKEN as string | undefined;
+  const configuredToken = (import.meta as any).env.VITE_API_TOKEN as string | undefined;
   const storedToken =
     typeof window !== "undefined"
       ? window.localStorage.getItem("hopa-auth-token") ??
@@ -193,13 +193,22 @@ export async function loadStaff() {
 }
 
 export async function loadAttendance() {
-  const records = await loadResource<
-    string | { studentId: string; date: string; present?: boolean }
-  >(API_ENDPOINTS.attendance, "attendance");
+  const records = await loadResource<{
+    student_name: string;
+    date: string;
+    status?: string;
+  }>(API_ENDPOINTS.attendance, "attendance");
+
+  const currentStudents = state.students.length ? state.students : await loadStudents();
+
   const attendance = records.flatMap((record) => {
-    if (typeof record === "string") return [record];
-    return record.present === false ? [] : [`${record.studentId}|${record.date}`];
+    const isPresent = (record.status ?? "").toLowerCase() === "present";
+    if (!isPresent) return [];
+
+    const student = currentStudents.find((s) => s.name === record.student_name);
+    return student ? [`${student.id}|${record.date}`] : [];
   });
+
   set({ attendance });
   return attendance;
 }
@@ -254,10 +263,6 @@ export const actions = {
     await updateResource(API_ENDPOINTS.students, studentId, student, "student");
     await loadStudents();
   },
-  async toggleAttendance(studentId: string, day: string) {
-    void studentId;
-    void day;
-  },
   async addCourse(c: Omit<Course, "id" | "active" | "titleMm">) {
     if (!API_BASE_URL) throw new Error("VITE_API_BASE_URL is not configured");
 
@@ -309,7 +314,22 @@ export const actions = {
     await loadStaff();
   },
   async updateAttendance(studentId: string, attendance: { date: string; present: boolean }) {
-    await updateResource(API_ENDPOINTS.attendance, studentId, attendance, "attendance");
+    if (!API_BASE_URL) throw new Error("VITE_API_BASE_URL is not configured");
+
+    const student = state.students.find((s) => s.id === studentId);
+    if (!student) throw new Error("Student not found");
+
+    const response = await fetchApi(API_ENDPOINTS.attendance, {
+      method: "PUT",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        student_name: student.name,
+        date: attendance.date,
+        status: attendance.present ? "present" : "absent",
+      }),
+    });
+    if (!response.ok) await throwApiError(response, "Failed to update attendance");
+
     await loadAttendance();
   },
   async toggleCompletion(courseId: string, studentId: string, date: string) {
