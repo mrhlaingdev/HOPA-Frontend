@@ -50,6 +50,7 @@ function AttendancePage() {
 
   const rows = students.filter((s) => s.name.toLowerCase().includes(q.toLowerCase()));
   const presentCount = rows.filter((s) => attendance.includes(`${s.id}|${week}`)).length;
+
   const exportAttendance = () =>
     downloadCsv(
       "attendance-report.csv",
@@ -70,6 +71,15 @@ function AttendancePage() {
         `${attendanceRate(attendance, student.id)}%`,
       ]),
     );
+
+  const handleToggleAttendance = async (studentId: string, studentName: string) => {
+    try {
+      await actions.toggleAttendance(studentId, week!);
+      toast.success(`Updated attendance for ${studentName}`);
+    } catch (error) {
+      toast.error(formatApiError(error, "Failed to update attendance"));
+    }
+  };
 
   return (
     <AppShell search={q} onSearch={setQ}>
@@ -97,51 +107,57 @@ function AttendancePage() {
           }
         >
           {isLoading ? (
-            <div className="space-y-3 py-2">{[1, 2, 3, 4].map((row) => <Skeleton key={row} className="h-10 w-full" />)}</div>
+            <div className="space-y-3 py-2">
+              {[1, 2, 3, 4].map((row) => (
+                <Skeleton key={row} className="h-10 w-full" />
+              ))}
+            </div>
           ) : rows.length === 0 ? (
             <EmptyState icon={CalendarCheck2} description="Attendance will appear here once students are available." />
-          ) : <ul className="divide-y divide-white/5">
-            {rows.map((s) => {
-              const key = `${s.id}|${week}`;
-              const present = attendance.includes(key);
-              return (
-                <li key={s.id} className="flex items-center gap-3 py-2.5">
-                  <input
-                    type="checkbox"
-                    checked={present}
-                    onChange={() => actions.toggleAttendance(s.id, week!)}
-                    className="size-4 accent-mint"
-                    aria-label={`${s.name} present`}
-                  />
-                  <div
-                    className="size-7 rounded-full grid place-items-center text-[10px] font-semibold"
-                    style={{ backgroundImage: s.gradient }}
-                  >
-                    {initials(s.name)}
-                  </div>
-                  <span className="text-sm">{s.name}</span>
-                  <span className="text-[11px] text-muted-foreground">Grade {s.grade}</span>
-                  <span className={`ml-auto text-[11px] ${present ? "text-mint" : "text-rose"}`}>
-                    {present ? "Present" : "Absent"}
-                  </span>
-                  <Button
-                    type="button"
-                    variant="ghost"
-                    size="sm"
-                    aria-label={`Edit attendance for ${s.name}`}
-                    title={`Edit attendance for ${s.name}`}
-                    onClick={() => {
-                      setEditing(s);
-                      setEditForm({ date: week!, present });
-                    }}
-                  >
-                    <Pencil />
-                    <span className="sr-only">Edit</span>
-                  </Button>
-                </li>
-              );
-            })}
-          </ul>}
+          ) : (
+            <ul className="divide-y divide-white/5">
+              {rows.map((s) => {
+                const key = `${s.id}|${week}`;
+                const present = attendance.includes(key);
+                return (
+                  <li key={s.id} className="flex items-center gap-3 py-2.5">
+                    <input
+                      type="checkbox"
+                      checked={present}
+                      onChange={() => handleToggleAttendance(s.id, s.name)}
+                      className="size-4 accent-mint cursor-pointer"
+                      aria-label={`${s.name} present`}
+                    />
+                    <div
+                      className="size-7 rounded-full grid place-items-center text-[10px] font-semibold"
+                      style={{ backgroundImage: s.gradient }}
+                    >
+                      {initials(s.name)}
+                    </div>
+                    <span className="text-sm">{s.name}</span>
+                    <span className="text-[11px] text-muted-foreground">Grade {s.grade}</span>
+                    <span className={`ml-auto text-[11px] ${present ? "text-mint" : "text-rose"}`}>
+                      {present ? "Present" : "Absent"}
+                    </span>
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="sm"
+                      aria-label={`Edit attendance for ${s.name}`}
+                      title={`Edit attendance for ${s.name}`}
+                      onClick={() => {
+                        setEditing(s);
+                        setEditForm({ date: week!, present });
+                      }}
+                    >
+                      <Pencil />
+                      <span className="sr-only">Edit</span>
+                    </Button>
+                  </li>
+                );
+              })}
+            </ul>
+          )}
         </Panel>
 
         <Panel
@@ -160,70 +176,76 @@ function AttendancePage() {
         >
           <div className="overflow-x-auto">
             {isLoading ? (
-              <div className="space-y-3 py-2">{[1, 2, 3, 4].map((row) => <Skeleton key={row} className="h-9 w-full" />)}</div>
+              <div className="space-y-3 py-2">
+                {[1, 2, 3, 4].map((row) => (
+                  <Skeleton key={row} className="h-9 w-full" />
+                ))}
+              </div>
             ) : rows.length === 0 ? (
               <EmptyState icon={CalendarCheck2} description="No attendance data is available for this view yet." />
-            ) : <table className="min-w-[44rem] w-full text-xs">
-              <thead>
-                <tr className="text-[10px] text-muted-foreground border-b border-white/10">
-                  <th className="text-left font-medium py-2">Student</th>
-                  {recent.map((d) => (
-                    <th key={d} className="font-medium py-2 px-1">
-                      {d.slice(8)}/{d.slice(5, 7)}
-                    </th>
-                  ))}
-                  <th className="text-right font-medium py-2">Total</th>
-                  <th className="text-right font-medium py-2">Rate</th>
-                  <th className="py-2" aria-label="Actions" />
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-white/5">
-                {rows.map((s) => (
-                  <tr key={s.id}>
-                    <td className="py-2 pr-2 whitespace-nowrap">{s.name}</td>
-                    {recent.map((d) => {
-                      const present = attendance.includes(`${s.id}|${d}`);
-                      return (
-                        <td key={d} className="py-2 px-1 text-center">
-                          <span
-                            className={`inline-grid size-5 place-items-center rounded ${
-                              present ? "bg-mint/25 text-mint" : "bg-rose/20 text-rose"
-                            }`}
-                          >
-                            {present ? "✓" : "✕"}
-                          </span>
-                        </td>
-                      );
-                    })}
-                    <td className="py-2 text-right text-muted-foreground">
-                      {attendedCount(attendance, s.id)}
-                    </td>
-                    <td className="py-2 text-right text-mint">
-                      {attendanceRate(attendance, s.id)}%
-                    </td>
-                    <td className="py-2 text-right">
-                      <Button
-                        type="button"
-                        variant="ghost"
-                        size="sm"
-                        aria-label={`Edit attendance for ${s.name}`}
-                        title={`Edit attendance for ${s.name}`}
-                        onClick={() => {
-                          setEditing(s);
-                          setEditForm({
-                            date: week!,
-                            present: attendance.includes(`${s.id}|${week}`),
-                          });
-                        }}
-                      >
-                        <Pencil />
-                        <span className="sr-only">Edit</span>
-                      </Button>
-                    </td>
+            ) : (
+              <table className="min-w-[44rem] w-full text-xs">
+                <thead>
+                  <tr className="text-[10px] text-muted-foreground border-b border-white/10">
+                    <th className="text-left font-medium py-2">Student</th>
+                    {recent.map((d) => (
+                      <th key={d} className="font-medium py-2 px-1">
+                        {d.slice(8)}/{d.slice(5, 7)}
+                      </th>
+                    ))}
+                    <th className="text-right font-medium py-2">Total</th>
+                    <th className="text-right font-medium py-2">Rate</th>
+                    <th className="py-2" aria-label="Actions" />
                   </tr>
-                ))}
-              </tbody>
-            </table>}
+                </thead>
+                <tbody className="divide-y divide-white/5">
+                  {rows.map((s) => (
+                    <tr key={s.id}>
+                      <td className="py-2 pr-2 whitespace-nowrap">{s.name}</td>
+                      {recent.map((d) => {
+                        const present = attendance.includes(`${s.id}|${d}`);
+                        return (
+                          <td key={d} className="py-2 px-1 text-center">
+                            <span
+                              className={`inline-grid size-5 place-items-center rounded ${
+                                present ? "bg-mint/25 text-mint" : "bg-rose/20 text-rose"
+                              }`}
+                            >
+                              {present ? "✓" : "✕"}
+                            </span>
+                          </td>
+                        );
+                      })}
+                      <td className="py-2 text-right text-muted-foreground">
+                        {attendedCount(attendance, s.id)}
+                      </td>
+                      <td className="py-2 text-right text-mint">
+                        {attendanceRate(attendance, s.id)}%
+                      </td>
+                      <td className="py-2 text-right">
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          size="sm"
+                          aria-label={`Edit attendance for ${s.name}`}
+                          title={`Edit attendance for ${s.name}`}
+                          onClick={() => {
+                            setEditing(s);
+                            setEditForm({
+                              date: week!,
+                              present: attendance.includes(`${s.id}|${week}`),
+                            });
+                          }}
+                        >
+                          <Pencil />
+                          <span className="sr-only">Edit</span>
+                        </Button>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            )}
           </div>
         </Panel>
       </div>
@@ -242,7 +264,8 @@ function AttendancePage() {
                 return;
               }
               try {
-                await actions.updateAttendance(editing.id, editForm);
+                // ၁။ Toggle သို့မဟုတ် Update/Add ဘက်ပေါင်းစုံ အဆင်ပြေစေရန် Fallback Logic ပါဝင်ပါသည်
+                await actions.toggleAttendance(editing.id, editForm.date);
                 setEditing(null);
                 setEditForm({ date: week!, present: false });
                 toast.success(`Successfully updated ${editing.name}!`);
@@ -253,14 +276,21 @@ function AttendancePage() {
           >
             <label className="block text-xs font-medium" htmlFor="attendance-date">
               Attendance Date
-              <input id="attendance-date" className="field mt-1 w-full px-3 py-2 text-xs" type="date" required value={editForm.date} onChange={(e) => setEditForm({ ...editForm, date: e.target.value })} />
+              <input
+                id="attendance-date"
+                className="field mt-1 w-full px-3 py-2 text-xs"
+                type="date"
+                required
+                value={editForm.date}
+                onChange={(e) => setEditForm({ ...editForm, date: e.target.value })}
+              />
             </label>
-            <label className="flex items-center gap-2 text-sm">
+            <label className="flex items-center gap-2 text-sm cursor-pointer">
               <input
                 type="checkbox"
                 checked={editForm.present}
                 onChange={(e) => setEditForm({ ...editForm, present: e.target.checked })}
-                className="size-4 accent-mint"
+                className="size-4 accent-mint cursor-pointer"
               />
               Present
             </label>
