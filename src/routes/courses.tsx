@@ -97,8 +97,7 @@ function CoursesPage() {
   );
 
   const course = rows.find((c) => c.id === selected) ?? rows[0];
-  const teacherName = (teacherId?: string) => teachers.find((teacher) => teacher.id === teacherId)?.name ?? "Unassigned";
-
+  const teacherName = (teacherId?: string, instructor?: string) => instructor || (teachers.find((teacher) => teacher.id === teacherId)?.name ?? "Unassigned");
   // Completion Toggle Handler
   const handleToggleCompletion = async (studentId: string, studentName: string) => {
     if (!course) return;
@@ -186,7 +185,7 @@ function CoursesPage() {
                   </td>
                   <td className="py-2.5 text-muted-foreground">{formatDate(c.date)}</td>
                   <td className="py-2.5 text-muted-foreground">{c.time}</td>
-                  <td className="py-2.5 text-muted-foreground">{teacherName(c.teacherId)}</td>
+                  <td className="py-2.5 text-muted-foreground">{teacherName(c.teacherId, c.instructor)}</td>
                   <td className="py-2.5 text-right text-mint">
                     {completions.filter(
                       (x) => x.courseId === c.id && matchesDate(x.date, dateFilter),
