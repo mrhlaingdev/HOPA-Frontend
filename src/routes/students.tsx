@@ -49,7 +49,7 @@ const emptyForm = {
   name: "",
   nameMm: "",
   age: 8,
-  grade: 2,
+  grade: "",
   parentName: "",
   parentPhone: "",
   address: "",
@@ -82,8 +82,8 @@ function StudentsPage() {
     if (!studentForm.enrolled) return "Enrollment date is required.";
     if (!Number.isInteger(studentForm.age) || studentForm.age <= 0)
       return "Age must be a positive whole number.";
-    if (!Number.isInteger(studentForm.grade) || studentForm.grade <= 0)
-      return "Grade must be a positive whole number.";
+    if (!String(studentForm.grade).trim()) 
+  return "Grade / Class is required.";
     return "";
   }
 
@@ -210,7 +210,7 @@ function StudentsPage() {
               {formError && <p className="col-span-4 text-xs text-rose">{formError}</p>}
               <label className="col-span-2 text-xs font-medium" htmlFor="student-name">Student Name<input id="student-name" className="field mt-1 w-full px-3 py-2 text-xs" placeholder="e.g. Thazin Moe" required value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} /></label>
               <label className="text-xs font-medium" htmlFor="student-age">Age<input id="student-age" className="field mt-1 w-full px-3 py-2 text-xs" placeholder="e.g. 8" type="number" min="1" step="1" required value={form.age} onChange={(e) => setForm({ ...form, age: Number(e.target.value) })} /></label>
-              <label className="text-xs font-medium" htmlFor="student-grade">Grade / Class<input id="student-grade" className="field mt-1 w-full px-3 py-2 text-xs" placeholder="e.g. Grade 2" type="number" min="1" step="1" required value={form.grade} onChange={(e) => setForm({ ...form, grade: Number(e.target.value) })} /></label>
+              <label className="text-xs font-medium" htmlFor="student-grade">Grade / Class<input type="text" className="w-full rounded-md border border-input bg-background px-3 py-2 text-xs" placeholder="e.g. G1 / KG" required value={form.grade} onChange={(e) => setForm({ ...form, grade: e.target.value })} /></label>
               <label className="text-xs font-medium" htmlFor="student-parent-name">Parent Name<input id="student-parent-name" className="field mt-1 w-full px-3 py-2 text-xs" placeholder="e.g. May Thu" required value={form.parentName} onChange={(e) => setForm({ ...form, parentName: e.target.value })} /></label>
               <label className="text-xs font-medium" htmlFor="student-parent-phone">Parent Phone<input id="student-parent-phone" className="field mt-1 w-full px-3 py-2 text-xs" placeholder="e.g. 09 123 456 789" required value={form.parentPhone} onChange={(e) => setForm({ ...form, parentPhone: e.target.value })} /></label>
               <label className="text-xs font-medium" htmlFor="student-address">Address<input id="student-address" className="field mt-1 w-full px-3 py-2 text-xs" placeholder="e.g. North Branch" required value={form.address} onChange={(e) => setForm({ ...form, address: e.target.value })} /></label>
@@ -509,7 +509,7 @@ function StudentsPage() {
             <label className="text-xs font-medium" htmlFor="edit-student-name-mm">Myanmar Name<input id="edit-student-name-mm" className="field mt-1 w-full px-3 py-2 text-xs" placeholder="Optional Myanmar name" value={editForm.nameMm} onChange={(e) => setEditForm({ ...editForm, nameMm: e.target.value })} /></label>
             <label className="text-xs font-medium" htmlFor="edit-student-enrolled">Enrollment Date<input id="edit-student-enrolled" className="field mt-1 w-full px-3 py-2 text-xs" type="date" value={editForm.enrolled} required onChange={(e) => setEditForm({ ...editForm, enrolled: e.target.value })} /></label>
             <label className="text-xs font-medium" htmlFor="edit-student-age">Age<input id="edit-student-age" className="field mt-1 w-full px-3 py-2 text-xs" type="number" placeholder="e.g. 8" min="1" step="1" required value={editForm.age} onChange={(e) => setEditForm({ ...editForm, age: Number(e.target.value) })} /></label>
-            <label className="text-xs font-medium" htmlFor="edit-student-grade">Grade / Class<input id="edit-student-grade" className="field mt-1 w-full px-3 py-2 text-xs" type="number" placeholder="e.g. Grade 2" min="1" step="1" required value={editForm.grade} onChange={(e) => setEditForm({ ...editForm, grade: Number(e.target.value) })} /></label>
+            <label className="text-xs font-medium" htmlFor="edit-student-grade">Grade / Class<input type="text" className="w-full rounded-md border border-input bg-background px-3 py-2 text-xs" placeholder="e.g. G1 / KG" required value={editForm.grade} onChange={(e) => setEditForm({ ...editForm, grade: e.target.value })} /></label>
             <label className="text-xs font-medium" htmlFor="edit-student-parent-name">Parent Name<input id="edit-student-parent-name" className="field mt-1 w-full px-3 py-2 text-xs" placeholder="e.g. May Thu" required value={editForm.parentName} onChange={(e) => setEditForm({ ...editForm, parentName: e.target.value })} /></label>
             <label className="text-xs font-medium" htmlFor="edit-student-parent-phone">Parent Phone<input id="edit-student-parent-phone" className="field mt-1 w-full px-3 py-2 text-xs" placeholder="e.g. 09 123 456 789" required value={editForm.parentPhone} onChange={(e) => setEditForm({ ...editForm, parentPhone: e.target.value })} /></label>
             <label className="col-span-2 text-xs font-medium" htmlFor="edit-student-address">Address<input id="edit-student-address" className="field mt-1 w-full px-3 py-2 text-xs" placeholder="e.g. North Branch" required value={editForm.address} onChange={(e) => setEditForm({ ...editForm, address: e.target.value })} /></label>
