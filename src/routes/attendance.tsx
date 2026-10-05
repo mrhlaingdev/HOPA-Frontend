@@ -64,6 +64,7 @@ const recent = currentIndex !== -1
 
   const rows = students.filter((s) => s.name.toLowerCase().includes(q.toLowerCase()));
   const presentCount = rows.filter((s) => attendance.includes(`${s.id}|${week}`)).length;
+  const absentCount = rows.length - presentCount;
 
   const exportAttendance = () =>
     downloadCsv(
@@ -178,6 +179,22 @@ const recent = currentIndex !== -1
                 );
               })}
             </ul>
+          )}
+          {!isLoading && (
+            <div className="mt-4 grid grid-cols-3 divide-x divide-white/10 border-t border-white/10 pt-4">
+              <div className="px-2 text-center">
+                <p className="text-[10px] text-muted-foreground">Total Students</p>
+                <p className="mt-1 text-lg font-semibold">{rows.length}</p>
+              </div>
+              <div className="px-2 text-center">
+                <p className="text-[10px] text-muted-foreground">Present Students</p>
+                <p className="mt-1 text-lg font-semibold text-mint">{presentCount}</p>
+              </div>
+              <div className="px-2 text-center">
+                <p className="text-[10px] text-muted-foreground">Absent Students</p>
+                <p className="mt-1 text-lg font-semibold text-rose">{absentCount}</p>
+              </div>
+            </div>
           )}
         </Panel>
 
