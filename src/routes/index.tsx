@@ -14,6 +14,16 @@ import {
 import { formatDate, formatShort, initials } from "@/lib/church-data";
 import { usePermission } from "@/lib/auth";
 
+function countGender<T extends object>(records: readonly T[], gender: "male" | "female") {
+  const values =
+    gender === "male" ? ["male", "m", "boy", "boys"] : ["female", "f", "girl", "girls"];
+
+  return records.filter((record) => {
+    const value = (record as T & { gender?: unknown }).gender;
+    return typeof value === "string" && values.includes(value.trim().toLowerCase());
+  }).length;
+}
+
 export const Route = createFileRoute("/")({
   head: () => ({
     meta: [
@@ -53,6 +63,12 @@ function Overview() {
   const staff = storedStaff?.filter(Boolean) || [];
   const activeTeachersCount = teachers.filter((teacher) => teacher.active !== false).length;
   const activeMembersCount = staff.filter((member) => member.active !== false).length;
+  const studentMaleCount = countGender(students, "male");
+  const studentFemaleCount = countGender(students, "female");
+  const teacherMaleCount = countGender(teachers, "male");
+  const teacherFemaleCount = countGender(teachers, "female");
+  const memberMaleCount = countGender(staff, "male");
+  const memberFemaleCount = countGender(staff, "female");
   const courses = storedCourses?.filter(Boolean) || [];
   const attendance = storedAttendance?.filter(Boolean) || [];
   const completions = storedCompletions?.filter(Boolean) || [];
@@ -121,6 +137,31 @@ function Overview() {
         />
       </div>
 
+      <Panel
+        title="Church Leadership"
+        mm="Leadership team"
+        className="mb-4 border border-indigo-300/20 bg-slate-900/60 shadow-[0_0_28px_rgba(129,140,248,0.06)] backdrop-blur-xl"
+        right={
+          <span className="rounded-full border border-indigo-300/20 bg-indigo-300/10 px-2.5 py-1 text-[10px] font-medium text-indigo-200">
+            HOPA
+          </span>
+        }
+      >
+        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+          {[
+            { label: "Senior Pastor", value: CHURCH_LEADERSHIP.seniorPastor },
+            { label: "Associate Pastor", value: CHURCH_LEADERSHIP.associatePastor },
+            { label: "Head Teacher", value: CHURCH_LEADERSHIP.headTeacher },
+            { label: "Church Name", value: CHURCH_LEADERSHIP.churchName },
+          ].map(({ label, value }) => (
+            <div key={label} className="rounded-xl border border-indigo-300/10 bg-slate-950/30 p-3">
+              <p className="text-[10px] font-medium uppercase text-indigo-200/80">{label}</p>
+              <p className="mt-2 text-sm font-medium text-slate-100">{value}</p>
+            </div>
+          ))}
+        </div>
+      </Panel>
+
       <div className="grid grid-cols-12 gap-4">
         <div className="col-span-12 grid grid-cols-1 gap-4 sm:grid-cols-3">
           <div className="glass relative overflow-hidden rounded-2xl border border-cyan-300/20 bg-slate-900/60 p-5 shadow-[0_0_24px_rgba(34,211,238,0.07)] backdrop-blur-xl">
@@ -137,7 +178,13 @@ function Overview() {
             </div>
             <div className="mt-4 flex items-center gap-2">
               <span className="size-1.5 rounded-full bg-cyan-300" />
-              <p className="text-xs text-slate-400">All registered students</p>
+              <p className="text-xs text-slate-300">
+                {studentMaleCount} Boys <span className="px-1 text-slate-500">•</span>
+                {studentFemaleCount} Girls
+              </p>
+            </div>
+            <div className="mt-2 text-[11px] text-slate-500">
+              All registered students
             </div>
           </div>
           <div className="glass relative overflow-hidden rounded-2xl border border-emerald-300/20 bg-slate-900/60 p-5 shadow-[0_0_24px_rgba(52,211,153,0.07)] backdrop-blur-xl">
@@ -153,6 +200,12 @@ function Overview() {
               </span>
             </div>
             <div className="mt-4 flex items-center gap-2">
+              <p className="text-xs text-slate-300">
+                {teacherMaleCount} Male <span className="px-1 text-slate-500">•</span>
+                {teacherFemaleCount} Female
+              </p>
+            </div>
+            <div className="mt-2 flex items-center gap-2">
               <span className="rounded-full border border-emerald-300/20 bg-emerald-300/10 px-2 py-0.5 text-[10px] font-medium text-emerald-200">
                 {activeTeachersCount} active
               </span>
@@ -174,6 +227,12 @@ function Overview() {
               </span>
             </div>
             <div className="mt-4 flex items-center gap-2">
+              <p className="text-xs text-slate-300">
+                {memberMaleCount} Male <span className="px-1 text-slate-500">•</span>
+                {memberFemaleCount} Female
+              </p>
+            </div>
+            <div className="mt-2 flex items-center gap-2">
               <span className="rounded-full border border-indigo-300/20 bg-indigo-300/10 px-2 py-0.5 text-[10px] font-medium text-indigo-200">
                 {activeMembersCount} active
               </span>
@@ -274,34 +333,6 @@ function Overview() {
           </div>
           <p className="mt-3 text-[11px] text-muted-foreground">Record data in one tap</p>
         </div>
-
-        <Panel
-          title="Church Leadership"
-          mm="Leadership team"
-          className="col-span-12 border border-indigo-300/20 bg-slate-900/60 shadow-[0_0_28px_rgba(129,140,248,0.06)] backdrop-blur-xl"
-          right={
-            <span className="rounded-full border border-indigo-300/20 bg-indigo-300/10 px-2.5 py-1 text-[10px] font-medium text-indigo-200">
-              HOPA
-            </span>
-          }
-        >
-          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-            {[
-              { label: "Senior Pastor", value: CHURCH_LEADERSHIP.seniorPastor },
-              { label: "Associate Pastor", value: CHURCH_LEADERSHIP.associatePastor },
-              { label: "Head Teacher", value: CHURCH_LEADERSHIP.headTeacher },
-              { label: "Church Name", value: CHURCH_LEADERSHIP.churchName },
-            ].map(({ label, value }) => (
-              <div
-                key={label}
-                className="rounded-xl border border-indigo-300/10 bg-slate-950/30 p-3"
-              >
-                <p className="text-[10px] font-medium uppercase text-indigo-200/80">{label}</p>
-                <p className="mt-2 text-sm font-medium text-slate-100">{value}</p>
-              </div>
-            ))}
-          </div>
-        </Panel>
 
         <Panel
           title="Student Directory"
