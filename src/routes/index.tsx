@@ -1,7 +1,9 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useMemo, useState } from "react";
+import { GraduationCap, Users, UsersRound } from "lucide-react";
 import { AppShell, Panel } from "@/components/AppShell";
 import { DateFilters } from "@/components/DateFilters";
+import { CHURCH_LEADERSHIP } from "@/lib/constants/leadership";
 import {
   ALL_DATE_FILTER,
   attendanceRate,
@@ -39,12 +41,16 @@ function Overview() {
   const canViewFinance = usePermission("view-finance");
   const {
     students: storedStudents,
+    teachers: storedTeachers,
+    staff: storedStaff,
     courses: storedCourses,
     attendance: storedAttendance,
     completions: storedCompletions,
     txns: storedTxns,
   } = useChurch();
   const students = storedStudents?.filter(Boolean) || [];
+  const teachers = storedTeachers?.filter(Boolean) || [];
+  const staff = storedStaff?.filter(Boolean) || [];
   const courses = storedCourses?.filter(Boolean) || [];
   const attendance = storedAttendance?.filter(Boolean) || [];
   const completions = storedCompletions?.filter(Boolean) || [];
@@ -114,15 +120,38 @@ function Overview() {
       </div>
 
       <div className="grid grid-cols-12 gap-4">
-        <div className="glass rounded-2xl col-span-8 p-5">
+        <div className="col-span-12 grid grid-cols-1 gap-4 sm:grid-cols-3">
+          <div className="glass rounded-2xl p-5">
+            <div className="flex items-center justify-between">
+              <p className="text-muted-foreground text-sm">Total Students</p>
+              <Users className="size-4 text-accent" aria-hidden="true" />
+            </div>
+            <p className="mt-2 text-3xl font-display font-bold">{filteredStudents.length}</p>
+            <p className="mt-1 text-[11px] text-muted-foreground">Live data</p>
+          </div>
+          <div className="glass rounded-2xl p-5">
+            <div className="flex items-center justify-between">
+              <p className="text-muted-foreground text-sm">Total Teachers</p>
+              <GraduationCap className="size-4 text-mint" aria-hidden="true" />
+            </div>
+            <p className="mt-2 text-3xl font-display font-bold">{teachers.length}</p>
+            <p className="mt-1 text-[11px] text-muted-foreground">Live data</p>
+          </div>
+          <div className="glass rounded-2xl p-5">
+            <div className="flex items-center justify-between">
+              <p className="text-muted-foreground text-sm">Total Members</p>
+              <UsersRound className="size-4 text-amber" aria-hidden="true" />
+            </div>
+            <p className="mt-2 text-3xl font-display font-bold">{staff.length}</p>
+            <p className="mt-1 text-[11px] text-muted-foreground">Live data</p>
+          </div>
+        </div>
+
+        <div className="glass rounded-2xl col-span-12 lg:col-span-8 p-5">
           <div className="flex items-baseline justify-between">
-            <p className="text-muted-foreground text-sm">Total Sunday School Students</p>
+            <p className="text-muted-foreground text-sm">Weekly Attendance Trend</p>
             <span className="text-[11px] text-muted-foreground">Live data</span>
           </div>
-          <p className="mt-2 text-4xl font-display font-bold">{filteredStudents.length}</p>
-          <p className="mt-1 text-[11px] text-muted-foreground">
-            တနင်္ဂနွေကျောင်း ကျောင်းသားစုစုပေါင်း
-          </p>
           <div className="mt-4 flex h-10 items-end gap-1.5">
             {weeklyCounts?.map((c, i) => (
               <div
@@ -135,7 +164,7 @@ function Overview() {
           </div>
         </div>
 
-        <div className="col-span-4 grid grid-rows-2 gap-4">
+        <div className="col-span-12 grid grid-rows-2 gap-4 lg:col-span-4">
           <div className="glass rounded-2xl p-5 flex flex-col">
             <p className="text-muted-foreground text-sm">Active Courses</p>
             <p className="mt-1 text-3xl font-display font-bold">
@@ -208,6 +237,22 @@ function Overview() {
           </div>
           <p className="mt-3 text-[11px] text-muted-foreground">Record data in one tap</p>
         </div>
+
+        <Panel title="Church Leadership" className="col-span-12">
+          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+            {[
+              { label: "Senior Pastor", value: CHURCH_LEADERSHIP.seniorPastor },
+              { label: "Associate Pastor", value: CHURCH_LEADERSHIP.associatePastor },
+              { label: "Head Teacher", value: CHURCH_LEADERSHIP.headTeacher },
+              { label: "Church Name", value: CHURCH_LEADERSHIP.churchName },
+            ].map(({ label, value }) => (
+              <div key={label} className="border-l border-accent/40 pl-3">
+                <p className="text-[11px] text-muted-foreground">{label}</p>
+                <p className="mt-1 text-sm font-medium">{value}</p>
+              </div>
+            ))}
+          </div>
+        </Panel>
 
         <Panel
           title="Student Directory"
