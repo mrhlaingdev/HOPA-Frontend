@@ -51,6 +51,8 @@ function Overview() {
   const students = storedStudents?.filter(Boolean) || [];
   const teachers = storedTeachers?.filter(Boolean) || [];
   const staff = storedStaff?.filter(Boolean) || [];
+  const activeTeachersCount = teachers.filter((teacher) => teacher.active !== false).length;
+  const activeMembersCount = staff.filter((member) => member.active !== false).length;
   const courses = storedCourses?.filter(Boolean) || [];
   const attendance = storedAttendance?.filter(Boolean) || [];
   const completions = storedCompletions?.filter(Boolean) || [];
@@ -121,29 +123,64 @@ function Overview() {
 
       <div className="grid grid-cols-12 gap-4">
         <div className="col-span-12 grid grid-cols-1 gap-4 sm:grid-cols-3">
-          <div className="glass rounded-2xl p-5">
-            <div className="flex items-center justify-between">
-              <p className="text-muted-foreground text-sm">Total Students</p>
-              <Users className="size-4 text-accent" aria-hidden="true" />
+          <div className="glass relative overflow-hidden rounded-2xl border border-cyan-300/20 bg-slate-900/60 p-5 shadow-[0_0_24px_rgba(34,211,238,0.07)] backdrop-blur-xl">
+            <div className="flex items-start justify-between gap-3">
+              <div>
+                <p className="text-sm text-slate-300">Total Students</p>
+                <p className="mt-3 text-4xl font-display font-bold leading-none text-white">
+                  {filteredStudents.length}
+                </p>
+              </div>
+              <span className="grid size-11 shrink-0 place-items-center rounded-full border border-cyan-300/30 bg-cyan-400/10 text-cyan-200">
+                <Users className="size-5" aria-hidden="true" />
+              </span>
             </div>
-            <p className="mt-2 text-3xl font-display font-bold">{filteredStudents.length}</p>
-            <p className="mt-1 text-[11px] text-muted-foreground">Live data</p>
+            <div className="mt-4 flex items-center gap-2">
+              <span className="size-1.5 rounded-full bg-cyan-300" />
+              <p className="text-xs text-slate-400">All registered students</p>
+            </div>
           </div>
-          <div className="glass rounded-2xl p-5">
-            <div className="flex items-center justify-between">
-              <p className="text-muted-foreground text-sm">Total Teachers</p>
-              <GraduationCap className="size-4 text-mint" aria-hidden="true" />
+          <div className="glass relative overflow-hidden rounded-2xl border border-emerald-300/20 bg-slate-900/60 p-5 shadow-[0_0_24px_rgba(52,211,153,0.07)] backdrop-blur-xl">
+            <div className="flex items-start justify-between gap-3">
+              <div>
+                <p className="text-sm text-slate-300">Total Teachers</p>
+                <p className="mt-3 text-4xl font-display font-bold leading-none text-white">
+                  {teachers.length}
+                </p>
+              </div>
+              <span className="grid size-11 shrink-0 place-items-center rounded-full border border-emerald-300/30 bg-emerald-400/10 text-emerald-200">
+                <GraduationCap className="size-5" aria-hidden="true" />
+              </span>
             </div>
-            <p className="mt-2 text-3xl font-display font-bold">{teachers.length}</p>
-            <p className="mt-1 text-[11px] text-muted-foreground">Live data</p>
+            <div className="mt-4 flex items-center gap-2">
+              <span className="rounded-full border border-emerald-300/20 bg-emerald-300/10 px-2 py-0.5 text-[10px] font-medium text-emerald-200">
+                {activeTeachersCount} active
+              </span>
+              <span className="text-[11px] text-slate-400">
+                {teachers.length - activeTeachersCount} inactive
+              </span>
+            </div>
           </div>
-          <div className="glass rounded-2xl p-5">
-            <div className="flex items-center justify-between">
-              <p className="text-muted-foreground text-sm">Total Members</p>
-              <UsersRound className="size-4 text-amber" aria-hidden="true" />
+          <div className="glass relative overflow-hidden rounded-2xl border border-indigo-300/20 bg-slate-900/60 p-5 shadow-[0_0_24px_rgba(129,140,248,0.07)] backdrop-blur-xl">
+            <div className="flex items-start justify-between gap-3">
+              <div>
+                <p className="text-sm text-slate-300">Total Members</p>
+                <p className="mt-3 text-4xl font-display font-bold leading-none text-white">
+                  {staff.length}
+                </p>
+              </div>
+              <span className="grid size-11 shrink-0 place-items-center rounded-full border border-indigo-300/30 bg-indigo-400/10 text-indigo-200">
+                <UsersRound className="size-5" aria-hidden="true" />
+              </span>
             </div>
-            <p className="mt-2 text-3xl font-display font-bold">{staff.length}</p>
-            <p className="mt-1 text-[11px] text-muted-foreground">Live data</p>
+            <div className="mt-4 flex items-center gap-2">
+              <span className="rounded-full border border-indigo-300/20 bg-indigo-300/10 px-2 py-0.5 text-[10px] font-medium text-indigo-200">
+                {activeMembersCount} active
+              </span>
+              <span className="text-[11px] text-slate-400">
+                {staff.length - activeMembersCount} inactive
+              </span>
+            </div>
           </div>
         </div>
 
@@ -238,7 +275,16 @@ function Overview() {
           <p className="mt-3 text-[11px] text-muted-foreground">Record data in one tap</p>
         </div>
 
-        <Panel title="Church Leadership" className="col-span-12">
+        <Panel
+          title="Church Leadership"
+          mm="Leadership team"
+          className="col-span-12 border border-indigo-300/20 bg-slate-900/60 shadow-[0_0_28px_rgba(129,140,248,0.06)] backdrop-blur-xl"
+          right={
+            <span className="rounded-full border border-indigo-300/20 bg-indigo-300/10 px-2.5 py-1 text-[10px] font-medium text-indigo-200">
+              HOPA
+            </span>
+          }
+        >
           <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
             {[
               { label: "Senior Pastor", value: CHURCH_LEADERSHIP.seniorPastor },
@@ -246,9 +292,12 @@ function Overview() {
               { label: "Head Teacher", value: CHURCH_LEADERSHIP.headTeacher },
               { label: "Church Name", value: CHURCH_LEADERSHIP.churchName },
             ].map(({ label, value }) => (
-              <div key={label} className="border-l border-accent/40 pl-3">
-                <p className="text-[11px] text-muted-foreground">{label}</p>
-                <p className="mt-1 text-sm font-medium">{value}</p>
+              <div
+                key={label}
+                className="rounded-xl border border-indigo-300/10 bg-slate-950/30 p-3"
+              >
+                <p className="text-[10px] font-medium uppercase text-indigo-200/80">{label}</p>
+                <p className="mt-2 text-sm font-medium text-slate-100">{value}</p>
               </div>
             ))}
           </div>
