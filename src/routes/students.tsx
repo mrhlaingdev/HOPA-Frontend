@@ -534,7 +534,7 @@ function StudentsPage() {
                 title="Course Training Records"
                 mm={`${studentCourseHistory.filter(({ completion }) => completion).length} completed · ${studentCourseHistory.filter(({ completion }) => !completion).length} in progress`}
               >
-                <ul className="space-y-3">
+                <ul className="max-h-[260px] space-y-3 overflow-y-auto pr-2 custom-scrollbar">
                   {studentCourseHistory.map(({ course, completion }) => {
                     const progress = completion ? 100 : 0;
                     return (
