@@ -1,6 +1,19 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { Pencil, Trash2, WalletCards } from "lucide-react";
+import {
+  Bar,
+  BarChart,
+  CartesianGrid,
+  Cell,
+  Legend,
+  Pie,
+  PieChart,
+  ResponsiveContainer,
+  Tooltip,
+  XAxis,
+  YAxis,
+} from "recharts";
 import { AppShell, Panel } from "@/components/AppShell";
 import { ExportDropdown } from "@/components/ExportDropdown";
 import { EmptyState } from "@/components/EmptyState";
@@ -108,6 +121,67 @@ function FinancePage() {
   const totalIncome = totals.income + eventDonations;
   const totalExpense = totals.expense + eventExpenses;
   const netBalance = totalIncome - totalExpense;
+  const monthlyAnalytics = new Map<
+    string,
+    { period: string; income: number; expenses: number }
+  >();
+  for (const transaction of totals.rows) {
+    const period = transaction.date.slice(0, 7);
+    const entry = monthlyAnalytics.get(period) ?? {
+      period,
+      income: 0,
+      expenses: 0,
+    };
+    if (transaction.type === "income") entry.income += transaction.amount;
+    else entry.expenses += transaction.amount;
+    monthlyAnalytics.set(period, entry);
+  }
+  for (const event of filteredEvents) {
+    const period = event.date.slice(0, 7);
+    const entry = monthlyAnalytics.get(period) ?? {
+      period,
+      income: 0,
+      expenses: 0,
+    };
+    entry.income += parseNumericValue(event.donations) ?? 0;
+    entry.expenses += parseNumericValue(event.totalExpense) ?? 0;
+    monthlyAnalytics.set(period, entry);
+  }
+  const monthlyChartData = [...monthlyAnalytics.values()]
+    .sort((a, b) => a.period.localeCompare(b.period))
+    .map((entry) => ({
+      ...entry,
+      label: new Date(`${entry.period}-01T00:00:00Z`).toLocaleDateString("en", {
+        month: "short",
+        year: "numeric",
+        timeZone: "UTC",
+      }),
+    }));
+  const expenseCategories = new Map<string, number>();
+  for (const transaction of totals.rows) {
+    if (transaction.type !== "expense") continue;
+    const category = transaction.category.trim() || "Uncategorized";
+    expenseCategories.set(
+      category,
+      (expenseCategories.get(category) ?? 0) + transaction.amount,
+    );
+  }
+  if (eventExpenses > 0) {
+    expenseCategories.set("Events", (expenseCategories.get("Events") ?? 0) + eventExpenses);
+  }
+  const categoryChartData = [...expenseCategories.entries()]
+    .map(([name, value]) => ({ name, value }))
+    .sort((a, b) => b.value - a.value);
+  const categoryColors = [
+    "#34d399",
+    "#38bdf8",
+    "#818cf8",
+    "#fbbf24",
+    "#fb7185",
+    "#c084fc",
+    "#2dd4bf",
+    "#f97316",
+  ];
   const rows = totals.rows.filter(
     (t) =>
       t.description.toLowerCase().includes(q.toLowerCase()) ||
@@ -212,6 +286,126 @@ function FinancePage() {
             </div>
           )}
         </div>
+
+        <section className="col-span-12" aria-label="Financial analytics">
+          <div className="mb-3">
+            <h2 className="font-display text-lg font-semibold">Analytics &amp; Charts</h2>
+            <p className="text-xs text-muted-foreground">
+              Income and expenses for the selected period, including event donations and expenses.
+            </p>
+          </div>
+          <div className="grid grid-cols-12 gap-4">
+            <Panel
+              title="Monthly Income vs Expenses"
+              mm={dateFilter.year === "all" ? "All years" : dateFilter.year}
+              className="col-span-12 xl:col-span-7"
+            >
+              {monthlyChartData.length === 0 ? (
+                <p className="py-12 text-center text-sm text-muted-foreground">
+                  No financial data for the selected period.
+                </p>
+              ) : (
+                <div className="h-[19rem] w-full">
+                  <ResponsiveContainer width="100%" height="100%">
+                    <BarChart
+                      data={monthlyChartData}
+                      margin={{ top: 12, right: 12, left: 8, bottom: 4 }}
+                    >
+                      <CartesianGrid stroke="rgba(255,255,255,0.08)" vertical={false} />
+                      <XAxis
+                        dataKey="label"
+                        tick={{ fill: "#9ca3af", fontSize: 11 }}
+                        tickLine={false}
+                        axisLine={false}
+                      />
+                      <YAxis
+                        tick={{ fill: "#9ca3af", fontSize: 11 }}
+                        tickLine={false}
+                        axisLine={false}
+                        tickFormatter={(value: number) => formatShortThb(value)}
+                        width={78}
+                      />
+                      <Tooltip
+                        cursor={{ fill: "rgba(255,255,255,0.04)" }}
+                        contentStyle={{
+                          backgroundColor: "#171b32",
+                          border: "1px solid rgba(255,255,255,0.12)",
+                          borderRadius: 12,
+                          color: "#f8fafc",
+                        }}
+                        labelStyle={{ color: "#cbd5e1", marginBottom: 6 }}
+                        formatter={(value) => formatThb(Number(value))}
+                      />
+                      <Legend wrapperStyle={{ color: "#cbd5e1", fontSize: 12 }} />
+                      <Bar
+                        dataKey="income"
+                        name="Income"
+                        fill="#34d399"
+                        radius={[5, 5, 0, 0]}
+                      />
+                      <Bar
+                        dataKey="expenses"
+                        name="Expenses"
+                        fill="#fb7185"
+                        radius={[5, 5, 0, 0]}
+                      />
+                    </BarChart>
+                  </ResponsiveContainer>
+                </div>
+              )}
+            </Panel>
+
+            <Panel
+              title="Expense by Category"
+              mm={formatThb(totalExpense)}
+              className="col-span-12 xl:col-span-5"
+            >
+              {categoryChartData.length === 0 ? (
+                <p className="py-12 text-center text-sm text-muted-foreground">
+                  No expenses for the selected period.
+                </p>
+              ) : (
+                <div className="h-[19rem] w-full">
+                  <ResponsiveContainer width="100%" height="100%">
+                    <PieChart>
+                      <Pie
+                        data={categoryChartData}
+                        dataKey="value"
+                        nameKey="name"
+                        innerRadius="52%"
+                        outerRadius="78%"
+                        paddingAngle={3}
+                        stroke="transparent"
+                      >
+                        {categoryChartData.map((category, index) => (
+                          <Cell
+                            key={category.name}
+                            fill={categoryColors[index % categoryColors.length]}
+                          />
+                        ))}
+                      </Pie>
+                      <Tooltip
+                        contentStyle={{
+                          backgroundColor: "#171b32",
+                          border: "1px solid rgba(255,255,255,0.12)",
+                          borderRadius: 12,
+                          color: "#f8fafc",
+                        }}
+                        formatter={(value) => formatThb(Number(value))}
+                      />
+                      <Legend
+                        layout="vertical"
+                        align="right"
+                        verticalAlign="middle"
+                        wrapperStyle={{ color: "#cbd5e1", fontSize: 11 }}
+                      />
+                    </PieChart>
+                  </ResponsiveContainer>
+                </div>
+              )}
+            </Panel>
+          </div>
+        </section>
 
         {canManage && (
           <Panel title="Record Transaction" mm="ငွေသွင်း / ငွေထုတ် မှတ်တမ်း" className="col-span-12 lg:col-span-4">
