@@ -1,6 +1,6 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useMemo, useState } from "react";
-import { GraduationCap, Users, UsersRound } from "lucide-react";
+import { BookOpen, BookOpenCheck, GraduationCap, Users, UsersRound } from "lucide-react";
 import { AppShell, Panel } from "@/components/AppShell";
 import { DateFilters } from "@/components/DateFilters";
 import { CHURCH_LEADERSHIP } from "@/lib/constants/leadership";
@@ -112,11 +112,6 @@ function Overview() {
         .slice(0, 5),
     [students, q],
   );
-
-  const weeklyCounts = recentWeeks.map(
-    (d) => filteredAttendance.filter((k) => k.endsWith("|" + d)).length,
-  );
-  const peak = Math.max(...weeklyCounts, 1);
 
   return (
     <AppShell search={q} onSearch={setQ}>
@@ -243,46 +238,47 @@ function Overview() {
           </div>
         </section>
 
-        <section aria-label="Operational and attendance" className="grid grid-cols-12 gap-4">
-          <div className="glass col-span-12 rounded-2xl p-5 lg:col-span-8">
-            <div className="flex items-baseline justify-between">
-              <p className="text-muted-foreground text-sm">Weekly Attendance Trend</p>
-              <span className="text-[11px] text-muted-foreground">Live data</span>
-            </div>
-            <div className="mt-4 flex h-10 items-end gap-1.5">
-              {weeklyCounts?.map((c, i) => (
-                <div
-                  key={recentWeeks[i]}
-                  className="flex-1 rounded-t bg-accent"
-                  style={{ height: `${(c / peak) * 100}%`, opacity: 0.4 + i * 0.09 }}
-                  title={`${formatDate(recentWeeks[i]!)}: ${c} present`}
-                />
-              ))}
-            </div>
-          </div>
-
-          <div className="col-span-12 grid gap-4 sm:grid-cols-2 lg:col-span-4 lg:grid-cols-1">
-            <div className="glass flex flex-col rounded-2xl p-5">
-              <p className="text-muted-foreground text-sm">Active Courses</p>
-              <p className="mt-1 text-3xl font-display font-bold">{activeCoursesCount}</p>
-              <p className="mt-auto text-[11px] text-muted-foreground">
+        <section aria-label="Course statistics">
+          <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+            <div className="glass relative overflow-hidden rounded-2xl border border-amber-300/20 bg-slate-900/60 p-5 shadow-[0_0_24px_rgba(251,191,36,0.07)] backdrop-blur-xl">
+              <div className="flex items-start justify-between gap-3">
+                <div>
+                  <p className="text-sm text-slate-300">Active Courses</p>
+                  <p className="mt-3 text-4xl font-display font-bold leading-none text-white">
+                    {activeCoursesCount}
+                  </p>
+                </div>
+                <span className="grid size-11 shrink-0 place-items-center rounded-full border border-amber-300/30 bg-amber-400/10 text-amber-200">
+                  <BookOpen className="size-5" aria-hidden="true" />
+                </span>
+              </div>
+              <p className="mt-4 text-xs text-slate-400">
                 {courses.length} total courses in system
               </p>
             </div>
-            <div className="glass flex flex-col rounded-2xl p-5">
-              <p className="text-muted-foreground text-sm">Courses Completed</p>
-              <p className="mt-1 text-3xl font-display font-bold text-accent">
-                {completedInPeriod}
-              </p>
-              <p className="mt-auto text-[11px] text-muted-foreground">
+            <div className="glass relative overflow-hidden rounded-2xl border border-indigo-300/20 bg-slate-900/60 p-5 shadow-[0_0_24px_rgba(129,140,248,0.07)] backdrop-blur-xl">
+              <div className="flex items-start justify-between gap-3">
+                <div>
+                  <p className="text-sm text-slate-300">Courses Completed</p>
+                  <p className="mt-3 text-4xl font-display font-bold leading-none text-white">
+                    {completedInPeriod}
+                  </p>
+                </div>
+                <span className="grid size-11 shrink-0 place-items-center rounded-full border border-indigo-300/30 bg-indigo-400/10 text-indigo-200">
+                  <BookOpenCheck className="size-5" aria-hidden="true" />
+                </span>
+              </div>
+              <p className="mt-4 text-xs text-slate-400">
                 In the selected month or period
               </p>
             </div>
           </div>
+        </section>
 
+        <section aria-label="Weekly attendance">
           <Panel
             title="Weekly Attendance"
-            className="col-span-12"
+            className="w-full"
             right={
               <span className="text-[11px] text-muted-foreground">
                 {recentWeeks.length > 0
