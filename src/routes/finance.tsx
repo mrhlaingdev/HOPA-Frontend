@@ -1,5 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Download, Pencil, WalletCards } from "lucide-react";
 import { AppShell, Panel } from "@/components/AppShell";
 import { EmptyState } from "@/components/EmptyState";
@@ -11,10 +11,18 @@ import {
   ALL_DATE_FILTER,
   actions,
   formatApiError,
+  loadEvents,
+  matchesDate,
   monthlyTotals,
   useChurch,
 } from "@/lib/church-store";
-import { formatDate, formatKs, formatShort } from "@/lib/church-data";
+import {
+  type ChurchEvent,
+  formatDate,
+  formatKs,
+  formatShort,
+  parseNumericValue,
+} from "@/lib/church-data";
 import { toast } from "sonner";
 import { usePermission } from "@/lib/auth";
 import { downloadCsv } from "@/lib/utils";
@@ -53,6 +61,9 @@ const emptyTxn = {
 function FinancePage() {
   const canManage = usePermission("manage-finance");
   const { txns, isLoading } = useChurch();
+  const [events, setEvents] = useState<ChurchEvent[]>([]);
+  const [areEventsLoading, setAreEventsLoading] = useState(true);
+  const [eventLoadError, setEventLoadError] = useState("");
   const [q, setQ] = useState("");
   const [dateFilter, setDateFilter] = useState(ALL_DATE_FILTER);
   const [form, setForm] = useState(emptyTxn);
@@ -62,7 +73,40 @@ function FinancePage() {
   const [editForm, setEditForm] = useState(emptyTxn);
   const [editError, setEditError] = useState("");
 
+  useEffect(() => {
+    let active = true;
+    loadEvents()
+      .then((result) => {
+        if (active) setEvents(result);
+      })
+      .catch((error: unknown) => {
+        if (!active) return;
+        const message = formatApiError(error, "Unable to load event finances");
+        setEventLoadError(message);
+        toast.error(message);
+      })
+      .finally(() => {
+        if (active) setAreEventsLoading(false);
+      });
+
+    return () => {
+      active = false;
+    };
+  }, []);
+
   const totals = monthlyTotals(txns, dateFilter);
+  const filteredEvents = events.filter((event) => matchesDate(event.date, dateFilter));
+  const eventExpenses = filteredEvents.reduce(
+    (sum, event) => sum + (parseNumericValue(event.totalExpense) ?? 0),
+    0,
+  );
+  const eventDonations = filteredEvents.reduce(
+    (sum, event) => sum + (parseNumericValue(event.donations) ?? 0),
+    0,
+  );
+  const totalIncome = totals.income + eventDonations;
+  const totalExpense = totals.expense + eventExpenses;
+  const netBalance = totalIncome - totalExpense;
   const rows = totals.rows.filter(
     (t) =>
       t.description.toLowerCase().includes(q.toLowerCase()) ||
@@ -115,35 +159,60 @@ function FinancePage() {
         <DateFilters
           value={dateFilter}
           onChange={setDateFilter}
-          dates={txns.map((txn) => txn.date)}
+          dates={[...txns.map((txn) => txn.date), ...events.map((event) => event.date)]}
         />
       </div>
 
       <div className="grid grid-cols-12 gap-4">
-        <div className="glass rounded-2xl col-span-4 p-5">
-          <p className="text-muted-foreground text-sm">Total Monthly Income</p>
+        <div className="glass rounded-2xl col-span-12 p-5 sm:col-span-6 xl:col-span-3">
+          <p className="text-muted-foreground text-sm">Total Income</p>
           <p className="mt-1 text-3xl font-display font-bold text-mint">
-            {formatShort(totals.income)}
+            {formatShort(totalIncome)}
           </p>
-          <p className="mt-1 text-[11px] text-muted-foreground">{formatKs(totals.income)}</p>
+          <p className="mt-1 text-[11px] text-muted-foreground">{formatKs(totalIncome)}</p>
         </div>
-        <div className="glass rounded-2xl col-span-4 p-5">
-          <p className="text-muted-foreground text-sm">Monthly Spent Budget</p>
+        <div className="glass rounded-2xl col-span-12 p-5 sm:col-span-6 xl:col-span-3">
+          <p className="text-muted-foreground text-sm">Total Expenses</p>
           <p className="mt-1 text-3xl font-display font-bold text-rose">
-            {formatShort(totals.expense)}
+            {formatShort(totalExpense)}
           </p>
-          <p className="mt-1 text-[11px] text-muted-foreground">{formatKs(totals.expense)}</p>
+          <p className="mt-1 text-[11px] text-muted-foreground">{formatKs(totalExpense)}</p>
         </div>
-        <div className="glass rounded-2xl col-span-4 p-5">
+        <div className="glass rounded-2xl col-span-12 p-5 sm:col-span-6 xl:col-span-3">
           <p className="text-muted-foreground text-sm">Net Balance · လက်ကျန်</p>
           <p className="mt-1 text-3xl font-display font-bold">
-            {totals.net >= 0 ? "+ " : "− "}
-            {formatShort(Math.abs(totals.net))}
+            {netBalance >= 0 ? "+ " : "− "}
+            {formatShort(Math.abs(netBalance))}
           </p>
           <p className="mt-1 text-[11px] text-muted-foreground">
             {dateFilter.year === "all" ? "All years" : dateFilter.year} ·{" "}
             {dateFilter.month === "all" ? "All months" : "Selected month"}
           </p>
+        </div>
+        <div className="glass rounded-2xl col-span-12 p-5 sm:col-span-6 xl:col-span-3">
+          <p className="text-muted-foreground text-sm">Event Expenses / Donations</p>
+          {areEventsLoading ? (
+            <p className="mt-2 text-xs text-muted-foreground">Loading event totals…</p>
+          ) : eventLoadError ? (
+            <p role="alert" className="mt-2 text-xs text-rose">
+              Event totals unavailable.
+            </p>
+          ) : (
+            <div className="mt-2 grid grid-cols-2 gap-2">
+              <div>
+                <p className="text-[10px] text-muted-foreground">Expenses</p>
+                <p className="font-display text-sm font-semibold text-rose">
+                  {formatShort(eventExpenses)}
+                </p>
+              </div>
+              <div>
+                <p className="text-[10px] text-muted-foreground">Donations</p>
+                <p className="font-display text-sm font-semibold text-mint">
+                  {formatShort(eventDonations)}
+                </p>
+              </div>
+            </div>
+          )}
         </div>
 
         {canManage && (
