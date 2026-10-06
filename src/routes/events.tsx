@@ -14,6 +14,16 @@ import { AppShell } from "@/components/AppShell";
 import { EmptyState } from "@/components/EmptyState";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import { Skeleton } from "@/components/ui/skeleton";
 import { type ChurchEvent, formatDate, formatKs, parseNumericValue } from "@/lib/church-data";
 import { usePermission } from "@/lib/auth";
@@ -60,6 +70,7 @@ function EventsPage() {
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editing, setEditing] = useState<ChurchEvent | null>(null);
   const [detailEvent, setDetailEvent] = useState<ChurchEvent | null>(null);
+  const [eventToDelete, setEventToDelete] = useState<ChurchEvent | null>(null);
   const [form, setForm] = useState<EventForm>(emptyForm);
   const [formError, setFormError] = useState("");
   const [isDeleting, setIsDeleting] = useState(false);
@@ -154,12 +165,12 @@ function EventsPage() {
     }
   }
 
-  async function deleteEvent(event: ChurchEvent) {
-    if (!window.confirm(`Delete "${event.title}"? This action cannot be undone.`)) return;
-
+  async function confirmDeleteEvent() {
+    if (!eventToDelete) return;
     setIsDeleting(true);
     try {
-      setEvents(await actions.deleteEvent(event.id));
+      setEvents(await actions.deleteEvent(eventToDelete.id));
+      setEventToDelete(null);
       setDetailEvent(null);
       toast.success("Event deleted successfully.");
     } catch (error) {
@@ -392,7 +403,7 @@ function EventsPage() {
                     type="button"
                     variant="destructive"
                     disabled={isDeleting}
-                    onClick={() => void deleteEvent(detailEvent)}
+                    onClick={() => setEventToDelete(detailEvent)}
                   >
                     <Trash2 className="size-4" />
                     Delete
@@ -414,6 +425,35 @@ function EventsPage() {
           )}
         </DialogContent>
       </Dialog>
+
+      <AlertDialog
+        open={!!eventToDelete}
+        onOpenChange={(open) => {
+          if (!open && !isDeleting) setEventToDelete(null);
+        }}
+      >
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Delete Event</AlertDialogTitle>
+            <AlertDialogDescription>
+              Are you sure you want to delete this event? This action cannot be undone.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={isDeleting}>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              disabled={isDeleting}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+              onClick={(event) => {
+                event.preventDefault();
+                void confirmDeleteEvent();
+              }}
+            >
+              Confirm Delete
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
 
       <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
         <DialogContent className="max-h-[90vh] overflow-y-auto sm:max-w-xl">
