@@ -297,7 +297,7 @@ function Overview() {
               </span>
             }
           >
-            <div className="dashboard-scrollbar max-h-[380px] overflow-y-auto overscroll-contain pr-1">
+            <div className="dashboard-scrollbar h-[360px] overflow-y-auto overscroll-contain pr-1">
               <div className="space-y-2">
                 {filteredStudents.map((s) => (
                   <div key={s.id} className="flex items-center gap-3">
@@ -340,7 +340,7 @@ function Overview() {
               />
             }
           >
-            <div className="dashboard-scrollbar max-h-[380px] overflow-y-auto overscroll-contain pr-1">
+            <div className="dashboard-scrollbar h-[360px] overflow-y-auto overscroll-contain pr-1">
               <div className="divide-y divide-white/5 text-sm">
                 {filtered.map((s) => {
                   const rate = attendanceRate(attendance, s.id);
