@@ -9,6 +9,7 @@ import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import {
   allSundays,
+  attendanceRate,
   actions,
   formatApiError,
   useChurch,
@@ -62,6 +63,7 @@ function StudentsPage() {
   const initialQ = search["q"];
   const { students, attendance, courses, completions, isLoading } = useChurch();
   const [q, setQ] = useState(initialQ);
+  const [directoryWidgetSearch, setDirectoryWidgetSearch] = useState("");
   const [grade, setGrade] = useState("all");
   const [ageBand, setAgeBand] = useState("all");
   const [selected, setSelected] = useState(students[0]?.id ?? "");
@@ -129,6 +131,13 @@ function StudentsPage() {
         return okName && okGrade && okAge;
       }),
     [students, q, grade, ageBand],
+  );
+  const directoryWidgetRows = useMemo(
+    () =>
+      students.filter((studentRow) =>
+        studentRow.name.toLowerCase().includes(directoryWidgetSearch.toLowerCase()),
+      ),
+    [students, directoryWidgetSearch],
   );
 
   const student = students.find((s) => s.id === selected) ?? rows[0] ?? students[0];
@@ -589,76 +598,144 @@ function StudentsPage() {
         </div>
       </div>
 
-      <Panel
-        title="Weekly Attendance"
-        mm="Latest seven Sunday sessions for the students shown in the directory"
-        className="mt-4"
+      <section
+        aria-label="Weekly attendance and student directory widgets"
+        className="mt-4 grid grid-cols-1 items-stretch gap-4 xl:grid-cols-2"
       >
-        <div className="overflow-x-auto">
-          <table className="min-w-[48rem] w-full text-xs">
-            <thead>
-              <tr className="border-b border-white/10 text-left text-[10px] uppercase tracking-[0.1em] text-muted-foreground">
-                <th className="py-2 pr-3 font-medium">Student</th>
-                {recentSundays.map((date) => (
-                  <th key={date} className="px-2 py-2 text-center font-medium">
-                    <span title={formatDate(date)}>{formatDate(date)}</span>
-                  </th>
-                ))}
-                <th className="py-2 pl-3 text-right font-medium">Attendance</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-white/5">
-              {rows.map((studentRow) => {
-                const attended = recentSundays.filter((date) =>
-                  attendance.includes(`${studentRow.id}|${date}`),
-                ).length;
-                const rate =
-                  recentSundays.length === 0
-                    ? 0
-                    : Math.round((attended / recentSundays.length) * 100);
-                return (
-                  <tr key={studentRow.id}>
-                    <th className="py-2 pr-3 text-left font-medium">
-                      {studentRow.name}
+        <Panel
+          title="Weekly Attendance"
+          mm="Latest seven Sunday sessions for the students shown in the directory"
+          className="border border-white/10 bg-slate-900/60 backdrop-blur-xl"
+          right={
+            <span className="text-[11px] text-muted-foreground">
+              {recentSundays.length > 0
+                ? `${formatDate(recentSundays[0]!)} – ${formatDate(recentSundays[recentSundays.length - 1]!)}`
+                : "No Sunday sessions available"}
+            </span>
+          }
+        >
+          <div className="max-h-[340px] overflow-auto">
+            <table className="min-w-[48rem] w-full text-xs">
+              <thead className="sticky top-0 bg-slate-900">
+                <tr className="border-b border-white/10 text-left text-[10px] uppercase tracking-[0.1em] text-muted-foreground">
+                  <th className="py-2 pr-3 font-medium">Student</th>
+                  {recentSundays.map((date) => (
+                    <th key={date} className="px-2 py-2 text-center font-medium">
+                      <span title={formatDate(date)}>{formatDate(date)}</span>
                     </th>
-                    {recentSundays.map((date) => {
-                      const present = attendance.includes(`${studentRow.id}|${date}`);
-                      return (
-                        <td key={date} className="px-2 py-2 text-center">
-                          <span
-                            title={`${formatDate(date)}: ${present ? "Attended" : "Absent"}`}
-                            aria-label={`${formatDate(date)}: ${present ? "Attended" : "Absent"}`}
-                            className={`inline-grid size-6 place-items-center rounded-md text-[10px] ${
-                              present
-                                ? "bg-mint/15 text-mint"
-                                : "bg-rose/15 text-rose"
-                            }`}
-                          >
-                            {present ? "✓" : "—"}
-                          </span>
-                        </td>
-                      );
-                    })}
-                    <td className="py-2 pl-3 text-right text-muted-foreground">
-                      {rate}%
+                  ))}
+                  <th className="py-2 pl-3 text-right font-medium">Attendance</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-white/5">
+                {rows.map((studentRow) => {
+                  const attended = recentSundays.filter((date) =>
+                    attendance.includes(`${studentRow.id}|${date}`),
+                  ).length;
+                  const rate =
+                    recentSundays.length === 0
+                      ? 0
+                      : Math.round((attended / recentSundays.length) * 100);
+                  return (
+                    <tr key={studentRow.id}>
+                      <th className="py-2 pr-3 text-left font-medium">
+                        {studentRow.name}
+                      </th>
+                      {recentSundays.map((date) => {
+                        const present = attendance.includes(`${studentRow.id}|${date}`);
+                        return (
+                          <td key={date} className="px-2 py-2 text-center">
+                            <span
+                              title={`${formatDate(date)}: ${present ? "Attended" : "Absent"}`}
+                              aria-label={`${formatDate(date)}: ${present ? "Attended" : "Absent"}`}
+                              className={`inline-grid size-6 place-items-center rounded-md text-[10px] ${
+                                present
+                                  ? "bg-mint/15 text-mint"
+                                  : "bg-rose/15 text-rose"
+                              }`}
+                            >
+                              {present ? "✓" : "—"}
+                            </span>
+                          </td>
+                        );
+                      })}
+                      <td className="py-2 pl-3 text-right text-muted-foreground">
+                        {rate}%
+                      </td>
+                    </tr>
+                  );
+                })}
+                {rows.length === 0 && (
+                  <tr>
+                    <td
+                      colSpan={recentSundays.length + 2}
+                      className="py-6 text-center text-muted-foreground"
+                    >
+                      No students match the current directory filters.
                     </td>
                   </tr>
+                )}
+              </tbody>
+            </table>
+          </div>
+        </Panel>
+
+        <Panel
+          title="Student Directory"
+          mm={`${directoryWidgetRows.length} of ${students.length} students`}
+          className="border border-white/10 bg-slate-900/60 backdrop-blur-xl"
+          right={
+            <input
+              value={directoryWidgetSearch}
+              onChange={(event) => setDirectoryWidgetSearch(event.target.value)}
+              className="field w-36 px-3 py-1.5 text-xs sm:w-44"
+              placeholder="Search name…"
+              aria-label="Search student directory widget"
+            />
+          }
+        >
+          <div className="max-h-[340px] overflow-y-auto pr-2 custom-scrollbar">
+            <div className="divide-y divide-white/5 text-sm">
+              {directoryWidgetRows.map((studentRow) => {
+                const rate = attendanceRate(attendance, studentRow.id);
+                return (
+                  <button
+                    key={studentRow.id}
+                    type="button"
+                    onClick={() => setSelected(studentRow.id)}
+                    className="flex w-full items-center gap-3 py-2.5 text-left hover:bg-white/[0.03]"
+                  >
+                    <div
+                      className="grid size-8 shrink-0 place-items-center rounded-full text-[11px] font-semibold"
+                      style={{ backgroundImage: studentRow.gradient }}
+                    >
+                      {initials(studentRow.name)}
+                    </div>
+                    <div className="min-w-0 leading-tight">
+                      <p className="truncate">{studentRow.name}</p>
+                      <p className="text-[11px] text-muted-foreground">
+                        Grade {studentRow.grade} · Age {studentRow.age}
+                      </p>
+                    </div>
+                    <span
+                      className={`ml-auto shrink-0 rounded-full px-2.5 py-1 text-[11px] ${
+                        rate >= 85 ? "bg-mint/15 text-mint" : "bg-amber/15 text-amber"
+                      }`}
+                    >
+                      {rate}% attended
+                    </span>
+                  </button>
                 );
               })}
-              {rows.length === 0 && (
-                <tr>
-                  <td
-                    colSpan={recentSundays.length + 2}
-                    className="py-6 text-center text-muted-foreground"
-                  >
-                    No students match the current directory filters.
-                  </td>
-                </tr>
+              {directoryWidgetRows.length === 0 && (
+                <p className="py-6 text-center text-xs text-muted-foreground">
+                  No students found.
+                </p>
               )}
-            </tbody>
-          </table>
-        </div>
-      </Panel>
+            </div>
+          </div>
+        </Panel>
+      </section>
 
       <Dialog open={canManage && !!editing} onOpenChange={(open) => !open && setEditing(null)}>
         <DialogContent>
