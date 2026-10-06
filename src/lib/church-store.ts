@@ -466,6 +466,10 @@ export const actions = {
     await updateResource(API_ENDPOINTS.events, eventId, toEventApiPayload(event), "event");
     return loadEvents();
   },
+  async deleteEvent(eventId: string): Promise<ChurchEvent[]> {
+    await deleteResource(API_ENDPOINTS.events, eventId, "event");
+    return loadEvents();
+  },
   async updateTxn(txnId: string, txn: Partial<Omit<Txn, "id">>) {
     await updateResource(API_ENDPOINTS.transactions, txnId, txn, "transaction");
     await loadTransactions();

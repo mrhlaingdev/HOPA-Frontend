@@ -1,6 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useEffect, useState, type FormEvent } from "react";
-import { CalendarDays, MapPin, Pencil, Plus, UsersRound, Utensils } from "lucide-react";
+import { CalendarDays, MapPin, Pencil, Plus, Trash2, UsersRound, Utensils } from "lucide-react";
 import { AppShell } from "@/components/AppShell";
 import { EmptyState } from "@/components/EmptyState";
 import { Button } from "@/components/ui/button";
@@ -48,8 +48,10 @@ function EventsPage() {
   const [isSaving, setIsSaving] = useState(false);
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editing, setEditing] = useState<ChurchEvent | null>(null);
+  const [detailEvent, setDetailEvent] = useState<ChurchEvent | null>(null);
   const [form, setForm] = useState<EventForm>(emptyForm);
   const [formError, setFormError] = useState("");
+  const [isDeleting, setIsDeleting] = useState(false);
 
   useEffect(() => {
     let active = true;
@@ -132,6 +134,21 @@ function EventsPage() {
       toast.error(message);
     } finally {
       setIsSaving(false);
+    }
+  }
+
+  async function deleteEvent(event: ChurchEvent) {
+    if (!window.confirm(`Delete "${event.title}"? This action cannot be undone.`)) return;
+
+    setIsDeleting(true);
+    try {
+      setEvents(await actions.deleteEvent(event.id));
+      setDetailEvent(null);
+      toast.success("Event deleted successfully.");
+    } catch (error) {
+      toast.error(formatApiError(error, "Unable to delete event"));
+    } finally {
+      setIsDeleting(false);
     }
   }
 
@@ -229,7 +246,9 @@ function EventsPage() {
                   {event.foodMenu && (
                     <p className="flex items-start gap-2">
                       <Utensils className="mt-0.5 size-4 shrink-0" />
-                      <span>{event.foodMenu}</span>
+                      <span className="line-clamp-2 whitespace-pre-line break-words">
+                        {event.foodMenu}
+                      </span>
                     </p>
                   )}
                 </div>
@@ -245,11 +264,88 @@ function EventsPage() {
                     <strong className="ml-1 text-mint">{formatEventAmount(event.donations)}</strong>
                   </span>
                 </div>
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  className="mt-3 w-full"
+                  onClick={() => setDetailEvent(event)}
+                >
+                  View details
+                </Button>
               </article>
             ))}
           </div>
         )}
       </section>
+
+      <Dialog open={!!detailEvent} onOpenChange={(open) => !open && setDetailEvent(null)}>
+        <DialogContent className="max-h-[90vh] overflow-y-auto sm:max-w-xl">
+          {detailEvent && (
+            <>
+              <DialogHeader>
+                <DialogTitle className="font-display text-xl">{detailEvent.title}</DialogTitle>
+                <p className="flex items-center gap-2 text-sm text-muted-foreground">
+                  <CalendarDays className="size-4 shrink-0" />
+                  {formatDate(detailEvent.date)}
+                </p>
+              </DialogHeader>
+              <dl className="grid gap-4 sm:grid-cols-2">
+                <DetailField label="Location">
+                  <span className="flex items-start gap-2">
+                    <MapPin className="mt-0.5 size-4 shrink-0 text-muted-foreground" />
+                    <span className="break-words">{detailEvent.location || "—"}</span>
+                  </span>
+                </DetailField>
+                <DetailField label="Attendees">
+                  <span className="flex items-center gap-2">
+                    <UsersRound className="size-4 shrink-0 text-muted-foreground" />
+                    {detailEvent.attendeesCount.toLocaleString()}
+                  </span>
+                </DetailField>
+                <DetailField label="Food Menu / Catering" className="sm:col-span-2">
+                  <span className="flex items-start gap-2">
+                    <Utensils className="mt-0.5 size-4 shrink-0 text-muted-foreground" />
+                    <span className="whitespace-pre-wrap break-words">
+                      {detailEvent.foodMenu.trim() || "No food or catering details provided."}
+                    </span>
+                  </span>
+                </DetailField>
+                <DetailField label="Total Expense">
+                  {formatEventAmount(detailEvent.totalExpense)}
+                </DetailField>
+                <DetailField label="Donations Collected">
+                  {formatEventAmount(detailEvent.donations)}
+                </DetailField>
+              </dl>
+              {canManage && (
+                <div className="flex flex-wrap justify-end gap-2 border-t border-white/10 pt-4">
+                  <Button
+                    type="button"
+                    variant="destructive"
+                    disabled={isDeleting}
+                    onClick={() => void deleteEvent(detailEvent)}
+                  >
+                    <Trash2 className="size-4" />
+                    Delete
+                  </Button>
+                  <Button
+                    type="button"
+                    onClick={() => {
+                      const eventToEdit = detailEvent;
+                      setDetailEvent(null);
+                      openEditDialog(eventToEdit);
+                    }}
+                  >
+                    <Pencil className="size-4" />
+                    Edit Event
+                  </Button>
+                </div>
+              )}
+            </>
+          )}
+        </DialogContent>
+      </Dialog>
 
       <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
         <DialogContent className="max-h-[90vh] overflow-y-auto sm:max-w-xl">
@@ -388,6 +484,25 @@ function SummaryCard({
       <div className="grid size-11 place-items-center rounded-xl bg-accent/10 text-accent">
         <Icon className="size-5" />
       </div>
+    </div>
+  );
+}
+
+function DetailField({
+  label,
+  className,
+  children,
+}: {
+  label: string;
+  className?: string;
+  children: React.ReactNode;
+}) {
+  return (
+    <div className={className}>
+      <dt className="mb-1 text-[10px] font-medium uppercase tracking-[0.14em] text-muted-foreground">
+        {label}
+      </dt>
+      <dd className="min-w-0 text-sm">{children}</dd>
     </div>
   );
 }
