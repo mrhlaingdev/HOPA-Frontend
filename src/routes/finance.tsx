@@ -19,8 +19,8 @@ import {
 import {
   type ChurchEvent,
   formatDate,
-  formatKs,
-  formatShort,
+  formatShortThb,
+  formatThb,
   parseNumericValue,
 } from "@/lib/church-data";
 import { toast } from "sonner";
@@ -125,13 +125,13 @@ function FinancePage() {
   const exportFinance = () =>
     downloadCsv(
       "finance-report.csv",
-      ["Date", "Type", "Category", "Description", "Amount"],
+      ["Date", "Type", "Category", "Description", "Amount (THB)"],
       rows.map((transaction) => [
         transaction.date,
         transaction.type,
         transaction.category,
         transaction.description,
-        transaction.amount,
+        formatThb(transaction.amount),
       ]),
     );
 
@@ -165,24 +165,24 @@ function FinancePage() {
 
       <div className="grid grid-cols-12 gap-4">
         <div className="glass rounded-2xl col-span-12 p-5 sm:col-span-6 xl:col-span-3">
-          <p className="text-muted-foreground text-sm">Total Income</p>
+          <p className="text-muted-foreground text-sm">Total Income (฿)</p>
           <p className="mt-1 text-3xl font-display font-bold text-mint">
-            {formatShort(totalIncome)}
+            {formatShortThb(totalIncome)}
           </p>
-          <p className="mt-1 text-[11px] text-muted-foreground">{formatKs(totalIncome)}</p>
+          <p className="mt-1 text-[11px] text-muted-foreground">{formatThb(totalIncome)}</p>
         </div>
         <div className="glass rounded-2xl col-span-12 p-5 sm:col-span-6 xl:col-span-3">
-          <p className="text-muted-foreground text-sm">Total Expenses</p>
+          <p className="text-muted-foreground text-sm">Total Expenses (฿)</p>
           <p className="mt-1 text-3xl font-display font-bold text-rose">
-            {formatShort(totalExpense)}
+            {formatShortThb(totalExpense)}
           </p>
-          <p className="mt-1 text-[11px] text-muted-foreground">{formatKs(totalExpense)}</p>
+          <p className="mt-1 text-[11px] text-muted-foreground">{formatThb(totalExpense)}</p>
         </div>
         <div className="glass rounded-2xl col-span-12 p-5 sm:col-span-6 xl:col-span-3">
-          <p className="text-muted-foreground text-sm">Net Balance · လက်ကျန်</p>
+          <p className="text-muted-foreground text-sm">Net Balance (฿) · လက်ကျန်</p>
           <p className="mt-1 text-3xl font-display font-bold">
-            {netBalance >= 0 ? "+ " : "− "}
-            {formatShort(Math.abs(netBalance))}
+            {netBalance >= 0 ? "+" : "−"}
+            {formatShortThb(Math.abs(netBalance))}
           </p>
           <p className="mt-1 text-[11px] text-muted-foreground">
             {dateFilter.year === "all" ? "All years" : dateFilter.year} ·{" "}
@@ -190,7 +190,7 @@ function FinancePage() {
           </p>
         </div>
         <div className="glass rounded-2xl col-span-12 p-5 sm:col-span-6 xl:col-span-3">
-          <p className="text-muted-foreground text-sm">Event Expenses / Donations</p>
+          <p className="text-muted-foreground text-sm">Event Expenses / Donations (฿)</p>
           {areEventsLoading ? (
             <p className="mt-2 text-xs text-muted-foreground">Loading event totals…</p>
           ) : eventLoadError ? (
@@ -202,13 +202,13 @@ function FinancePage() {
               <div>
                 <p className="text-[10px] text-muted-foreground">Expenses</p>
                 <p className="font-display text-sm font-semibold text-rose">
-                  {formatShort(eventExpenses)}
+                  {formatShortThb(eventExpenses)}
                 </p>
               </div>
               <div>
                 <p className="text-[10px] text-muted-foreground">Donations</p>
                 <p className="font-display text-sm font-semibold text-mint">
-                  {formatShort(eventDonations)}
+                  {formatShortThb(eventDonations)}
                 </p>
               </div>
             </div>
@@ -241,7 +241,7 @@ function FinancePage() {
               </div>
               <label className="block text-xs font-medium" htmlFor="transaction-category">Category<input id="transaction-category" className="field mt-1 w-full px-3 py-2 text-xs" placeholder="e.g. Sunday Offering or Supplies" required value={form.category} onChange={(e) => setForm({ ...form, category: e.target.value })} /></label>
               <label className="block text-xs font-medium" htmlFor="transaction-description">Description<input id="transaction-description" className="field mt-1 w-full px-3 py-2 text-xs" placeholder="e.g. September offering" required value={form.description} onChange={(e) => setForm({ ...form, description: e.target.value })} /></label>
-              <label className="block text-xs font-medium" htmlFor="transaction-amount">Amount (Ks)<input id="transaction-amount" className="field mt-1 w-full px-3 py-2 text-xs" type="number" min="0.01" step="0.01" required placeholder="e.g. 50000" value={form.amount || ""} onChange={(e) => setForm({ ...form, amount: Number(e.target.value) })} /></label>
+              <label className="block text-xs font-medium" htmlFor="transaction-amount">Amount (฿)<input id="transaction-amount" className="field mt-1 w-full px-3 py-2 text-xs" type="number" min="0.01" step="0.01" required placeholder="e.g. 50000 THB" value={form.amount || ""} onChange={(e) => setForm({ ...form, amount: Number(e.target.value) })} /></label>
               <label className="block rounded-xl glass-inset p-3 text-xs cursor-pointer">
                 <span className="text-muted-foreground">Upload voucher / receipt photo</span>
                 <input
@@ -313,7 +313,7 @@ function FinancePage() {
                     className={`py-2.5 text-right ${t.type === "income" ? "text-mint" : "text-rose"}`}
                   >
                     {t.type === "income" ? "+" : "−"}
-                    {t.amount.toLocaleString("en-US")}
+                    {formatThb(t.amount)}
                   </td>
                   <td className="py-2.5">
                     <div className="flex items-center justify-end gap-2">
@@ -410,7 +410,7 @@ function FinancePage() {
             </div>
             <label className="block text-xs font-medium" htmlFor="edit-transaction-category">Category<input id="edit-transaction-category" className="field mt-1 w-full px-3 py-2 text-xs" placeholder="e.g. Sunday Offering or Supplies" required value={editForm.category} onChange={(e) => setEditForm({ ...editForm, category: e.target.value })} /></label>
             <label className="block text-xs font-medium" htmlFor="edit-transaction-description">Description<input id="edit-transaction-description" className="field mt-1 w-full px-3 py-2 text-xs" placeholder="e.g. September offering" required value={editForm.description} onChange={(e) => setEditForm({ ...editForm, description: e.target.value })} /></label>
-            <label className="block text-xs font-medium" htmlFor="edit-transaction-amount">Amount (Ks)<input id="edit-transaction-amount" className="field mt-1 w-full px-3 py-2 text-xs" type="number" min="0.01" step="0.01" required placeholder="e.g. 50000" value={editForm.amount || ""} onChange={(e) => setEditForm({ ...editForm, amount: Number(e.target.value) })} /></label>
+            <label className="block text-xs font-medium" htmlFor="edit-transaction-amount">Amount (฿)<input id="edit-transaction-amount" className="field mt-1 w-full px-3 py-2 text-xs" type="number" min="0.01" step="0.01" required placeholder="e.g. 50000 THB" value={editForm.amount || ""} onChange={(e) => setEditForm({ ...editForm, amount: Number(e.target.value) })} /></label>
             <label className="block rounded-xl glass-inset p-3 text-xs cursor-pointer">
               <span className="text-muted-foreground">Replace voucher / receipt photo</span>
               <input

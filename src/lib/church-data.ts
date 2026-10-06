@@ -108,6 +108,16 @@ export function formatShort(n: number) {
   return "Ks " + n;
 }
 
+export function formatThb(n: number) {
+  return "฿" + n.toLocaleString("en-US");
+}
+
+export function formatShortThb(n: number) {
+  if (n >= 1_000_000) return "฿" + (n / 1_000_000).toFixed(2) + "M";
+  if (n >= 1_000) return "฿" + Math.round(n / 1000) + "K";
+  return formatThb(n);
+}
+
 export function parseNumericValue(value: unknown): number | null {
   if (typeof value === "number") return Number.isFinite(value) ? value : null;
   if (typeof value !== "string") return null;

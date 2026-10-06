@@ -35,7 +35,12 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { Skeleton } from "@/components/ui/skeleton";
-import { type ChurchEvent, formatDate, formatKs, parseNumericValue } from "@/lib/church-data";
+import {
+  type ChurchEvent,
+  formatDate,
+  formatThb,
+  parseNumericValue,
+} from "@/lib/church-data";
 import { usePermission } from "@/lib/auth";
 import { actions, formatApiError, loadEvents } from "@/lib/church-store";
 import { downloadCsv } from "@/lib/utils";
@@ -66,8 +71,8 @@ const exportHeaders = [
   "Location",
   "Attendees Count",
   "Food Menu",
-  "Total Expense",
-  "Donations Collected",
+  "Total Expense (THB)",
+  "Donations Collected (THB)",
 ];
 
 const emptyForm = (): EventForm => ({
@@ -176,7 +181,7 @@ function EventsPage() {
       worksheet[`D${row}`].z = "#,##0";
       for (const column of ["F", "G"]) {
         const cell = worksheet[`${column}${row}`];
-        if (cell && typeof cell.v === "number") cell.z = '#,##0 "Ks"';
+        if (cell && typeof cell.v === "number") cell.z = '#,##0 "฿"';
       }
     }
 
@@ -351,7 +356,7 @@ function EventsPage() {
           value={visibleEvents.length.toLocaleString()}
           icon={CalendarDays}
         />
-        <SummaryCard label="Total Expense" value={formatKs(totalExpense)} icon={Utensils} />
+        <SummaryCard label="Total Expense (฿)" value={formatThb(totalExpense)} icon={Utensils} />
         <SummaryCard
           label="Total Attendees"
           value={totalAttendees.toLocaleString()}
@@ -669,21 +674,23 @@ function EventsPage() {
                   onChange={(e) => setForm({ ...form, foodMenu: e.target.value })}
                 />
               </FormField>
-              <FormField label="Total Expense (Ks)" htmlFor="event-expense">
+              <FormField label="Total Expense (฿)" htmlFor="event-expense">
                 <input
                   id="event-expense"
                   type="text"
                   inputMode="text"
+                  placeholder="e.g. ฿50,000"
                   className="field mt-1 block w-full min-w-0 px-3 py-2 text-sm"
                   value={form.totalExpense}
                   onChange={(e) => setForm({ ...form, totalExpense: e.target.value })}
                 />
               </FormField>
-              <FormField label="Donations (Ks)" htmlFor="event-donations">
+              <FormField label="Donations (฿)" htmlFor="event-donations">
                 <input
                   id="event-donations"
                   type="text"
                   inputMode="text"
+                  placeholder="e.g. ฿50,000"
                   className="field mt-1 block w-full min-w-0 px-3 py-2 text-sm"
                   value={form.donations}
                   onChange={(e) => setForm({ ...form, donations: e.target.value })}
@@ -720,7 +727,7 @@ function parseEventAmount(value: string | number): number | null {
 
 function formatEventAmount(value: string | number) {
   const amount = parseEventAmount(value);
-  if (amount !== null) return formatKs(amount);
+  if (amount !== null) return formatThb(amount);
   return String(value).trim() || "—";
 }
 
