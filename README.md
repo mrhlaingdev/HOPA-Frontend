@@ -40,6 +40,20 @@ Core Modules & Features:
 
 - Filter and search training history by Course Title or Date.
 
+#### Course completion API contract
+
+Course completion records are stored independently from courses and are keyed by the
+`(course_id, student_id)` pair. The backend should enforce that pair as unique.
+
+- `GET /api/completions` returns an array (or `{ "completions": [...] }`) with
+  `course_id`, `student_id`, and `date`.
+- `POST /api/completions` accepts `{ "course_id": "...", "student_id": "...",
+  "date": "YYYY-MM-DD" }` and creates or replaces that student's completion.
+- `DELETE /api/completions?course_id=...&student_id=...` removes the matching record.
+
+The frontend updates the shared completion state optimistically and rolls it back if
+the API rejects a change, so the Courses and Students views stay in sync.
+
 5. Petty Cash & Finance Management:
 
 - Income (Donations/Offerings) and Expense transaction recorder.

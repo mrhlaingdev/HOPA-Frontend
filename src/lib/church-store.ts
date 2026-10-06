@@ -130,6 +130,7 @@ const API_ENDPOINTS = {
   teachers: "/api/teachers",
   staff: "/api/staff",
   attendance: "/api/attendance",
+  completions: "/api/completions",
   transactions: "/api/finance",
   events: "/api/events",
   backupRestore: "/api/backup/restore",
@@ -226,6 +227,29 @@ export async function loadCourses() {
   const courses = await loadResource<Course>(API_ENDPOINTS.courses, "courses");
   set({ courses });
   return courses;
+}
+
+function normalizeCompletion(value: unknown): Completion {
+  if (!isRecord(value)) throw new Error("Invalid course completion record from backend");
+
+  const courseId = value["courseId"] ?? value["course_id"];
+  const studentId = value["studentId"] ?? value["student_id"];
+  const date = value["date"] ?? value["completed_at"] ?? value["completion_date"];
+  if (
+    (typeof courseId !== "string" && typeof courseId !== "number") ||
+    (typeof studentId !== "string" && typeof studentId !== "number") ||
+    typeof date !== "string"
+  ) {
+    throw new Error("Course completion record is missing course, student, or date");
+  }
+  return { courseId: String(courseId), studentId: String(studentId), date };
+}
+
+export async function loadCompletions() {
+  const records = await loadResource<unknown>(API_ENDPOINTS.completions, "completions");
+  const completions = records.map(normalizeCompletion);
+  set({ completions });
+  return completions;
 }
 
 export async function loadTeachers() {
@@ -565,7 +589,14 @@ async function loadFromApi() {
   try {
     if (await checkBackend()) {
       await loadStudents();
-      await Promise.all([loadCourses(), loadTeachers(), loadStaff(), loadAttendance(), loadTransactions()]);
+      await Promise.all([
+        loadCourses(),
+        loadCompletions(),
+        loadTeachers(),
+        loadStaff(),
+        loadAttendance(),
+        loadTransactions(),
+      ]);
       return;
     }
     set({ students: [], attendance: [], courses: [], teachers: [], staff: [], completions: [], txns: [] });
@@ -675,9 +706,59 @@ export const actions = {
     await loadAttendance();
   },
   async toggleCompletion(courseId: string, studentId: string, date: string) {
-    void courseId;
-    void studentId;
-    void date;
+    if (!API_BASE_URL) throw new Error("VITE_API_BASE_URL is not configured");
+
+    const wasCompleted = state.completions.some(
+      (completion) => completion.courseId === courseId && completion.studentId === studentId,
+    );
+    const previousCompletions = state.completions;
+    const nextCompletion = { courseId, studentId, date };
+    set({
+      completions: wasCompleted
+        ? previousCompletions.filter((completion) =>
+            completion.courseId !== courseId || completion.studentId !== studentId,
+          )
+        : [...previousCompletions, nextCompletion],
+    });
+
+    try {
+      const completionQuery = new URLSearchParams({ course_id: courseId, student_id: studentId });
+      const response = await fetchApi(
+        wasCompleted
+          ? `${API_ENDPOINTS.completions}?${completionQuery}`
+          : API_ENDPOINTS.completions,
+        wasCompleted
+          ? { method: "DELETE" }
+          : {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({
+                course_id: courseId,
+                student_id: studentId,
+                date,
+              }),
+            },
+      );
+      if (!response.ok) {
+        await throwApiError(
+          response,
+          wasCompleted ? "Failed to remove course completion" : "Failed to save course completion",
+        );
+      }
+    } catch (error) {
+      const previousCompletion = previousCompletions.find(
+        (completion) => completion.courseId === courseId && completion.studentId === studentId,
+      );
+      set({
+        completions: [
+          ...state.completions.filter((completion) =>
+            completion.courseId !== courseId || completion.studentId !== studentId,
+          ),
+          ...(previousCompletion ? [previousCompletion] : []),
+        ],
+      });
+      throw error;
+    }
   },
   async addTxn(t: Omit<Txn, "id">) {
     if (!API_BASE_URL) throw new Error("VITE_API_BASE_URL is not configured");

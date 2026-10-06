@@ -48,6 +48,7 @@ function CoursesPage() {
   const [q, setQ] = useState("");
   const [dateFilter, setDateFilter] = useState(ALL_DATE_FILTER);
   const [selected, setSelected] = useState(courses[0]?.id ?? "");
+  const [pendingCompletions, setPendingCompletions] = useState<string[]>([]);
   const emptyCourseForm = () => ({
     title: "",
     date: localDateString(),
@@ -79,20 +80,18 @@ function CoursesPage() {
 
   const course = rows.find((c) => c.id === selected) ?? rows[0];
   const teacherName = (teacherId?: string, instructor?: string) => instructor || (teachers.find((teacher) => teacher.id === teacherId)?.name ?? "Unassigned");
-  // Completion Toggle Handler
   const handleToggleCompletion = async (studentId: string, studentName: string) => {
     if (!canManage || !course) return;
+    const pendingKey = `${course.id}|${studentId}`;
+    if (pendingCompletions.includes(pendingKey)) return;
+    setPendingCompletions((pending) => [...pending, pendingKey]);
     try {
-      await actions.toggleCompletion(studentId, course.id, course.date);
+      await actions.toggleCompletion(course.id, studentId, course.date);
       toast.success(`Updated completion for ${studentName}`);
     } catch (error) {
-      // Fallback: အကယ်၍ (courseId, studentId, date) Parameter structure ဖြစ်ခဲ့ရင်
-      try {
-        await actions.toggleCompletion(course.id, studentId, course.date);
-        toast.success(`Updated completion for ${studentName}`);
-      } catch (err) {
-        toast.error(formatApiError(err, "Failed to update completion status"));
-      }
+      toast.error(formatApiError(error, "Failed to update completion status"));
+    } finally {
+      setPendingCompletions((pending) => pending.filter((key) => key !== pendingKey));
     }
   };
 
@@ -126,11 +125,11 @@ function CoursesPage() {
                   courseRow.date,
                   courseRow.time,
                   courseRow.instructor,
-                  completions.filter(
-                    (completion) =>
-                      completion.courseId === courseRow.id &&
-                      matchesDate(completion.date, dateFilter),
-                  ).length,
+                  new Set(
+                    completions
+                      .filter((completion) => completion.courseId === courseRow.id)
+                      .map((completion) => completion.studentId),
+                  ).size,
                   students.length,
                 ])}
               />
@@ -178,9 +177,11 @@ function CoursesPage() {
                   <td className="py-2.5 text-muted-foreground">{c.time}</td>
                   <td className="py-2.5 text-muted-foreground">{teacherName(c.teacherId, c.instructor)}</td>
                   <td className="py-2.5 text-right text-mint">
-                    {completions.filter(
-                      (x) => x.courseId === c.id && matchesDate(x.date, dateFilter),
-                    ).length}/{students.length}
+                    {new Set(
+                      completions
+                        .filter((completion) => completion.courseId === c.id)
+                        .map((completion) => completion.studentId),
+                    ).size}/{students.length}
                   </td>
                   <td className="py-2.5 text-right">
                     <div className="flex justify-end gap-1">
@@ -296,20 +297,22 @@ function CoursesPage() {
                     <input
                       type="checkbox"
                       checked={!!done}
-                      disabled={!canManage}
-                      onChange={() => {}} // Controlled via parent li click
+                      disabled={!canManage || pendingCompletions.includes(`${course.id}|${s.id}`)}
+                      onChange={() => void handleToggleCompletion(s.id, s.name)}
+                      onClick={(event) => event.stopPropagation()}
                       className="size-4 accent-mint enabled:cursor-pointer"
                       aria-label={`${s.name} completed ${course.title}`}
                     />
                     <span className="select-none font-medium">{s.name}</span>
                     <span
+                      title={done ? `Completed ${formatDate(done.date)}` : undefined}
                       className={`ml-auto text-[11px] px-2 py-0.5 rounded-full ${
                         done
                           ? "bg-mint/15 text-mint font-medium"
                           : "text-muted-foreground opacity-60"
                       }`}
                     >
-                      {done ? `Completed ${formatDate(done.date)}` : "Not completed"}
+                      {done ? "Completed" : "Not completed"}
                     </span>
                   </li>
                 );

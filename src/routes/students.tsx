@@ -299,7 +299,15 @@ function StudentsPage() {
               </thead>
               <tbody className="divide-y divide-white/5">
                 {rows.map((s) => {
-                  const done = completions.filter((c) => c.studentId === s.id).length;
+                  const done = new Set(
+                    completions
+                      .filter(
+                        (completion) =>
+                          completion.studentId === s.id &&
+                          courses.some((course) => course.id === completion.courseId),
+                      )
+                      .map((completion) => completion.courseId),
+                  ).size;
                   return (
                     <tr
                       key={s.id}
