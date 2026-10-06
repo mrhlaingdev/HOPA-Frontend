@@ -1,6 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
-import { Pencil, WalletCards } from "lucide-react";
+import { Pencil, Trash2, WalletCards } from "lucide-react";
 import { AppShell, Panel } from "@/components/AppShell";
 import { ExportDropdown } from "@/components/ExportDropdown";
 import { EmptyState } from "@/components/EmptyState";
@@ -60,6 +60,7 @@ const emptyTxn = {
 
 function FinancePage() {
   const canManage = usePermission("manage-finance");
+  const canDelete = usePermission("delete-records");
   const { txns, isLoading } = useChurch();
   const [events, setEvents] = useState<ChurchEvent[]>([]);
   const [areEventsLoading, setAreEventsLoading] = useState(true);
@@ -121,6 +122,16 @@ function FinancePage() {
       return "Amount must be greater than 0.";
     return "";
   };
+
+  async function deleteTransaction(transaction: (typeof txns)[number]) {
+    if (!canDelete || !window.confirm(`Delete transaction "${transaction.description}"?`)) return;
+    try {
+      await actions.deleteTxn(transaction.id);
+      toast.success("Transaction deleted successfully.");
+    } catch (error) {
+      toast.error(formatApiError(error, "Unable to delete transaction"));
+    }
+  }
 
   function onFile(file?: File) {
     if (!file) return;
@@ -321,27 +332,42 @@ function FinancePage() {
                       ) : (
                         <span className="text-[11px] text-muted-foreground">—</span>
                       )}
-                      <Button
-                        type="button"
-                        variant="ghost"
-                        size="sm"
-                        aria-label={`Edit ${t.description}`}
-                        title={`Edit ${t.description}`}
-                        onClick={() => {
-                          setEditing(t);
-                          setEditForm({
-                            date: t.date,
-                            type: t.type,
-                            category: t.category,
-                            description: t.description,
-                            amount: t.amount,
-                            receipt: t.receipt,
-                          });
-                        }}
-                      >
-                        <Pencil />
-                        <span className="sr-only">Edit</span>
-                      </Button>
+                      {canManage && (
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          size="sm"
+                          aria-label={`Edit ${t.description}`}
+                          title={`Edit ${t.description}`}
+                          onClick={() => {
+                            setEditing(t);
+                            setEditForm({
+                              date: t.date,
+                              type: t.type,
+                              category: t.category,
+                              description: t.description,
+                              amount: t.amount,
+                              receipt: t.receipt,
+                            });
+                          }}
+                        >
+                          <Pencil />
+                          <span className="sr-only">Edit</span>
+                        </Button>
+                      )}
+                      {canDelete && (
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          size="sm"
+                          aria-label={`Delete ${t.description}`}
+                          title={`Delete ${t.description}`}
+                          onClick={() => void deleteTransaction(t)}
+                        >
+                          <Trash2 />
+                          <span className="sr-only">Delete</span>
+                        </Button>
+                      )}
                     </div>
                   </td>
                 </tr>
@@ -372,7 +398,7 @@ function FinancePage() {
         </div>
       )}
 
-      <Dialog open={!!editing} onOpenChange={(open) => !open && setEditing(null)}>
+      <Dialog open={canManage && !!editing} onOpenChange={(open) => !open && setEditing(null)}>
         <DialogContent>
           <DialogHeader>
             <DialogTitle>Edit Transaction</DialogTitle>

@@ -211,7 +211,7 @@ function StaffPage() {
           </div>
         )}
       </Panel>
-      <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
+      <Dialog open={canManage && dialogOpen} onOpenChange={setDialogOpen}>
         <DialogContent>
           <DialogHeader>
             <DialogTitle>{editing ? "Edit Staff Member" : "Add Staff Member"}</DialogTitle>

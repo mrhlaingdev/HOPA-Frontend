@@ -83,7 +83,7 @@ function CoursesPage() {
   const teacherName = (teacherId?: string, instructor?: string) => instructor || (teachers.find((teacher) => teacher.id === teacherId)?.name ?? "Unassigned");
   // Completion Toggle Handler
   const handleToggleCompletion = async (studentId: string, studentName: string) => {
-    if (!course) return;
+    if (!canManage || !course) return;
     try {
       await actions.toggleCompletion(studentId, course.id, course.date);
       toast.success(`Updated completion for ${studentName}`);
@@ -288,14 +288,19 @@ function CoursesPage() {
                 return (
                   <li
                     key={s.id}
-                    className="flex items-center gap-3 py-2.5 text-sm cursor-pointer hover:bg-white/5 px-2 rounded-lg transition-colors"
-                    onClick={() => handleToggleCompletion(s.id, s.name)}
+                    className={`flex items-center gap-3 py-2.5 text-sm px-2 rounded-lg transition-colors ${
+                      canManage ? "cursor-pointer hover:bg-white/5" : ""
+                    }`}
+                    onClick={
+                      canManage ? () => void handleToggleCompletion(s.id, s.name) : undefined
+                    }
                   >
                     <input
                       type="checkbox"
                       checked={!!done}
+                      disabled={!canManage}
                       onChange={() => {}} // Controlled via parent li click
-                      className="size-4 accent-mint cursor-pointer"
+                      className="size-4 accent-mint enabled:cursor-pointer"
                       aria-label={`${s.name} completed ${course.title}`}
                     />
                     <span className="select-none font-medium">{s.name}</span>
@@ -315,7 +320,7 @@ function CoursesPage() {
         </Panel>
       </div>
 
-      <Dialog open={!!editing} onOpenChange={(open) => !open && setEditing(null)}>
+      <Dialog open={canManage && !!editing} onOpenChange={(open) => !open && setEditing(null)}>
         <DialogContent>
           <DialogHeader>
             <DialogTitle>Edit Course</DialogTitle>

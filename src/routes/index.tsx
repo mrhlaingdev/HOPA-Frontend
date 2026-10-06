@@ -96,7 +96,8 @@ function Overview() {
   const [isRestoringBackup, setIsRestoringBackup] = useState(false);
   const [pendingBackup, setPendingBackup] = useState<SystemBackup | null>(null);
   const backupFileInput = useRef<HTMLInputElement>(null);
-  const canManageSystem = usePermission("manage-finance");
+  const canManageSystem = usePermission("delete-records");
+  const canManageRecords = usePermission("manage-students");
   const displayedDashboardStats = dashboardStats ?? {
     totalStudents: students.length,
     totalTeachers: teachers.length,
@@ -582,7 +583,7 @@ function Overview() {
           </Panel>
         </section>
 
-        <section aria-label="Quick actions">
+        {canManageRecords && <section aria-label="Quick actions">
           <div className="glass w-full rounded-2xl border border-white/10 bg-slate-900/60 p-5 backdrop-blur-xl">
             <p className="text-muted-foreground text-sm">Quick Actions</p>
             <div className="mt-3 grid grid-cols-2 gap-3 sm:grid-cols-4">
@@ -632,7 +633,7 @@ function Overview() {
             </div>
             <p className="mt-3 text-[11px] text-muted-foreground">Record data in one tap</p>
           </div>
-        </section>
+        </section>}
 
         {canManageSystem && (
           <section aria-label="Backup and restore">
@@ -681,7 +682,7 @@ function Overview() {
       </div>
 
       <AlertDialog
-        open={!!pendingBackup}
+        open={canManageSystem && !!pendingBackup}
         onOpenChange={(open) => {
           if (!open && !isRestoringBackup) setPendingBackup(null);
         }}

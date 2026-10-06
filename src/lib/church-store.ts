@@ -662,6 +662,10 @@ export const actions = {
     await updateResource(API_ENDPOINTS.transactions, txnId, txn, "transaction");
     await loadTransactions();
   },
+  async deleteTxn(txnId: string) {
+    await deleteResource(API_ENDPOINTS.transactions, txnId, "transaction");
+    await loadTransactions();
+  },
 };
 
 function toEventApiPayload(event: Omit<ChurchEvent, "id">) {

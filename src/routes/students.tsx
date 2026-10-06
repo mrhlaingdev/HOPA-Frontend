@@ -181,7 +181,7 @@ function StudentsPage() {
             </div>
           }
         >
-          {adding && (
+          {adding && canManage && (
             <form
               className="mb-4 grid grid-cols-4 gap-2 rounded-xl glass-inset p-3"
               onSubmit={async (e) => {
@@ -494,7 +494,7 @@ function StudentsPage() {
         </div>
       </div>
 
-      <Dialog open={!!editing} onOpenChange={(open) => !open && setEditing(null)}>
+      <Dialog open={canManage && !!editing} onOpenChange={(open) => !open && setEditing(null)}>
         <DialogContent>
           <DialogHeader>
             <DialogTitle>Edit Student</DialogTitle>

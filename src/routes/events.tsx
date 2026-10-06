@@ -76,6 +76,7 @@ const emptyForm = (): EventForm => ({
 
 function EventsPage() {
   const canManage = usePermission("manage-events");
+  const canDelete = usePermission("delete-records");
   const [events, setEvents] = useState<ChurchEvent[]>([]);
   const [query, setQuery] = useState("");
   const [selectedYear, setSelectedYear] = useState("all");
@@ -167,6 +168,7 @@ function EventsPage() {
 
   async function submitEvent(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
+    if (!canManage) return;
     const validationError = validateEvent(form);
     setFormError(validationError);
     if (validationError) return;
@@ -191,7 +193,7 @@ function EventsPage() {
   }
 
   async function confirmDeleteEvent() {
-    if (!eventToDelete) return;
+    if (!canDelete || !eventToDelete) return;
     setIsDeleting(true);
     try {
       setEvents(await actions.deleteEvent(eventToDelete.id));
@@ -430,28 +432,32 @@ function EventsPage() {
                   {formatEventAmount(detailEvent.donations)}
                 </DetailField>
               </dl>
-              {canManage && (
+              {(canManage || canDelete) && (
                 <div className="flex flex-wrap justify-end gap-2 border-t border-white/10 pt-4">
-                  <Button
-                    type="button"
-                    variant="destructive"
-                    disabled={isDeleting}
-                    onClick={() => setEventToDelete(detailEvent)}
-                  >
-                    <Trash2 className="size-4" />
-                    Delete
-                  </Button>
-                  <Button
-                    type="button"
-                    onClick={() => {
-                      const eventToEdit = detailEvent;
-                      setDetailEvent(null);
-                      openEditDialog(eventToEdit);
-                    }}
-                  >
-                    <Pencil className="size-4" />
-                    Edit Event
-                  </Button>
+                  {canDelete && (
+                    <Button
+                      type="button"
+                      variant="destructive"
+                      disabled={isDeleting}
+                      onClick={() => setEventToDelete(detailEvent)}
+                    >
+                      <Trash2 className="size-4" />
+                      Delete
+                    </Button>
+                  )}
+                  {canManage && (
+                    <Button
+                      type="button"
+                      onClick={() => {
+                        const eventToEdit = detailEvent;
+                        setDetailEvent(null);
+                        openEditDialog(eventToEdit);
+                      }}
+                    >
+                      <Pencil className="size-4" />
+                      Edit Event
+                    </Button>
+                  )}
                 </div>
               )}
             </>
@@ -460,7 +466,7 @@ function EventsPage() {
       </Dialog>
 
       <AlertDialog
-        open={!!eventToDelete}
+        open={canDelete && !!eventToDelete}
         onOpenChange={(open) => {
           if (!open && !isDeleting) setEventToDelete(null);
         }}
@@ -488,7 +494,7 @@ function EventsPage() {
         </AlertDialogContent>
       </AlertDialog>
 
-      <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
+      <Dialog open={canManage && dialogOpen} onOpenChange={setDialogOpen}>
         <DialogContent className="max-h-[90vh] overflow-y-auto sm:max-w-xl">
           <DialogHeader>
             <DialogTitle>{editing ? "Edit Event" : "Add Event"}</DialogTitle>

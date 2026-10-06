@@ -3,6 +3,7 @@ import { useState } from "react";
 import { CalendarCheck2, Pencil } from "lucide-react";
 import { AppShell, Panel } from "@/components/AppShell";
 import { ExportDropdown } from "@/components/ExportDropdown";
+import { usePermission } from "@/lib/auth";
 import { EmptyState } from "@/components/EmptyState";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Button } from "@/components/ui/button";
@@ -42,6 +43,7 @@ export const Route = createFileRoute("/attendance")({
 
 function AttendancePage() {
   const { students, attendance, isLoading } = useChurch();
+  const canManage = usePermission("manage-students");
   // ယနေ့ သို့မဟုတ် ယနေ့ထက် မကျော်သော အနီးစပ်ဆုံး တနင်္ဂနွေနေ့ရက်စွဲကို ရှာယူမည်
   const getInitialSunday = () => {
   const today = new Date().toISOString().split("T")[0] ?? "";
@@ -71,6 +73,7 @@ const recent = currentIndex !== -1
     studentName: string,
     currentlyPresent: boolean,
   ) => {
+    if (!canManage) return;
     try {
       await actions.updateAttendance(studentId, {
         date: week!,
@@ -125,8 +128,9 @@ const recent = currentIndex !== -1
                     <input
                       type="checkbox"
                       checked={present}
-                      onChange={() => handleToggleAttendance(s.id, s.name, present)}
-                      className="size-4 accent-mint cursor-pointer"
+                      disabled={!canManage}
+                      onChange={() => void handleToggleAttendance(s.id, s.name, present)}
+                      className="size-4 accent-mint enabled:cursor-pointer"
                       aria-label={`${s.name} present`}
                     />
                     <div
@@ -140,7 +144,7 @@ const recent = currentIndex !== -1
                     <span className={`ml-auto text-[11px] font-medium ${present ? "text-mint" : "text-rose"}`}>
                       {present ? "Present" : "Absent"}
                     </span>
-                    <Button
+                    {canManage && <Button
                       type="button"
                       variant="ghost"
                       size="sm"
@@ -153,7 +157,7 @@ const recent = currentIndex !== -1
                     >
                       <Pencil className="size-3.5" />
                       <span className="sr-only">Edit</span>
-                    </Button>
+                    </Button>}
                   </li>
                 );
               })}
@@ -253,7 +257,7 @@ const recent = currentIndex !== -1
                         {attendanceRate(attendance, s.id)}%
                       </td>
                       <td className="py-2 text-right">
-                        <Button
+                        {canManage && <Button
                           type="button"
                           variant="ghost"
                           size="sm"
@@ -269,7 +273,7 @@ const recent = currentIndex !== -1
                         >
                           <Pencil className="size-3.5" />
                           <span className="sr-only">Edit</span>
-                        </Button>
+                        </Button>}
                       </td>
                     </tr>
                   ))}
@@ -280,7 +284,7 @@ const recent = currentIndex !== -1
         </Panel>
       </div>
 
-      <Dialog open={!!editing} onOpenChange={(open) => !open && setEditing(null)}>
+      <Dialog open={canManage && !!editing} onOpenChange={(open) => !open && setEditing(null)}>
         <DialogContent>
           <DialogHeader>
             <DialogTitle>Edit Attendance{editing ? ` · ${editing.name}` : ""}</DialogTitle>
