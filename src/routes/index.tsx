@@ -1,5 +1,5 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import {
   BookOpen,
   BookOpenCheck,
@@ -29,7 +29,6 @@ import {
 import { CHURCH_LEADERSHIP } from "@/lib/constants/leadership";
 import {
   ALL_DATE_FILTER,
-  attendanceRate,
   formatApiError,
   loadDashboardStats,
   loadEvents,
@@ -43,9 +42,7 @@ import {
 } from "@/lib/church-store";
 import {
   type ChurchEvent,
-  formatDate,
   formatShortThb,
-  initials,
   parseNumericValue,
 } from "@/lib/church-data";
 import { usePermission } from "@/lib/auth";
@@ -95,7 +92,6 @@ function Overview() {
   const attendance = storedAttendance?.filter(Boolean) || [];
   const completions = storedCompletions?.filter(Boolean) || [];
   const txns = storedTxns?.filter(Boolean) || [];
-  const [q, setQ] = useState("");
   const [dateFilter, setDateFilter] = useState(ALL_DATE_FILTER);
   const [events, setEvents] = useState<ChurchEvent[]>([]);
   const [areEventsLoading, setAreEventsLoading] = useState(true);
@@ -157,8 +153,6 @@ function Overview() {
   }, []);
 
   // Total Students အတွက် စနစ်ထဲရှိသမျှ ကျောင်းသားအကုန်လုံးကို ယူပါမည်
-  const filteredStudents = students;
-
   // Active Courses အတွက် Archived မဖြစ်သေးသော သင်တန်းများကို ရေတွက်ပါမည်
   /* Line 59 ကို ဒီအတိုင်း လဲပေးပါ */
   const activeCoursesCount = courses.filter((c) => !(c as any)?.archived).length;
@@ -167,9 +161,6 @@ function Overview() {
     (completion) => completion?.date && matchesDate(completion.date, dateFilter),
   ).length;
 
-  const filteredAttendance = attendance.filter(
-    (record) => record?.includes("|") && matchesDate(record.split("|")[1] ?? "", dateFilter),
-  );
   const month = monthlyTotals(txns || [], dateFilter) || {
     income: 0,
     expense: 0,
@@ -188,14 +179,6 @@ function Overview() {
   const totalIncome = month.income + eventDonations;
   const totalExpense = month.expense + eventExpenses;
   const netBalance = totalIncome - totalExpense;
-  const recentWeeks = Array.from(
-    new Set(attendance?.map((record) => record?.split("|")[1] ?? "") || []),
-  )
-    .filter((date) => matchesDate(date, dateFilter))
-    .sort()
-    .slice(-7);
-  const lastWeek = recentWeeks[recentWeeks.length - 1];
-
   async function downloadFullBackup() {
     setIsBackupLoading(true);
     try {
@@ -258,14 +241,8 @@ function Overview() {
     }
   }
 
-  // Student Directory တွင် ပြသရန် စနစ်ထဲရှိ ကျောင်းသားများထဲမှ ရှာဖွေပါမည်
-  const filtered = useMemo(
-    () => students.filter((s) => s?.name?.toLowerCase?.().includes(q.toLowerCase())),
-    [students, q],
-  );
-
   return (
-    <AppShell search={q} onSearch={setQ}>
+    <AppShell>
       <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
         <div>
           <h1 className="font-display text-2xl font-semibold">Overview</h1>
@@ -427,107 +404,6 @@ function Overview() {
               </p>
             </div>
           </div>
-        </section>
-
-        <section
-          aria-label="Attendance and student directory"
-          className="grid grid-cols-1 items-stretch gap-4 lg:grid-cols-2"
-        >
-          <Panel
-            title="Weekly Attendance"
-            className="h-[380px] flex flex-col justify-between border border-white/10 bg-slate-900/60 backdrop-blur-xl"
-            right={
-              <span className="text-[11px] text-muted-foreground">
-                {recentWeeks.length > 0
-                  ? `Last 7 Sundays · ${formatDate(recentWeeks[0]!)} – ${formatDate(lastWeek!)}`
-                  : "No attendance data for this period"}
-              </span>
-            }
-          >
-            <div className="h-[280px] max-h-[280px] overflow-y-auto overflow-x-hidden pr-2 custom-scrollbar">
-              <div className="space-y-2">
-                {filteredStudents.map((s) => (
-                  <div key={s.id} className="flex items-center gap-3">
-                    <div className="w-28 truncate text-sm opacity-85">{s.name}</div>
-                    <div className="flex gap-1.5">
-                      {recentWeeks.map((d) => {
-                        const present = filteredAttendance.includes(`${s.id}|${d}`);
-                        return (
-                          <span
-                            key={d}
-                            title={formatDate(d)}
-                            className={`size-6 rounded-md grid place-items-center text-[10px] ${
-                              present ? "bg-mint/25 text-mint" : "bg-rose/20 text-rose"
-                            }`}
-                          >
-                            {present ? "✓" : "✕"}
-                          </span>
-                        );
-                      })}
-                    </div>
-                    <span className="ml-auto text-[11px] text-muted-foreground">
-                      {attendanceRate(filteredAttendance, s.id)}% selected
-                    </span>
-                  </div>
-                ))}
-              </div>
-            </div>
-          </Panel>
-
-          <Panel
-            title="Student Directory"
-            className="h-[380px] flex flex-col justify-between border border-white/10 bg-slate-900/60 backdrop-blur-xl"
-            right={
-              <input
-                value={q}
-                onChange={(e) => setQ(e.target.value)}
-                className="field px-3 py-1.5 text-xs"
-                placeholder="Search name…"
-                aria-label="Search students"
-              />
-            }
-          >
-            <div className="h-[280px] max-h-[280px] overflow-y-auto overflow-x-hidden pr-2 custom-scrollbar">
-              <div className="divide-y divide-white/5 text-sm">
-                {filtered.map((s) => {
-                  const rate = attendanceRate(attendance, s.id);
-                  return (
-                    <Link
-                      key={s.id}
-                      to="/students"
-                      search={{ q: s.name }}
-                      className="flex items-center gap-3 py-2.5"
-                    >
-                      <div
-                        className="size-8 rounded-full grid place-items-center text-[11px] font-semibold"
-                        style={{ backgroundImage: s.gradient }}
-                      >
-                        {initials(s.name)}
-                      </div>
-                      <div className="leading-tight">
-                        <p>{s.name}</p>
-                        <p className="text-[11px] text-muted-foreground">
-                          Grade {s.grade} · Age {s.age}
-                        </p>
-                      </div>
-                      <span
-                        className={`ml-auto rounded-full text-[11px] px-2.5 py-1 ${
-                          rate >= 85 ? "bg-mint/15 text-mint" : "bg-amber/15 text-amber"
-                        }`}
-                      >
-                        {rate}% attended
-                      </span>
-                    </Link>
-                  );
-                })}
-                {filtered.length === 0 && (
-                  <p className="py-6 text-center text-xs text-muted-foreground">
-                    No students found.
-                  </p>
-                )}
-              </div>
-            </div>
-          </Panel>
         </section>
 
         <section

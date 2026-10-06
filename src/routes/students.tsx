@@ -148,6 +148,7 @@ function StudentsPage() {
     currentYearSessions.length === 0
       ? 0
       : Math.round((currentYearAttended / currentYearSessions.length) * 100);
+  const recentSundays = allSundays.filter((date) => date <= today).slice(-7);
   const studentCourseHistory = student
     ? courses
         .map((course) => {
@@ -587,6 +588,77 @@ function StudentsPage() {
           )}
         </div>
       </div>
+
+      <Panel
+        title="Weekly Attendance"
+        mm="Latest seven Sunday sessions for the students shown in the directory"
+        className="mt-4"
+      >
+        <div className="overflow-x-auto">
+          <table className="min-w-[48rem] w-full text-xs">
+            <thead>
+              <tr className="border-b border-white/10 text-left text-[10px] uppercase tracking-[0.1em] text-muted-foreground">
+                <th className="py-2 pr-3 font-medium">Student</th>
+                {recentSundays.map((date) => (
+                  <th key={date} className="px-2 py-2 text-center font-medium">
+                    <span title={formatDate(date)}>{formatDate(date)}</span>
+                  </th>
+                ))}
+                <th className="py-2 pl-3 text-right font-medium">Attendance</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-white/5">
+              {rows.map((studentRow) => {
+                const attended = recentSundays.filter((date) =>
+                  attendance.includes(`${studentRow.id}|${date}`),
+                ).length;
+                const rate =
+                  recentSundays.length === 0
+                    ? 0
+                    : Math.round((attended / recentSundays.length) * 100);
+                return (
+                  <tr key={studentRow.id}>
+                    <th className="py-2 pr-3 text-left font-medium">
+                      {studentRow.name}
+                    </th>
+                    {recentSundays.map((date) => {
+                      const present = attendance.includes(`${studentRow.id}|${date}`);
+                      return (
+                        <td key={date} className="px-2 py-2 text-center">
+                          <span
+                            title={`${formatDate(date)}: ${present ? "Attended" : "Absent"}`}
+                            aria-label={`${formatDate(date)}: ${present ? "Attended" : "Absent"}`}
+                            className={`inline-grid size-6 place-items-center rounded-md text-[10px] ${
+                              present
+                                ? "bg-mint/15 text-mint"
+                                : "bg-rose/15 text-rose"
+                            }`}
+                          >
+                            {present ? "✓" : "—"}
+                          </span>
+                        </td>
+                      );
+                    })}
+                    <td className="py-2 pl-3 text-right text-muted-foreground">
+                      {rate}%
+                    </td>
+                  </tr>
+                );
+              })}
+              {rows.length === 0 && (
+                <tr>
+                  <td
+                    colSpan={recentSundays.length + 2}
+                    className="py-6 text-center text-muted-foreground"
+                  >
+                    No students match the current directory filters.
+                  </td>
+                </tr>
+              )}
+            </tbody>
+          </table>
+        </div>
+      </Panel>
 
       <Dialog open={canManage && !!editing} onOpenChange={(open) => !open && setEditing(null)}>
         <DialogContent>
