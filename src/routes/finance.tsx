@@ -33,6 +33,7 @@ import {
 import {
   type ChurchEvent,
   formatDate,
+  localDateString,
   formatShortThb,
   formatThb,
   parseNumericValue,
@@ -62,14 +63,14 @@ export const Route = createFileRoute("/finance")({
   component: FinancePage,
 });
 
-const emptyTxn = {
-  date: "2026-09-06",
+const emptyTxn = () => ({
+  date: localDateString(),
   type: "income" as "income" | "expense",
   category: "Sunday Offering",
   description: "",
   amount: 0,
   receipt: undefined as string | undefined,
-};
+});
 
 function FinancePage() {
   const canManage = usePermission("manage-finance");
@@ -80,11 +81,11 @@ function FinancePage() {
   const [eventLoadError, setEventLoadError] = useState("");
   const [q, setQ] = useState("");
   const [dateFilter, setDateFilter] = useState(ALL_DATE_FILTER);
-  const [form, setForm] = useState(emptyTxn);
+  const [form, setForm] = useState(emptyTxn());
   const [formError, setFormError] = useState("");
   const [viewing, setViewing] = useState<string | null>(null);
   const [editing, setEditing] = useState<(typeof txns)[number] | null>(null);
-  const [editForm, setEditForm] = useState(emptyTxn);
+  const [editForm, setEditForm] = useState(emptyTxn());
   const [editError, setEditError] = useState("");
 
   useEffect(() => {
@@ -230,7 +231,7 @@ function FinancePage() {
       transaction.category.toLowerCase().includes(q.toLowerCase()),
   );
 
-  const validateTransaction = (transaction: typeof emptyTxn) => {
+  const validateTransaction = (transaction: ReturnType<typeof emptyTxn>) => {
     if (!transaction.date) return "Transaction date is required.";
     if (!transaction.category.trim()) return "Category is required.";
     if (!transaction.description.trim()) return "Description is required.";
@@ -448,7 +449,7 @@ function FinancePage() {
                 try {
                   await actions.addTxn({ ...form, receipt: form.receipt });
                   const description = form.description;
-                  setForm(emptyTxn);
+                  setForm(emptyTxn());
                   toast.success(`Successfully added ${description}!`);
                 } catch (error) {
                   toast.error(formatApiError(error, "Unable to create transaction"));
@@ -625,7 +626,7 @@ function FinancePage() {
                 });
                 setEditing(null);
                 const description = editForm.description;
-                setEditForm(emptyTxn);
+                setEditForm(emptyTxn());
                 toast.success(`Successfully updated ${description}!`);
               } catch (error) {
                 toast.error(formatApiError(error, "Unable to update transaction"));

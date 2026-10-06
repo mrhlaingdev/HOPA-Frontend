@@ -16,7 +16,7 @@ import {
   formatApiError,
   useChurch,
 } from "@/lib/church-store";
-import { formatDate, initials } from "@/lib/church-data";
+import { formatDate, initials, localDateString } from "@/lib/church-data";
 import { toast } from "sonner";
 
 export const Route = createFileRoute("/attendance")({
@@ -46,7 +46,7 @@ function AttendancePage() {
   const canManage = usePermission("manage-students");
   // ယနေ့ သို့မဟုတ် ယနေ့ထက် မကျော်သော အနီးစပ်ဆုံး တနင်္ဂနွေနေ့ရက်စွဲကို ရှာယူမည်
   const getInitialSunday = () => {
-  const today = new Date().toISOString().split("T")[0] ?? "";
+  const today = localDateString();
   const pastSundays = allSundays.filter((date) => date <= today);
   return pastSundays.length > 0 
     ? (pastSundays[pastSundays.length - 1] ?? "") 
@@ -59,7 +59,7 @@ function AttendancePage() {
   const [editForm, setEditForm] = useState({ date: week, present: false });
   
 const currentIndex = week ? allSundays.indexOf(week) : -1;
-const todayStr = new Date().toISOString().split("T")[0] ?? "";
+const todayStr = localDateString();
 const recent = currentIndex !== -1 
   ? allSundays.slice(Math.max(0, currentIndex - 9), currentIndex + 1)
   : allSundays.filter((d) => d <= todayStr).slice(-10);

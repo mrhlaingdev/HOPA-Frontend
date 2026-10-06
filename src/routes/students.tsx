@@ -14,7 +14,7 @@ import {
   formatApiError,
   useChurch,
 } from "@/lib/church-store";
-import { formatDate, initials, isGender } from "@/lib/church-data";
+import { formatDate, initials, isGender, localDateString } from "@/lib/church-data";
 import { toast } from "sonner";
 import { usePermission } from "@/lib/auth";
 
@@ -44,7 +44,7 @@ export const Route = createFileRoute("/students")({
   component: StudentsPage,
 });
 
-const emptyForm = {
+const emptyForm = () => ({
   name: "",
   nameMm: "",
   gender: "",
@@ -53,8 +53,8 @@ const emptyForm = {
   parentName: "",
   parentPhone: "",
   address: "",
-  enrolled: "2026-09-06",
-};
+  enrolled: localDateString(),
+});
 
 function StudentsPage() {
   const canManage = usePermission("manage-students");
@@ -69,13 +69,13 @@ function StudentsPage() {
   const [selected, setSelected] = useState(students[0]?.id ?? "");
   const [adding, setAdding] = useState(false);
   const [deleting, setDeleting] = useState(false);
-  const [form, setForm] = useState(emptyForm);
+  const [form, setForm] = useState(emptyForm());
   const [formError, setFormError] = useState("");
   const [editing, setEditing] = useState<(typeof students)[number] | null>(null);
-  const [editForm, setEditForm] = useState(emptyForm);
+  const [editForm, setEditForm] = useState(emptyForm());
   const [editError, setEditError] = useState("");
 
-  function validateStudentForm(studentForm: typeof emptyForm) {
+  function validateStudentForm(studentForm: ReturnType<typeof emptyForm>) {
     if (!studentForm.name.trim()) return "Full name is required.";
     if (!isGender(studentForm.gender)) return "Gender is required.";
     if (!studentForm.parentName.trim()) return "Parent name is required.";
@@ -224,7 +224,7 @@ function StudentsPage() {
                 try {
                   const id = await actions.addStudent({ ...form, gender });
                   if (id) setSelected(id);
-                  setForm(emptyForm);
+                  setForm(emptyForm());
                   setAdding(false);
                   toast.success(`Successfully added ${form.name}!`);
                 } catch (error) {
@@ -754,7 +754,7 @@ function StudentsPage() {
               try {
                 await actions.updateStudent(editing.id, { ...editForm, gender });
                 setEditing(null);
-                setEditForm(emptyForm);
+                setEditForm(emptyForm());
                 toast.success(`Successfully updated ${editForm.name}!`);
               } catch (error) {
                 toast.error(formatApiError(error, "Unable to update student"));

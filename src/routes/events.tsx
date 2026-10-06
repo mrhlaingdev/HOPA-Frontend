@@ -30,6 +30,7 @@ import {
   type ChurchEvent,
   formatDate,
   formatThb,
+  localDateString,
   parseNumericValue,
 } from "@/lib/church-data";
 import { usePermission } from "@/lib/auth";
@@ -66,7 +67,7 @@ const exportHeaders = [
 
 const emptyForm = (): EventForm => ({
   title: "",
-  date: new Date().toLocaleDateString("en-CA"),
+  date: localDateString(),
   location: "",
   attendeesCount: 0,
   foodMenu: "",

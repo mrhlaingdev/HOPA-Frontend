@@ -15,7 +15,7 @@ import {
   matchesDate,
   useChurch,
 } from "@/lib/church-store";
-import { formatDate } from "@/lib/church-data";
+import { formatDate, localDateString } from "@/lib/church-data";
 import { toast } from "sonner";
 import { usePermission } from "@/lib/auth";
 
@@ -48,13 +48,14 @@ function CoursesPage() {
   const [q, setQ] = useState("");
   const [dateFilter, setDateFilter] = useState(ALL_DATE_FILTER);
   const [selected, setSelected] = useState(courses[0]?.id ?? "");
-  const [form, setForm] = useState({
+  const emptyCourseForm = () => ({
     title: "",
-    date: "2026-09-13",
+    date: localDateString(),
     time: "10:30",
     instructor: "",
     teacherId: "",
   });
+  const [form, setForm] = useState(emptyCourseForm);
   const [editing, setEditing] = useState<(typeof courses)[number] | null>(null);
   const [editForm, setEditForm] = useState(form);
   const [formError, setFormError] = useState("");
@@ -255,7 +256,7 @@ function CoursesPage() {
               try {
                 await actions.addCourse(form);
                 const courseName = form.title;
-                setForm({ title: "", date: "2026-09-13", time: "10:30", instructor: "", teacherId: "" });
+                setForm(emptyCourseForm());
                 toast.success(`Successfully added ${courseName}!`);
               } catch (error) {
                 toast.error(formatApiError(error, "Unable to create course"));
@@ -339,7 +340,7 @@ function CoursesPage() {
                 await actions.updateCourse(editing.id, editForm);
                 const courseName = editForm.title;
                 setEditing(null);
-                setEditForm({ title: "", date: "2026-09-13", time: "10:30", instructor: "", teacherId: "" });
+                setEditForm(emptyCourseForm());
                 toast.success(`Successfully updated ${courseName}!`);
               } catch (error) {
                 toast.error(formatApiError(error, "Unable to update course"));
