@@ -9,7 +9,6 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import { actions, formatApiError, useChurch } from "@/lib/church-store";
 import { usePermission } from "@/lib/auth";
 import { toast } from "sonner";
-import { isGender } from "@/lib/church-data";
 
 export const Route = createFileRoute("/staff")({
   head: () => ({ meta: [{ title: "Staff Directory — House Of Prayer Assembly" }] }),
@@ -69,19 +68,22 @@ function StaffPage() {
   }
   function validate() {
     if (!form.name.trim()) return "Staff name is required.";
-    if (!form.position.trim()) return "Position is required.";
-    if (!form.phone.trim()) return "Phone number is required.";
     if (!Number.isFinite(form.salary) || form.salary < 0) return "Salary must be zero or greater.";
     if (form.email && !/^\S+@\S+\.\S+$/.test(form.email)) return "Enter a valid email address.";
     return "";
   }
   async function save() {
-    const gender = form.gender;
     const validationError = validate();
-    const formError = validationError || (isGender(gender) ? "" : "Gender is required.");
-    setError(formError);
-    if (formError || !isGender(gender)) return;
-    const staffForm = { ...form, gender };
+    setError(validationError);
+    if (validationError) return;
+    const staffForm = {
+      ...form,
+      gender: form.gender === "Male" || form.gender === "Female" ? form.gender : "Unknown",
+      position: form.position || "",
+      phone: form.phone || "",
+      email: form.email || "",
+      salary: Number(form.salary) || 0,
+    };
     try {
       if (editing) await actions.updateStaff(editing.id, staffForm);
       else await actions.addStaff(staffForm);
@@ -236,11 +238,10 @@ function StaffPage() {
               Gender
               <select
                 className="field mt-1 w-full px-3 py-2 text-xs"
-                required
                 value={form.gender}
                 onChange={(event) => setForm({ ...form, gender: event.target.value })}
               >
-                <option value="">Select gender</option>
+                <option value="">Unknown</option>
                 <option value="Male">Male</option>
                 <option value="Female">Female</option>
               </select>

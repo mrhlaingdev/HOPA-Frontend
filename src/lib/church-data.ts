@@ -1,4 +1,4 @@
-export type Gender = "Male" | "Female";
+export type Gender = "Male" | "Female" | "Unknown";
 
 export function isGender(value: unknown): value is Gender {
   return value === "Male" || value === "Female";

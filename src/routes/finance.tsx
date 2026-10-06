@@ -232,9 +232,6 @@ function FinancePage() {
   );
 
   const validateTransaction = (transaction: ReturnType<typeof emptyTxn>) => {
-    if (!transaction.date) return "Transaction date is required.";
-    if (!transaction.category.trim()) return "Category is required.";
-    if (!transaction.description.trim()) return "Description is required.";
     const amount = Number(transaction.amount);
     if (!Number.isFinite(amount) || amount <= 0)
       return "Amount must be greater than 0.";
@@ -447,7 +444,13 @@ function FinancePage() {
                 setFormError(validationError);
                 if (validationError) return;
                 try {
-                  await actions.addTxn({ ...form, receipt: form.receipt });
+                  await actions.addTxn({
+                    ...form,
+                    date: form.date || localDateString(),
+                    category: form.category || "",
+                    description: form.description || "",
+                    receipt: form.receipt,
+                  });
                   const description = form.description;
                   setForm(emptyTxn());
                   toast.success(`Successfully added ${description}!`);
@@ -459,10 +462,10 @@ function FinancePage() {
               {formError && <p className="text-xs text-rose">{formError}</p>}
               <div className="grid grid-cols-2 gap-2">
                 <label className="text-xs font-medium" htmlFor="transaction-type">Transaction Type<select id="transaction-type" value={form.type} onChange={(e) => setForm({ ...form, type: e.target.value as "income" | "expense" })} className="field mt-1 w-full px-3 py-2 text-xs"><option value="income">Income</option><option value="expense">Expense</option></select></label>
-                <label className="text-xs font-medium" htmlFor="transaction-date">Transaction Date<input id="transaction-date" type="date" value={form.date} onChange={(e) => setForm({ ...form, date: e.target.value })} className="field mt-1 w-full px-3 py-2 text-xs" required /></label>
+                <label className="text-xs font-medium" htmlFor="transaction-date">Transaction Date<input id="transaction-date" type="date" value={form.date} onChange={(e) => setForm({ ...form, date: e.target.value })} className="field mt-1 w-full px-3 py-2 text-xs" /></label>
               </div>
-              <label className="block text-xs font-medium" htmlFor="transaction-category">Category<input id="transaction-category" className="field mt-1 w-full px-3 py-2 text-xs" placeholder="e.g. Sunday Offering or Supplies" required value={form.category} onChange={(e) => setForm({ ...form, category: e.target.value })} /></label>
-              <label className="block text-xs font-medium" htmlFor="transaction-description">Description<input id="transaction-description" className="field mt-1 w-full px-3 py-2 text-xs" placeholder="e.g. September offering" required value={form.description} onChange={(e) => setForm({ ...form, description: e.target.value })} /></label>
+              <label className="block text-xs font-medium" htmlFor="transaction-category">Category<input id="transaction-category" className="field mt-1 w-full px-3 py-2 text-xs" placeholder="Optional" value={form.category} onChange={(e) => setForm({ ...form, category: e.target.value })} /></label>
+              <label className="block text-xs font-medium" htmlFor="transaction-description">Description<input id="transaction-description" className="field mt-1 w-full px-3 py-2 text-xs" placeholder="Optional" value={form.description} onChange={(e) => setForm({ ...form, description: e.target.value })} /></label>
               <label className="block text-xs font-medium" htmlFor="transaction-amount">Amount (฿)<input id="transaction-amount" className="field mt-1 w-full px-3 py-2 text-xs" type="number" min="0.01" step="0.01" required placeholder="e.g. 50000 THB" value={form.amount || ""} onChange={(e) => setForm({ ...form, amount: Number(e.target.value) })} /></label>
               <button className="w-full rounded-xl gradient-brand py-2.5 text-xs font-medium">
                 Save Transaction
@@ -622,6 +625,9 @@ function FinancePage() {
               try {
                 await actions.updateTxn(editing.id, {
                   ...editForm,
+                  date: editForm.date || localDateString(),
+                  category: editForm.category || "",
+                  description: editForm.description || "",
                   amount: Number(editForm.amount),
                 });
                 setEditing(null);
@@ -636,10 +642,10 @@ function FinancePage() {
             {editError && <p className="text-xs text-rose">{editError}</p>}
             <div className="grid grid-cols-2 gap-2">
               <label className="text-xs font-medium" htmlFor="edit-transaction-type">Transaction Type<select id="edit-transaction-type" className="field mt-1 w-full px-3 py-2 text-xs" value={editForm.type} onChange={(e) => setEditForm({ ...editForm, type: e.target.value as "income" | "expense" })}><option value="income">Income</option><option value="expense">Expense</option></select></label>
-              <label className="text-xs font-medium" htmlFor="edit-transaction-date">Transaction Date<input id="edit-transaction-date" className="field mt-1 w-full px-3 py-2 text-xs" type="date" value={editForm.date} required onChange={(e) => setEditForm({ ...editForm, date: e.target.value })} /></label>
+              <label className="text-xs font-medium" htmlFor="edit-transaction-date">Transaction Date<input id="edit-transaction-date" className="field mt-1 w-full px-3 py-2 text-xs" type="date" value={editForm.date} onChange={(e) => setEditForm({ ...editForm, date: e.target.value })} /></label>
             </div>
-            <label className="block text-xs font-medium" htmlFor="edit-transaction-category">Category<input id="edit-transaction-category" className="field mt-1 w-full px-3 py-2 text-xs" placeholder="e.g. Sunday Offering or Supplies" required value={editForm.category} onChange={(e) => setEditForm({ ...editForm, category: e.target.value })} /></label>
-            <label className="block text-xs font-medium" htmlFor="edit-transaction-description">Description<input id="edit-transaction-description" className="field mt-1 w-full px-3 py-2 text-xs" placeholder="e.g. September offering" required value={editForm.description} onChange={(e) => setEditForm({ ...editForm, description: e.target.value })} /></label>
+            <label className="block text-xs font-medium" htmlFor="edit-transaction-category">Category<input id="edit-transaction-category" className="field mt-1 w-full px-3 py-2 text-xs" placeholder="Optional" value={editForm.category} onChange={(e) => setEditForm({ ...editForm, category: e.target.value })} /></label>
+            <label className="block text-xs font-medium" htmlFor="edit-transaction-description">Description<input id="edit-transaction-description" className="field mt-1 w-full px-3 py-2 text-xs" placeholder="Optional" value={editForm.description} onChange={(e) => setEditForm({ ...editForm, description: e.target.value })} /></label>
             <label className="block text-xs font-medium" htmlFor="edit-transaction-amount">Amount (฿)<input id="edit-transaction-amount" className="field mt-1 w-full px-3 py-2 text-xs" type="number" min="0.01" step="0.01" required placeholder="e.g. 50000 THB" value={editForm.amount || ""} onChange={(e) => setEditForm({ ...editForm, amount: Number(e.target.value) })} /></label>
             <Button type="submit" className="w-full">
               Save changes

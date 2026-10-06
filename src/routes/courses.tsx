@@ -63,9 +63,6 @@ function CoursesPage() {
 
   function validateCourse(courseForm: typeof form) {
     if (!courseForm.title.trim()) return "Course name is required.";
-    if (!courseForm.date) return "Course date is required.";
-    if (!courseForm.time) return "Course time is required.";
-    if (!courseForm.instructor.trim()) return "Instructor is required.";
     return "";
   }
 
@@ -265,9 +262,9 @@ function CoursesPage() {
           >
             {formError && <p className="col-span-5 text-xs text-rose">{formError}</p>}
             <label className="col-span-2 text-xs font-medium" htmlFor="course-title">Course Name<input id="course-title" className="field mt-1 w-full px-3 py-2 text-xs" placeholder="e.g. New Believers Class" required value={form.title} onChange={(e) => setForm({ ...form, title: e.target.value })} /></label>
-            <label className="text-xs font-medium" htmlFor="course-date">Course Date<input id="course-date" className="field mt-1 w-full px-3 py-2 text-xs" type="date" required value={form.date} onChange={(e) => setForm({ ...form, date: e.target.value })} /></label>
-            <label className="text-xs font-medium" htmlFor="course-time">Start Time<input id="course-time" className="field mt-1 w-full px-3 py-2 text-xs" type="time" required value={form.time} onChange={(e) => setForm({ ...form, time: e.target.value })} /></label>
-            <label className="text-xs font-medium" htmlFor="course-instructor">Instructor<input id="course-instructor" className="field mt-1 w-full px-3 py-2 text-xs" placeholder="e.g. Pastor John" required value={form.instructor} onChange={(e) => setForm({ ...form, instructor: e.target.value })} /></label>
+            <label className="text-xs font-medium" htmlFor="course-date">Course Date<input id="course-date" className="field mt-1 w-full px-3 py-2 text-xs" type="date" value={form.date} onChange={(e) => setForm({ ...form, date: e.target.value })} /></label>
+            <label className="text-xs font-medium" htmlFor="course-time">Start Time<input id="course-time" className="field mt-1 w-full px-3 py-2 text-xs" type="time" value={form.time} onChange={(e) => setForm({ ...form, time: e.target.value })} /></label>
+            <label className="text-xs font-medium" htmlFor="course-instructor">Instructor<input id="course-instructor" className="field mt-1 w-full px-3 py-2 text-xs" placeholder="Optional" value={form.instructor} onChange={(e) => setForm({ ...form, instructor: e.target.value })} /></label>
             <label className="col-span-2 text-xs font-medium" htmlFor="course-teacher">Assigned Teacher<select id="course-teacher" className="field mt-1 w-full px-3 py-2 text-xs" value={form.teacherId} onChange={(e) => setForm({ ...form, teacherId: e.target.value })}><option value="">Unassigned</option>{teachers.filter((teacher) => teacher.active !== false).map((teacher) => <option key={teacher.id} value={teacher.id}>{teacher.name}</option>)}</select></label>
             <button className="col-span-5 rounded-xl gradient-brand py-2 text-xs font-medium">
               + Create Course
@@ -349,9 +346,9 @@ function CoursesPage() {
           >
             {editError && <p className="col-span-2 text-xs text-rose">{editError}</p>}
             <label className="col-span-2 text-xs font-medium" htmlFor="edit-course-title">Course Name<input id="edit-course-title" className="field mt-1 w-full px-3 py-2 text-xs" placeholder="e.g. New Believers Class" required value={editForm.title} onChange={(e) => setEditForm({ ...editForm, title: e.target.value })} /></label>
-            <label className="text-xs font-medium" htmlFor="edit-course-date">Course Date<input id="edit-course-date" className="field mt-1 w-full px-3 py-2 text-xs" type="date" required value={editForm.date} onChange={(e) => setEditForm({ ...editForm, date: e.target.value })} /></label>
-            <label className="text-xs font-medium" htmlFor="edit-course-time">Start Time<input id="edit-course-time" className="field mt-1 w-full px-3 py-2 text-xs" type="time" required value={editForm.time} onChange={(e) => setEditForm({ ...editForm, time: e.target.value })} /></label>
-            <label className="col-span-2 text-xs font-medium" htmlFor="edit-course-instructor">Instructor<input id="edit-course-instructor" className="field mt-1 w-full px-3 py-2 text-xs" placeholder="e.g. Pastor John" required value={editForm.instructor} onChange={(e) => setEditForm({ ...editForm, instructor: e.target.value })} /></label>
+            <label className="text-xs font-medium" htmlFor="edit-course-date">Course Date<input id="edit-course-date" className="field mt-1 w-full px-3 py-2 text-xs" type="date" value={editForm.date} onChange={(e) => setEditForm({ ...editForm, date: e.target.value })} /></label>
+            <label className="text-xs font-medium" htmlFor="edit-course-time">Start Time<input id="edit-course-time" className="field mt-1 w-full px-3 py-2 text-xs" type="time" value={editForm.time} onChange={(e) => setEditForm({ ...editForm, time: e.target.value })} /></label>
+            <label className="col-span-2 text-xs font-medium" htmlFor="edit-course-instructor">Instructor<input id="edit-course-instructor" className="field mt-1 w-full px-3 py-2 text-xs" placeholder="Optional" value={editForm.instructor} onChange={(e) => setEditForm({ ...editForm, instructor: e.target.value })} /></label>
             <label className="col-span-2 text-xs font-medium" htmlFor="edit-course-teacher">Assigned Teacher<select id="edit-course-teacher" className="field mt-1 w-full px-3 py-2 text-xs" value={editForm.teacherId} onChange={(e) => setEditForm({ ...editForm, teacherId: e.target.value })}><option value="">Unassigned</option>{teachers.filter((teacher) => teacher.active !== false).map((teacher) => <option key={teacher.id} value={teacher.id}>{teacher.name}</option>)}</select></label>
             <Button type="submit" className="col-span-2">
               Save changes

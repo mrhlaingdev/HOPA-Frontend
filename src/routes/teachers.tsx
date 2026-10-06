@@ -9,7 +9,6 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import { actions, formatApiError, useChurch } from "@/lib/church-store";
 import { usePermission } from "@/lib/auth";
 import { toast } from "sonner";
-import { isGender } from "@/lib/church-data";
 
 export const Route = createFileRoute("/teachers")({
   head: () => ({ meta: [{ title: "Teachers Directory — House Of Prayer Assembly" }] }),
@@ -69,18 +68,21 @@ function TeachersPage() {
 
   function validate() {
     if (!form.name.trim()) return "Teacher name is required.";
-    if (!form.phone.trim()) return "Phone number is required.";
     if (form.email && !/^\S+@\S+\.\S+$/.test(form.email)) return "Enter a valid email address.";
     return "";
   }
 
   async function save() {
-    const gender = form.gender;
     const validationError = validate();
-    const formError = validationError || (isGender(gender) ? "" : "Gender is required.");
-    setError(formError);
-    if (formError || !isGender(gender)) return;
-    const teacherForm = { ...form, gender };
+    setError(validationError);
+    if (validationError) return;
+    const teacherForm = {
+      ...form,
+      gender: form.gender === "Male" || form.gender === "Female" ? form.gender : "Unknown",
+      phone: form.phone || "",
+      email: form.email || "",
+      specialization: form.specialization || "",
+    };
     try {
       if (editing) await actions.updateTeacher(editing.id, teacherForm);
       else await actions.addTeacher(teacherForm);
@@ -233,11 +235,10 @@ function TeachersPage() {
               Gender
               <select
                 className="field mt-1 w-full px-3 py-2 text-xs"
-                required
                 value={form.gender}
                 onChange={(event) => setForm({ ...form, gender: event.target.value })}
               >
-                <option value="">Select gender</option>
+                <option value="">Unknown</option>
                 <option value="Male">Male</option>
                 <option value="Female">Female</option>
               </select>

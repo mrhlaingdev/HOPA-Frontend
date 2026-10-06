@@ -176,11 +176,20 @@ function EventsPage() {
 
     setIsSaving(true);
     try {
+      const eventForm = {
+        ...form,
+        date: form.date || localDateString(),
+        location: form.location || "",
+        attendeesCount: Number.isFinite(form.attendeesCount) ? form.attendeesCount : 0,
+        foodMenu: form.foodMenu || "",
+        totalExpense: form.totalExpense || "",
+        donations: form.donations || "",
+      };
       if (editing) {
-        setEvents(await actions.updateEvent(editing.id, form));
+        setEvents(await actions.updateEvent(editing.id, eventForm));
         toast.success("Event updated successfully.");
       } else {
-        setEvents(await actions.addEvent(form));
+        setEvents(await actions.addEvent(eventForm));
         toast.success("Event created successfully.");
       }
       setDialogOpen(false);
@@ -513,7 +522,6 @@ function EventsPage() {
                   className="field mt-1 w-full px-3 py-2 text-sm"
                   value={form.title}
                   onChange={(e) => setForm({ ...form, title: e.target.value })}
-                  required
                 />
               </FormField>
               <FormField label="Date" htmlFor="event-date">
@@ -523,7 +531,6 @@ function EventsPage() {
                   className="field mt-1 w-full px-3 py-2 text-sm"
                   value={form.date}
                   onChange={(e) => setForm({ ...form, date: e.target.value })}
-                  required
                 />
               </FormField>
               <FormField label="Location" htmlFor="event-location">
@@ -532,7 +539,6 @@ function EventsPage() {
                   className="field mt-1 w-full px-3 py-2 text-sm"
                   value={form.location}
                   onChange={(e) => setForm({ ...form, location: e.target.value })}
-                  required
                 />
               </FormField>
               <FormField label="Attendees Count" htmlFor="event-attendees">
@@ -543,8 +549,9 @@ function EventsPage() {
                   step="1"
                   className="field mt-1 block w-full min-w-0 px-3 py-2 text-sm"
                   value={form.attendeesCount}
-                  onChange={(e) => setForm({ ...form, attendeesCount: e.target.valueAsNumber })}
-                  required
+                  onChange={(e) =>
+                    setForm({ ...form, attendeesCount: Number(e.target.value) || 0 })
+                  }
                 />
               </FormField>
               <FormField
@@ -599,10 +606,6 @@ function EventsPage() {
 
 function validateEvent(form: EventForm) {
   if (!form.title.trim()) return "Event title is required.";
-  if (!form.date) return "Event date is required.";
-  if (!form.location.trim()) return "Event location is required.";
-  if (!Number.isInteger(form.attendeesCount) || form.attendeesCount < 0)
-    return "Attendees count must be a non-negative whole number.";
   return "";
 }
 
