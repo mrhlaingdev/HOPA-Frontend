@@ -263,7 +263,7 @@ function Overview() {
       <Panel
         title="Church Leadership"
         mm="Leadership team"
-        className="mb-4 border border-indigo-300/20 bg-slate-900/60 shadow-[0_0_28px_rgba(129,140,248,0.06)] backdrop-blur-xl"
+        className="mb-4 border border-slate-400/15 border-l-2 border-l-indigo-300/60 border-t-indigo-300/30 bg-gradient-to-br from-indigo-950/25 via-slate-900/70 to-slate-900/60 shadow-[0_0_28px_rgba(129,140,248,0.05)] backdrop-blur-xl"
         right={
           <span className="rounded-full border border-indigo-300/20 bg-indigo-300/10 px-2.5 py-1 text-[10px] font-medium text-indigo-200">
             HOPA
@@ -277,7 +277,7 @@ function Overview() {
             { label: "Head Teacher", value: CHURCH_LEADERSHIP.headTeacher },
             { label: "Church Name", value: CHURCH_LEADERSHIP.churchName },
           ].map(({ label, value }) => (
-            <div key={label} className="rounded-xl border border-indigo-300/10 bg-slate-950/30 p-3">
+            <div key={label} className="rounded-xl border border-indigo-300/10 bg-slate-950/35 p-3">
               <p className="text-[10px] font-medium uppercase text-indigo-200/80">{label}</p>
               <p className="mt-2 text-sm font-medium text-slate-100">{value}</p>
             </div>
@@ -288,7 +288,7 @@ function Overview() {
       <div className="space-y-4">
         <section aria-label="People statistics">
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
-            <div className="glass relative overflow-hidden rounded-2xl border border-cyan-300/20 bg-slate-900/60 p-5 shadow-[0_0_24px_rgba(34,211,238,0.07)] backdrop-blur-xl">
+            <div className="glass relative overflow-hidden rounded-2xl border border-cyan-300/20 bg-gradient-to-br from-cyan-950/25 to-slate-900/70 p-5 shadow-[0_0_24px_rgba(34,211,238,0.05)] backdrop-blur-xl">
               <div className="flex items-start justify-between gap-3">
                 <div>
                   <p className="text-sm text-slate-300">Total Students</p>
@@ -310,7 +310,7 @@ function Overview() {
               </div>
               <div className="mt-2 text-[11px] text-slate-500">All registered students</div>
             </div>
-            <div className="glass relative overflow-hidden rounded-2xl border border-emerald-300/20 bg-slate-900/60 p-5 shadow-[0_0_24px_rgba(52,211,153,0.07)] backdrop-blur-xl">
+            <div className="glass relative overflow-hidden rounded-2xl border border-emerald-300/20 bg-gradient-to-br from-emerald-950/25 to-slate-900/70 p-5 shadow-[0_0_24px_rgba(52,211,153,0.05)] backdrop-blur-xl">
               <div className="flex items-start justify-between gap-3">
                 <div>
                   <p className="text-sm text-slate-300">Total Teachers</p>
@@ -338,7 +338,7 @@ function Overview() {
                 </span>
               </div>
             </div>
-            <div className="glass relative overflow-hidden rounded-2xl border border-indigo-300/20 bg-slate-900/60 p-5 shadow-[0_0_24px_rgba(129,140,248,0.07)] backdrop-blur-xl">
+            <div className="glass relative overflow-hidden rounded-2xl border border-cyan-300/20 bg-gradient-to-br from-cyan-950/20 to-slate-900/70 p-5 shadow-[0_0_24px_rgba(34,211,238,0.05)] backdrop-blur-xl">
               <div className="flex items-start justify-between gap-3">
                 <div>
                   <p className="text-sm text-slate-300">Total Members</p>
@@ -346,7 +346,7 @@ function Overview() {
                     {displayedDashboardStats.totalStaff}
                   </p>
                 </div>
-                <span className="grid size-11 shrink-0 place-items-center rounded-full border border-indigo-300/30 bg-indigo-400/10 text-indigo-200">
+                <span className="grid size-11 shrink-0 place-items-center rounded-full border border-cyan-300/30 bg-cyan-400/10 text-cyan-200">
                   <UsersRound className="size-5" aria-hidden="true" />
                 </span>
               </div>
@@ -358,7 +358,7 @@ function Overview() {
                 </p>
               </div>
               <div className="mt-2 flex items-center gap-2">
-                <span className="rounded-full border border-indigo-300/20 bg-indigo-300/10 px-2 py-0.5 text-[10px] font-medium text-indigo-200">
+                <span className="rounded-full border border-cyan-300/20 bg-cyan-300/10 px-2 py-0.5 text-[10px] font-medium text-cyan-200">
                   {activeMembersCount} active
                 </span>
                 <span className="text-[11px] text-slate-400">
@@ -371,7 +371,7 @@ function Overview() {
 
         <section aria-label="Course statistics">
           <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-            <div className="glass relative overflow-hidden rounded-2xl border border-amber-300/20 bg-slate-900/60 p-5 shadow-[0_0_24px_rgba(251,191,36,0.07)] backdrop-blur-xl">
+            <div className="glass relative overflow-hidden rounded-2xl border border-amber-300/20 bg-gradient-to-br from-amber-950/25 to-slate-900/70 p-5 shadow-[0_0_24px_rgba(251,191,36,0.05)] backdrop-blur-xl">
               <div className="flex items-start justify-between gap-3">
                 <div>
                   <p className="text-sm text-slate-300">Active Courses</p>
@@ -387,7 +387,7 @@ function Overview() {
                 {courses.length} total courses in system
               </p>
             </div>
-            <div className="glass relative overflow-hidden rounded-2xl border border-indigo-300/20 bg-slate-900/60 p-5 shadow-[0_0_24px_rgba(129,140,248,0.07)] backdrop-blur-xl">
+            <div className="glass relative overflow-hidden rounded-2xl border border-amber-300/20 bg-gradient-to-br from-yellow-950/20 to-slate-900/70 p-5 shadow-[0_0_24px_rgba(251,191,36,0.05)] backdrop-blur-xl">
               <div className="flex items-start justify-between gap-3">
                 <div>
                   <p className="text-sm text-slate-300">Courses Completed</p>
@@ -395,7 +395,7 @@ function Overview() {
                     {completedInPeriod}
                   </p>
                 </div>
-                <span className="grid size-11 shrink-0 place-items-center rounded-full border border-indigo-300/30 bg-indigo-400/10 text-indigo-200">
+                <span className="grid size-11 shrink-0 place-items-center rounded-full border border-amber-300/30 bg-amber-400/10 text-amber-200">
                   <BookOpenCheck className="size-5" aria-hidden="true" />
                 </span>
               </div>
@@ -408,7 +408,7 @@ function Overview() {
 
         <section
           aria-label="Financial overview"
-          className="rounded-2xl border border-emerald-300/15 bg-slate-900/40 p-4 shadow-[0_0_28px_rgba(52,211,153,0.05)] backdrop-blur-xl"
+          className="rounded-2xl border border-teal-300/15 bg-gradient-to-br from-teal-950/20 via-slate-900/55 to-slate-900/60 p-4 shadow-[0_0_28px_rgba(20,184,166,0.05)] backdrop-blur-xl"
         >
           <div className="mb-3 flex items-center justify-between gap-3">
             <div>
@@ -427,9 +427,9 @@ function Overview() {
             )}
           </div>
           <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
-            <div className="glass-inset rounded-xl border border-white/5 p-4">
-              <p className="text-muted-foreground text-sm">Monthly Income (฿)</p>
-              <p className="mt-1 text-3xl font-display font-bold">
+            <div className="glass-inset rounded-xl border border-emerald-300/20 bg-emerald-400/[0.04] p-4">
+              <p className="text-sm text-emerald-100/90">Monthly Income (฿)</p>
+              <p className="mt-1 text-3xl font-display font-bold text-emerald-100">
                 {formatShortThb(totalIncome)}
               </p>
               <div className="mt-3 flex items-center gap-2">
@@ -439,9 +439,9 @@ function Overview() {
                 </span>
               </div>
             </div>
-            <div className="glass-inset rounded-xl border border-white/5 p-4">
-              <p className="text-muted-foreground text-sm">Monthly Expenses (฿)</p>
-              <p className="mt-1 text-3xl font-display font-bold">
+            <div className="glass-inset rounded-xl border border-rose-300/20 bg-rose-400/[0.04] p-4">
+              <p className="text-sm text-rose-100/90">Monthly Expenses (฿)</p>
+              <p className="mt-1 text-3xl font-display font-bold text-rose-100">
                 {formatShortThb(totalExpense)}
               </p>
               <div className="mt-3 flex items-center gap-2">
@@ -451,11 +451,11 @@ function Overview() {
                 </span>
               </div>
             </div>
-            <div className="glass-inset rounded-xl border border-emerald-300/15 p-4">
-              <p className="text-muted-foreground text-sm">
+            <div className="glass-inset rounded-xl border border-teal-300/20 bg-teal-400/[0.04] p-4">
+              <p className="text-sm text-teal-100/90">
                 Net Balance (฿) <span className="opacity-60">· လက်ကျန်</span>
               </p>
-              <p className="mt-1 text-3xl font-display font-bold text-mint">
+              <p className="mt-1 text-3xl font-display font-bold text-teal-100">
                 {netBalance >= 0 ? "+ " : "− "}
                 {formatShortThb(Math.abs(netBalance))}
               </p>
@@ -478,15 +478,15 @@ function Overview() {
         </section>
 
         {canManageRecords && <section aria-label="Quick actions">
-          <div className="glass w-full rounded-2xl border border-white/10 bg-slate-900/60 p-5 backdrop-blur-xl">
-            <p className="text-muted-foreground text-sm">Quick Actions</p>
+          <div className="glass w-full rounded-2xl border border-violet-300/15 bg-gradient-to-br from-violet-950/25 to-slate-900/70 p-5 shadow-[0_0_24px_rgba(139,92,246,0.04)] backdrop-blur-xl">
+            <p className="text-sm text-violet-100/90">Quick Actions</p>
             <div className="mt-3 grid grid-cols-2 gap-3 sm:grid-cols-4">
               <Link
                 to="/attendance"
-                className="group flex min-h-12 items-center justify-center gap-2 rounded-xl border border-cyan-300/15 bg-cyan-300/[0.03] px-3 py-3 text-center text-xs font-medium text-cyan-100 transition-all hover:border-cyan-300/35 hover:bg-cyan-300/[0.08] hover:shadow-[0_0_20px_rgba(34,211,238,0.12)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-300/50"
+                className="group flex min-h-12 items-center justify-center gap-2 rounded-xl border border-violet-300/15 bg-violet-300/[0.04] px-3 py-3 text-center text-xs font-medium text-violet-100 transition-all hover:border-violet-300/35 hover:bg-violet-300/[0.09] hover:shadow-[0_0_20px_rgba(139,92,246,0.12)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-300/50"
               >
                 <ClipboardCheck
-                  className="size-4 shrink-0 text-cyan-200 transition-colors group-hover:text-cyan-100"
+                  className="size-4 shrink-0 text-violet-200 transition-colors group-hover:text-violet-100"
                   aria-hidden="true"
                 />
                 <span>+ Attendance</span>
@@ -494,10 +494,10 @@ function Overview() {
               {canViewFinance && (
                 <Link
                   to="/finance"
-                  className="group flex min-h-12 items-center justify-center gap-2 rounded-xl border border-emerald-300/15 bg-emerald-300/[0.03] px-3 py-3 text-center text-xs font-medium text-emerald-100 transition-all hover:border-emerald-300/35 hover:bg-emerald-300/[0.08] hover:shadow-[0_0_20px_rgba(52,211,153,0.12)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-300/50"
+                  className="group flex min-h-12 items-center justify-center gap-2 rounded-xl border border-violet-300/15 bg-violet-300/[0.04] px-3 py-3 text-center text-xs font-medium text-violet-100 transition-all hover:border-violet-300/35 hover:bg-violet-300/[0.09] hover:shadow-[0_0_20px_rgba(139,92,246,0.12)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-300/50"
                 >
                   <Receipt
-                    className="size-4 shrink-0 text-emerald-200 transition-colors group-hover:text-emerald-100"
+                    className="size-4 shrink-0 text-violet-200 transition-colors group-hover:text-violet-100"
                     aria-hidden="true"
                   />
                   <span>+ Finance</span>
@@ -506,20 +506,20 @@ function Overview() {
               <Link
                 to="/students"
                 search={{ q: "" }}
-                className="group flex min-h-12 items-center justify-center gap-2 rounded-xl border border-indigo-300/15 bg-indigo-300/[0.03] px-3 py-3 text-center text-xs font-medium text-indigo-100 transition-all hover:border-indigo-300/35 hover:bg-indigo-300/[0.08] hover:shadow-[0_0_20px_rgba(129,140,248,0.12)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-300/50"
+                className="group flex min-h-12 items-center justify-center gap-2 rounded-xl border border-violet-300/15 bg-violet-300/[0.04] px-3 py-3 text-center text-xs font-medium text-violet-100 transition-all hover:border-violet-300/35 hover:bg-violet-300/[0.09] hover:shadow-[0_0_20px_rgba(139,92,246,0.12)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-300/50"
               >
                 <UserPlus
-                  className="size-4 shrink-0 text-indigo-200 transition-colors group-hover:text-indigo-100"
+                  className="size-4 shrink-0 text-violet-200 transition-colors group-hover:text-violet-100"
                   aria-hidden="true"
                 />
                 <span>+ Student</span>
               </Link>
               <Link
                 to="/staff"
-                className="group flex min-h-12 items-center justify-center gap-2 rounded-xl border border-amber-300/15 bg-amber-300/[0.03] px-3 py-3 text-center text-xs font-medium text-amber-100 transition-all hover:border-amber-300/35 hover:bg-amber-300/[0.08] hover:shadow-[0_0_20px_rgba(251,191,36,0.12)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-300/50"
+                className="group flex min-h-12 items-center justify-center gap-2 rounded-xl border border-violet-300/15 bg-violet-300/[0.04] px-3 py-3 text-center text-xs font-medium text-violet-100 transition-all hover:border-violet-300/35 hover:bg-violet-300/[0.09] hover:shadow-[0_0_20px_rgba(139,92,246,0.12)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-300/50"
               >
                 <UserRoundPlus
-                  className="size-4 shrink-0 text-amber-200 transition-colors group-hover:text-amber-100"
+                  className="size-4 shrink-0 text-violet-200 transition-colors group-hover:text-violet-100"
                   aria-hidden="true"
                 />
                 <span>+ Member</span>
@@ -534,7 +534,7 @@ function Overview() {
             <Panel
               title="Backup &amp; Restore"
               mm="Download or restore a full system data backup"
-              className="border border-amber-300/15"
+              className="border border-slate-400/15 bg-gradient-to-br from-slate-800/70 to-slate-950/80 shadow-[0_0_24px_rgba(59,130,246,0.04)]"
             >
               <p className="max-w-3xl text-xs text-muted-foreground">
                 Back up students, teachers, staff, courses, attendance, finance, and events to a
@@ -546,7 +546,7 @@ function Overview() {
                   type="button"
                   onClick={downloadFullBackup}
                   disabled={isBackupLoading || isLoading}
-                  className="gap-2"
+                  className="gap-2 border border-blue-300/20 bg-blue-500/15 text-blue-100 hover:bg-blue-500/25"
                 >
                   <Download className="size-4" />
                   {isBackupLoading ? "Preparing Backup…" : "Download Full Backup"}
@@ -556,7 +556,7 @@ function Overview() {
                   variant="outline"
                   onClick={() => backupFileInput.current?.click()}
                   disabled={isRestoringBackup}
-                  className="gap-2"
+                  className="gap-2 border border-rose-300/20 bg-rose-500/10 text-rose-100 hover:bg-rose-500/20"
                 >
                   <RotateCcw className="size-4" />
                   Upload &amp; Restore Data
