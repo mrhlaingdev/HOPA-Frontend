@@ -1,7 +1,8 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useState } from "react";
-import { CalendarCheck2, Download, Pencil } from "lucide-react";
+import { CalendarCheck2, Pencil } from "lucide-react";
 import { AppShell, Panel } from "@/components/AppShell";
+import { ExportDropdown } from "@/components/ExportDropdown";
 import { EmptyState } from "@/components/EmptyState";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Button } from "@/components/ui/button";
@@ -16,7 +17,6 @@ import {
 } from "@/lib/church-store";
 import { formatDate, initials } from "@/lib/church-data";
 import { toast } from "sonner";
-import { downloadCsv } from "@/lib/utils";
 
 export const Route = createFileRoute("/attendance")({
   head: () => ({
@@ -65,27 +65,6 @@ const recent = currentIndex !== -1
   const rows = students.filter((s) => s.name.toLowerCase().includes(q.toLowerCase()));
   const presentCount = rows.filter((s) => attendance.includes(`${s.id}|${week}`)).length;
   const absentCount = rows.length - presentCount;
-
-  const exportAttendance = () =>
-    downloadCsv(
-      "attendance-report.csv",
-      [
-        "Student",
-        "Grade",
-        ...recent.map((date) => formatDate(date)),
-        "Total Attended",
-        "Attendance Rate",
-      ],
-      rows.map((student) => [
-        student.name,
-        student.grade,
-        ...recent.map((date) =>
-          attendance.includes(`${student.id}|${date}`) ? "Present" : "Absent",
-        ),
-        attendedCount(attendance, student.id),
-        `${attendanceRate(attendance, student.id)}%`,
-      ]),
-    );
 
   const handleToggleAttendance = async (
     studentId: string,
@@ -203,13 +182,26 @@ const recent = currentIndex !== -1
           mm="Last 10 Sundays · yearly rate"
           className="col-span-12 lg:col-span-6"
           right={
-            <button
-              type="button"
-              onClick={exportAttendance}
-              className="glass rounded-xl px-3 py-2 text-xs font-medium flex items-center gap-1.5"
-            >
-              <Download className="size-3.5" /> Export CSV
-            </button>
+            <ExportDropdown
+              title="Attendance Report"
+              filename="attendance-report"
+              headers={[
+                "Student",
+                "Grade",
+                ...recent.map((date) => formatDate(date)),
+                "Total Attended",
+                "Attendance Rate",
+              ]}
+              rows={rows.map((student) => [
+                student.name,
+                student.grade,
+                ...recent.map((date) =>
+                  attendance.includes(`${student.id}|${date}`) ? "Present" : "Absent",
+                ),
+                attendedCount(attendance, student.id),
+                `${attendanceRate(attendance, student.id)}%`,
+              ])}
+            />
           }
         >
           <div className="overflow-x-auto">

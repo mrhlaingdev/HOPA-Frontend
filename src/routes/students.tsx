@@ -1,7 +1,8 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useMemo, useState } from "react";
-import { Download, Pencil, Trash2, UsersRound } from "lucide-react";
+import { Pencil, Trash2, UsersRound } from "lucide-react";
 import { AppShell, Panel } from "@/components/AppShell";
+import { ExportDropdown } from "@/components/ExportDropdown";
 import { EmptyState } from "@/components/EmptyState";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Button } from "@/components/ui/button";
@@ -17,7 +18,6 @@ import {
 import { formatDate, initials, isGender } from "@/lib/church-data";
 import { toast } from "sonner";
 import { usePermission } from "@/lib/auth";
-import { downloadCsv } from "@/lib/utils";
 
 export const Route = createFileRoute("/students")({
   validateSearch: (s: Record<string, unknown>) => ({
@@ -89,23 +89,6 @@ function StudentsPage() {
     return "";
   }
 
-  function exportStudents() {
-    downloadCsv(
-      "student-directory.csv",
-      ["Name", "Myanmar Name", "Age", "Grade", "Parent", "Phone", "Address", "Enrolled"],
-      rows.map((studentRow) => [
-        studentRow.name,
-        studentRow.nameMm,
-        studentRow.age,
-        studentRow.grade,
-        studentRow.parentName,
-        studentRow.parentPhone,
-        studentRow.address,
-        studentRow.enrolled,
-      ]),
-    );
-  }
-
   async function handleDelete(studentId: string) {
     setDeleting(true);
     try {
@@ -168,13 +151,21 @@ function StudentsPage() {
           className="col-span-12 lg:col-span-8"
           right={
             <div className="flex items-center gap-2">
-              <button
-                type="button"
-                onClick={exportStudents}
-                className="glass rounded-xl px-3 py-2 text-xs font-medium flex items-center gap-1.5"
-              >
-                <Download className="size-3.5" /> Export CSV
-              </button>
+              <ExportDropdown
+                title="Student Directory"
+                filename="student-directory"
+                headers={["Name", "Myanmar Name", "Age", "Grade", "Parent", "Phone", "Address", "Enrolled"]}
+                rows={rows.map((studentRow) => [
+                  studentRow.name,
+                  studentRow.nameMm,
+                  studentRow.age,
+                  studentRow.grade,
+                  studentRow.parentName,
+                  studentRow.parentPhone,
+                  studentRow.address,
+                  studentRow.enrolled,
+                ])}
+              />
               {canManage && (
                 <button
                   type="button"

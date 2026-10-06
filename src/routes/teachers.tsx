@@ -1,12 +1,12 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useMemo, useState } from "react";
-import { Download, Pencil, Plus, Trash2, UsersRound } from "lucide-react";
+import { Pencil, Plus, Trash2, UsersRound } from "lucide-react";
 import { AppShell, Panel } from "@/components/AppShell";
+import { ExportDropdown } from "@/components/ExportDropdown";
 import { EmptyState } from "@/components/EmptyState";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { actions, formatApiError, useChurch } from "@/lib/church-store";
-import { downloadCsv } from "@/lib/utils";
 import { usePermission } from "@/lib/auth";
 import { toast } from "sonner";
 import { isGender } from "@/lib/church-data";
@@ -91,20 +91,6 @@ function TeachersPage() {
     }
   }
 
-  function exportTeachers() {
-    downloadCsv(
-      "teacher-directory.csv",
-      ["Name", "Phone", "Email", "specialization", "Status"],
-      rows.map((teacher) => [
-        teacher.name,
-        teacher.phone,
-        teacher.email,
-        teacher.specialization,
-        teacher.active === false ? "Inactive" : "Active",
-      ]),
-    );
-  }
-
   return (
     <AppShell search={q} onSearch={setQ}>
       <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
@@ -118,13 +104,18 @@ function TeachersPage() {
         mm={`${rows.length} of ${teachers.length} teachers`}
         right={
           <div className="flex items-center gap-2">
-            <button
-              type="button"
-              onClick={exportTeachers}
-              className="glass flex items-center gap-1.5 rounded-xl px-3 py-2 text-xs font-medium"
-            >
-              <Download className="size-3.5" /> Export CSV
-            </button>
+            <ExportDropdown
+              title="Teachers Directory"
+              filename="teacher-directory"
+              headers={["Name", "Phone", "Email", "Specialization", "Status"]}
+              rows={rows.map((teacher) => [
+                teacher.name,
+                teacher.phone,
+                teacher.email,
+                teacher.specialization,
+                teacher.active === false ? "Inactive" : "Active",
+              ])}
+            />
             {canManage && (
               <button
                 type="button"

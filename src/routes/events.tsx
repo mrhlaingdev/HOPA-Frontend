@@ -2,10 +2,6 @@ import { createFileRoute } from "@tanstack/react-router";
 import { useEffect, useState, type FormEvent } from "react";
 import {
   CalendarDays,
-  ChevronDown,
-  Download,
-  FileSpreadsheet,
-  FileText,
   MapPin,
   Pencil,
   Plus,
@@ -15,15 +11,10 @@ import {
   Utensils,
 } from "lucide-react";
 import { AppShell } from "@/components/AppShell";
+import { ExportDropdown } from "@/components/ExportDropdown";
 import { EmptyState } from "@/components/EmptyState";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -43,9 +34,7 @@ import {
 } from "@/lib/church-data";
 import { usePermission } from "@/lib/auth";
 import { actions, formatApiError, loadEvents } from "@/lib/church-store";
-import { downloadCsv } from "@/lib/utils";
 import { toast } from "sonner";
-import * as XLSX from "xlsx";
 
 export const Route = createFileRoute("/events")({
   head: () => ({
@@ -154,98 +143,6 @@ function EventsPage() {
     formatEventAmount(event.donations),
   ]);
 
-  function exportExcel() {
-    const excelRows = visibleEvents.map((event) => [
-      event.title,
-      formatDate(event.date),
-      event.location,
-      event.attendeesCount,
-      event.foodMenu,
-      parseEventAmount(event.totalExpense) ?? formatEventAmount(event.totalExpense),
-      parseEventAmount(event.donations) ?? formatEventAmount(event.donations),
-    ]);
-    const worksheet = XLSX.utils.aoa_to_sheet([exportHeaders, ...excelRows]);
-    worksheet["!cols"] = [
-      { wch: 28 },
-      { wch: 16 },
-      { wch: 28 },
-      { wch: 18 },
-      { wch: 48 },
-      { wch: 20 },
-      { wch: 22 },
-    ];
-    worksheet["!autofilter"] = {
-      ref: `A1:G${Math.max(1, excelRows.length + 1)}`,
-    };
-    for (let row = 2; row <= excelRows.length + 1; row += 1) {
-      worksheet[`D${row}`].z = "#,##0";
-      for (const column of ["F", "G"]) {
-        const cell = worksheet[`${column}${row}`];
-        if (cell && typeof cell.v === "number") cell.z = '#,##0 "฿"';
-      }
-    }
-
-    const workbook = XLSX.utils.book_new();
-    XLSX.utils.book_append_sheet(workbook, worksheet, "Events");
-    XLSX.writeFile(workbook, "events-report.xlsx");
-  }
-
-  function exportPdf() {
-    const printWindow = window.open("", "_blank");
-    if (!printWindow) {
-      toast.error("Allow pop-ups to open the printable event report.");
-      return;
-    }
-
-    const escapeHtml = (value: unknown) =>
-      String(value ?? "")
-        .replaceAll("&", "&amp;")
-        .replaceAll("<", "&lt;")
-        .replaceAll(">", "&gt;")
-        .replaceAll('"', "&quot;")
-        .replaceAll("'", "&#039;");
-    const tableRows = exportRows
-      .map((row) => `<tr>${row.map((value) => `<td>${escapeHtml(value)}</td>`).join("")}</tr>`)
-      .join("");
-    const emptyRow =
-      exportRows.length === 0
-        ? `<tr><td colspan="${exportHeaders.length}" class="empty">No events match the selected filters.</td></tr>`
-        : "";
-
-    printWindow.document.write(`<!doctype html>
-      <html lang="en">
-        <head>
-          <meta charset="utf-8" />
-          <title>Events Report</title>
-          <style>
-            @page { size: landscape; margin: 16mm; }
-            body { color: #172033; font: 12px/1.5 Arial, sans-serif; }
-            h1 { margin: 0; color: #142b4a; font-size: 24px; }
-            .meta { margin: 4px 0 20px; color: #5d6879; }
-            table { width: 100%; border-collapse: collapse; table-layout: auto; }
-            th { background: #183b5b; color: white; text-align: left; }
-            th, td { border: 1px solid #d6dce5; padding: 8px; vertical-align: top; }
-            tbody tr:nth-child(even) { background: #f1f5f9; }
-            td { white-space: pre-wrap; overflow-wrap: anywhere; }
-            .empty { text-align: center; color: #5d6879; }
-          </style>
-        </head>
-        <body>
-          <h1>Events Report</h1>
-          <p class="meta">${exportRows.length} ${exportRows.length === 1 ? "event" : "events"} · Generated ${escapeHtml(new Date().toLocaleString())}</p>
-          <table>
-            <thead><tr>${exportHeaders.map((header) => `<th>${escapeHtml(header)}</th>`).join("")}</tr></thead>
-            <tbody>${tableRows}${emptyRow}</tbody>
-          </table>
-        </body>
-      </html>`);
-    printWindow.document.close();
-    window.setTimeout(() => {
-      printWindow.focus();
-      printWindow.print();
-    }, 250);
-  }
-
   function openAddDialog() {
     setEditing(null);
     setForm(emptyForm());
@@ -322,31 +219,12 @@ function EventsPage() {
               Add Event
             </Button>
           )}
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <Button type="button" variant="outline" className="gap-2">
-                <Download className="size-4" />
-                Export
-                <ChevronDown className="size-4" />
-              </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="end">
-              <DropdownMenuItem
-                onSelect={() => downloadCsv("events-report.csv", exportHeaders, exportRows)}
-              >
-                <FileText />
-                Export CSV
-              </DropdownMenuItem>
-              <DropdownMenuItem onSelect={exportExcel}>
-                <FileSpreadsheet />
-                Export Excel (.xlsx)
-              </DropdownMenuItem>
-              <DropdownMenuItem onSelect={exportPdf}>
-                <FileText />
-                Export PDF
-              </DropdownMenuItem>
-            </DropdownMenuContent>
-          </DropdownMenu>
+          <ExportDropdown
+            title="Events Report"
+            filename="events-report"
+            headers={exportHeaders}
+            rows={exportRows}
+          />
         </div>
       </div>
 

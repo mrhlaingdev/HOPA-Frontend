@@ -1,7 +1,8 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
-import { Download, Pencil, WalletCards } from "lucide-react";
+import { Pencil, WalletCards } from "lucide-react";
 import { AppShell, Panel } from "@/components/AppShell";
+import { ExportDropdown } from "@/components/ExportDropdown";
 import { EmptyState } from "@/components/EmptyState";
 import { Skeleton } from "@/components/ui/skeleton";
 import { DateFilters } from "@/components/DateFilters";
@@ -25,7 +26,6 @@ import {
 } from "@/lib/church-data";
 import { toast } from "sonner";
 import { usePermission } from "@/lib/auth";
-import { downloadCsv } from "@/lib/utils";
 
 export const Route = createFileRoute("/finance")({
   head: () => ({
@@ -121,19 +121,6 @@ function FinancePage() {
       return "Amount must be greater than 0.";
     return "";
   };
-
-  const exportFinance = () =>
-    downloadCsv(
-      "finance-report.csv",
-      ["Date", "Type", "Category", "Description", "Amount (THB)"],
-      rows.map((transaction) => [
-        transaction.date,
-        transaction.type,
-        transaction.category,
-        transaction.description,
-        formatThb(transaction.amount),
-      ]),
-    );
 
   function onFile(file?: File) {
     if (!file) return;
@@ -274,13 +261,18 @@ function FinancePage() {
               <span className="text-[11px] text-muted-foreground">
                 {dateFilter.month === "all" ? "All months" : "Selected month"}
               </span>
-              <button
-                type="button"
-                onClick={exportFinance}
-                className="glass rounded-xl px-3 py-2 text-xs font-medium flex items-center gap-1.5"
-              >
-                <Download className="size-3.5" /> Export CSV
-              </button>
+              <ExportDropdown
+                title="Finance Report"
+                filename="finance-report"
+                headers={["Date", "Type", "Category", "Description", "Amount (THB)"]}
+                rows={rows.map((transaction) => [
+                  transaction.date,
+                  transaction.type,
+                  transaction.category,
+                  transaction.description,
+                  formatThb(transaction.amount),
+                ])}
+              />
             </div>
           }
         >

@@ -1,7 +1,8 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useMemo, useState } from "react";
-import { BookOpen, Download, Pencil, Trash2 } from "lucide-react";
+import { BookOpen, Pencil, Trash2 } from "lucide-react";
 import { AppShell, Panel } from "@/components/AppShell";
+import { ExportDropdown } from "@/components/ExportDropdown";
 import { EmptyState } from "@/components/EmptyState";
 import { Skeleton } from "@/components/ui/skeleton";
 import { DateFilters } from "@/components/DateFilters";
@@ -17,7 +18,6 @@ import {
 import { formatDate } from "@/lib/church-data";
 import { toast } from "sonner";
 import { usePermission } from "@/lib/auth";
-import { downloadCsv } from "@/lib/utils";
 
 export const Route = createFileRoute("/courses")({
   head: () => ({
@@ -66,23 +66,6 @@ function CoursesPage() {
     if (!courseForm.time) return "Course time is required.";
     if (!courseForm.instructor.trim()) return "Instructor is required.";
     return "";
-  }
-
-  function exportCourses() {
-    downloadCsv(
-      "courses-report.csv",
-      ["Course", "Date", "Time", "Instructor", "Completed", "Students"],
-      rows.map((courseRow) => [
-        courseRow.title,
-        courseRow.date,
-        courseRow.time,
-        courseRow.instructor,
-        completions.filter(
-          (completion) => completion.courseId === courseRow.id && matchesDate(completion.date, dateFilter),
-        ).length,
-        students.length,
-      ]),
-    );
   }
 
   const rows = useMemo(
@@ -136,13 +119,23 @@ function CoursesPage() {
           className="col-span-12 lg:col-span-7"
           right={
             <div className="flex items-center gap-2">
-              <button
-                type="button"
-                onClick={exportCourses}
-                className="glass rounded-xl px-3 py-2 text-xs font-medium flex items-center gap-1.5"
-              >
-                <Download className="size-3.5" /> Export CSV
-              </button>
+              <ExportDropdown
+                title="Courses Report"
+                filename="courses-report"
+                headers={["Course", "Date", "Time", "Instructor", "Completed", "Students"]}
+                rows={rows.map((courseRow) => [
+                  courseRow.title,
+                  courseRow.date,
+                  courseRow.time,
+                  courseRow.instructor,
+                  completions.filter(
+                    (completion) =>
+                      completion.courseId === courseRow.id &&
+                      matchesDate(completion.date, dateFilter),
+                  ).length,
+                  students.length,
+                ])}
+              />
               <input
                 value={q}
                 onChange={(e) => setQ(e.target.value)}
