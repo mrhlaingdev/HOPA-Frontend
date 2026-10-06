@@ -8,6 +8,7 @@ import {
   type Student,
   type Teacher,
   type Txn,
+  localDateString,
   parseNumericValue,
 } from "./church-data";
 import { getCurrentRole } from "./auth";
@@ -23,6 +24,27 @@ export class ApiRequestError extends Error {
   }
 }
 
+function loadPersistedCourseEnrollments(): CourseEnrollment[] {
+  if (typeof window === "undefined") return [];
+  try {
+    const stored = window.localStorage.getItem(COURSE_ENROLLMENTS_STORAGE_KEY);
+    if (!stored) return [];
+    const parsed: unknown = JSON.parse(stored);
+    if (!Array.isArray(parsed)) throw new Error("Course enrollments must be an array");
+    return parsed.filter(
+      (enrollment): enrollment is CourseEnrollment =>
+        isRecord(enrollment) &&
+        typeof enrollment["courseId"] === "string" &&
+        typeof enrollment["studentId"] === "string" &&
+        typeof enrollment["enrolledAt"] === "string",
+    );
+  } catch (error) {
+    console.error("Unable to load saved course enrollments", error);
+    toast.error("Saved course enrollment data is invalid and could not be loaded.");
+    return [];
+  }
+}
+
 export function formatApiError(error: unknown, fallback: string) {
   if (error instanceof ApiRequestError) {
     return `Error (${error.status}): ${error.operation} - ${error.detail}`;
@@ -33,6 +55,9 @@ export function formatApiError(error: unknown, fallback: string) {
 export type ChurchState = {
   students: Student[];
   attendance: string[]; // `${studentId}|${sunday}`
+  courseAttendance: CourseAttendance[];
+  courseAttendanceSessions: CourseAttendanceSession[];
+  courseEnrollments: CourseEnrollment[];
   courses: Course[];
   teachers: Teacher[];
   staff: Staff[];
@@ -40,6 +65,24 @@ export type ChurchState = {
   txns: Txn[];
   events: ChurchEvent[];
   isLoading: boolean;
+};
+
+export type CourseAttendance = {
+  courseId: string;
+  studentId: string;
+  date: string;
+  present: boolean;
+};
+
+export type CourseAttendanceSession = {
+  courseId: string;
+  date: string;
+};
+
+export type CourseEnrollment = {
+  courseId: string;
+  studentId: string;
+  enrolledAt: string;
 };
 
 export type SystemBackup = {
@@ -85,10 +128,16 @@ export type ActivityLog = {
 };
 
 const COMPLETIONS_STORAGE_KEY = "hopa-course-completions";
+const COURSE_ATTENDANCE_STORAGE_KEY = "hopa-course-attendance";
+const COURSE_ATTENDANCE_SESSIONS_STORAGE_KEY = "hopa-course-attendance-sessions";
+const COURSE_ENROLLMENTS_STORAGE_KEY = "hopa-course-enrollments";
 
 let state: ChurchState = {
   students: [],
-  attendance: [],
+  attendance: loadPersistedStringArray("hopa-sunday-attendance"),
+  courseAttendance: loadPersistedCourseAttendance(),
+  courseAttendanceSessions: loadPersistedCourseAttendanceSessions(),
+  courseEnrollments: loadPersistedCourseEnrollments(),
   courses: [],
   teachers: [],
   staff: [],
@@ -104,6 +153,18 @@ const API_TIMEOUT_MS = 10_000;
 
 function set(next: Partial<ChurchState>) {
   state = { ...state, ...next };
+  if (Object.hasOwn(next, "attendance")) {
+    persistStringArray("hopa-sunday-attendance", state.attendance);
+  }
+  if (Object.hasOwn(next, "courseAttendance")) {
+    persistJson(COURSE_ATTENDANCE_STORAGE_KEY, state.courseAttendance);
+  }
+  if (Object.hasOwn(next, "courseAttendanceSessions")) {
+    persistJson(COURSE_ATTENDANCE_SESSIONS_STORAGE_KEY, state.courseAttendanceSessions);
+  }
+  if (Object.hasOwn(next, "courseEnrollments")) {
+    persistJson(COURSE_ENROLLMENTS_STORAGE_KEY, state.courseEnrollments);
+  }
   if (Object.hasOwn(next, "completions")) {
     persistCompletions(state.completions);
   }
@@ -117,6 +178,79 @@ function subscribe(l: () => void) {
 
 function getSnapshot() {
   return state;
+}
+
+function loadPersistedStringArray(key: string): string[] {
+  if (typeof window === "undefined") return [];
+  try {
+    const stored = window.localStorage.getItem(key);
+    if (!stored) return [];
+    const parsed: unknown = JSON.parse(stored);
+    if (!Array.isArray(parsed) || !parsed.every((item) => typeof item === "string")) {
+      throw new Error(`Stored ${key} data must be an array of strings`);
+    }
+    return parsed;
+  } catch (error) {
+    console.error(`Unable to load saved data for ${key}`, error);
+    toast.error("Saved attendance data is invalid and could not be loaded.");
+    return [];
+  }
+}
+
+function loadPersistedCourseAttendance(): CourseAttendance[] {
+  if (typeof window === "undefined") return [];
+  try {
+    const stored = window.localStorage.getItem(COURSE_ATTENDANCE_STORAGE_KEY);
+    if (!stored) return [];
+    const parsed: unknown = JSON.parse(stored);
+    if (!Array.isArray(parsed)) throw new Error("Course attendance must be an array");
+    return parsed.filter(
+      (record): record is CourseAttendance =>
+        isRecord(record) &&
+        typeof record["courseId"] === "string" &&
+        typeof record["studentId"] === "string" &&
+        typeof record["date"] === "string" &&
+        typeof record["present"] === "boolean",
+    );
+  } catch (error) {
+    console.error("Unable to load saved course attendance", error);
+    toast.error("Saved course attendance is invalid and could not be loaded.");
+    return [];
+  }
+}
+
+function loadPersistedCourseAttendanceSessions(): CourseAttendanceSession[] {
+  if (typeof window === "undefined") return [];
+  try {
+    const stored = window.localStorage.getItem(COURSE_ATTENDANCE_SESSIONS_STORAGE_KEY);
+    if (!stored) return [];
+    const parsed: unknown = JSON.parse(stored);
+    if (!Array.isArray(parsed)) throw new Error("Course attendance sessions must be an array");
+    return parsed.filter(
+      (session): session is CourseAttendanceSession =>
+        isRecord(session) &&
+        typeof session["courseId"] === "string" &&
+        typeof session["date"] === "string",
+    );
+  } catch (error) {
+    console.error("Unable to load saved course attendance sessions", error);
+    toast.error("Saved course attendance sessions are invalid and could not be loaded.");
+    return [];
+  }
+}
+
+function persistStringArray(key: string, values: string[]) {
+  persistJson(key, values);
+}
+
+function persistJson(key: string, value: unknown) {
+  if (typeof window === "undefined") return;
+  try {
+    window.localStorage.setItem(key, JSON.stringify(value));
+  } catch (error) {
+    console.error(`Unable to save data for ${key}`, error);
+    toast.error("Attendance changed but could not be saved on this device.");
+  }
 }
 
 export function useChurch() {
@@ -726,6 +860,51 @@ export const actions = {
     if (!response.ok) await throwApiError(response, "Failed to update attendance");
 
     await loadAttendance();
+  },
+  enrollStudentInCourse(courseId: string, studentId: string) {
+    const exists = state.courseEnrollments.some(
+      (enrollment) => enrollment.courseId === courseId && enrollment.studentId === studentId,
+    );
+    if (exists) return;
+    set({
+      courseEnrollments: [
+        ...state.courseEnrollments,
+        { courseId, studentId, enrolledAt: localDateString() },
+      ],
+    });
+  },
+  startCourseAttendanceSession(courseId: string, date: string) {
+    if (!date) throw new Error("Course attendance date is required");
+    const exists = state.courseAttendanceSessions.some(
+      (session) => session.courseId === courseId && session.date === date,
+    );
+    if (!exists) {
+      set({
+        courseAttendanceSessions: [...state.courseAttendanceSessions, { courseId, date }],
+      });
+    }
+  },
+  updateCourseAttendance(
+    courseId: string,
+    studentId: string,
+    date: string,
+    present: boolean,
+  ) {
+    const sessionExists = state.courseAttendanceSessions.some(
+      (session) => session.courseId === courseId && session.date === date,
+    );
+    if (!sessionExists) throw new Error("Start the course attendance session first");
+    set({
+      courseAttendance: [
+        ...state.courseAttendance.filter(
+          (record) =>
+            record.courseId !== courseId ||
+            record.studentId !== studentId ||
+            record.date !== date,
+        ),
+        { courseId, studentId, date, present },
+      ],
+    });
   },
   async toggleCompletion(courseId: string, studentId: string, date: string) {
     const wasCompleted = state.completions.some(

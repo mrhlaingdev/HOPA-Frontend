@@ -32,6 +32,9 @@ Core Modules & Features:
 
 - Attendance history view to see total attendance frequency and yearly attendance rate per student.
 
+- Course attendance is tracked independently by course and session date, with per-course student enrollment.
+  Weekly Sunday records, course rosters, sessions, and check-ins are persisted in separate browser storage keys.
+
 4. Courses & Training Management:
 
 - Create and view courses/classes (Course Name, Date, Time, Instructor).

@@ -55,7 +55,16 @@ function StudentsPage() {
   const canDelete = usePermission("delete-records");
   const search = Route.useSearch();
   const initialQ = search["q"];
-  const { students, attendance, courses, completions, isLoading } = useChurch();
+  const {
+    students,
+    attendance,
+    courses,
+    completions,
+    courseAttendance,
+    courseAttendanceSessions,
+    courseEnrollments,
+    isLoading,
+  } = useChurch();
   const [q, setQ] = useState(initialQ);
   const [grade, setGrade] = useState("all");
   const [ageBand, setAgeBand] = useState("all");
@@ -139,9 +148,42 @@ function StudentsPage() {
           const completion = completions.find(
             (record) => record.studentId === student.id && record.courseId === course.id,
           );
-          return { course, completion };
+          const enrollment = courseEnrollments.find(
+            (record) => record.courseId === course.id && record.studentId === student.id,
+          );
+          const attendanceRecords = courseAttendance.filter(
+            (record) => record.courseId === course.id && record.studentId === student.id,
+          );
+          const firstAttendanceDate = attendanceRecords.map((record) => record.date).sort()[0];
+          const firstEligibleDate = enrollment?.enrolledAt ?? firstAttendanceDate;
+          const sessionDates = new Set(
+            courseAttendanceSessions
+              .filter(
+                (session) =>
+                  session.courseId === course.id &&
+                  !!firstEligibleDate &&
+                  session.date >= firstEligibleDate,
+              )
+              .map((session) => session.date),
+          );
+          const attendedCourseDates = new Set(
+            attendanceRecords
+              .filter((record) => record.present && sessionDates.has(record.date))
+              .map((record) => record.date),
+          );
+          const enrolled = !!enrollment;
+          return {
+            course,
+            completion,
+            enrolled,
+            courseAttendanceCount: attendedCourseDates.size,
+            courseAttendanceSessions: sessionDates.size,
+          };
         })
-        .filter(({ course, completion }) => course.active || completion)
+        .filter(
+          ({ course, completion, enrolled, courseAttendanceCount }) =>
+            course.active || completion || enrolled || courseAttendanceCount > 0,
+        )
     : [];
 
   return (
@@ -535,45 +577,56 @@ function StudentsPage() {
                 mm={`${studentCourseHistory.filter(({ completion }) => completion).length} completed · ${studentCourseHistory.filter(({ completion }) => !completion).length} in progress`}
               >
                 <ul className="max-h-[260px] space-y-3 overflow-y-auto pr-2 custom-scrollbar">
-                  {studentCourseHistory.map(({ course, completion }) => {
-                    const progress = completion ? 100 : 0;
-                    return (
-                      <li
-                        key={course.id}
-                        className="rounded-xl border border-white/10 bg-white/[0.03] p-3"
-                      >
-                        <div className="flex items-start gap-2">
-                          <GraduationCap className="mt-0.5 size-4 shrink-0 text-accent" />
-                          <div className="min-w-0 flex-1">
-                            <div className="flex flex-wrap items-center justify-between gap-2">
-                              <span className="text-xs font-medium">{course.title}</span>
-                              <span
-                                className={`rounded-full px-2 py-0.5 text-[10px] font-medium ${
-                                  completion
-                                    ? "bg-mint/15 text-mint"
-                                    : "bg-accent/15 text-accent"
-                                }`}
-                              >
-                                {completion ? "Completed" : "Enrolled"}
-                              </span>
-                            </div>
-                            <div className="mt-2 h-1.5 overflow-hidden rounded-full bg-white/10">
-                              <div
-                                className={`h-full rounded-full transition-[width] ${
-                                  completion ? "gradient-mint" : "bg-accent/70"
-                                }`}
-                                style={{ width: `${progress}%` }}
-                              />
-                            </div>
-                            <div className="mt-1 flex justify-between gap-2 text-[10px] text-muted-foreground">
-                              <span>{completion ? `Completed ${formatDate(completion.date)}` : `${formatDate(course.date)} · ${course.time}`}</span>
-                              <span>{progress}%</span>
+                  {studentCourseHistory.map(
+                    ({
+                      course,
+                      completion,
+                      courseAttendanceCount,
+                      courseAttendanceSessions,
+                    }) => {
+                      const progress = completion ? 100 : 0;
+                      return (
+                        <li
+                          key={course.id}
+                          className="rounded-xl border border-white/10 bg-white/[0.03] p-3"
+                        >
+                          <div className="flex items-start gap-2">
+                            <GraduationCap className="mt-0.5 size-4 shrink-0 text-accent" />
+                            <div className="min-w-0 flex-1">
+                              <div className="flex flex-wrap items-center justify-between gap-2">
+                                <span className="text-xs font-medium">{course.title}</span>
+                                <span
+                                  className={`rounded-full px-2 py-0.5 text-[10px] font-medium ${
+                                    completion
+                                      ? "bg-mint/15 text-mint"
+                                      : "bg-accent/15 text-accent"
+                                  }`}
+                                >
+                                  {completion ? "Completed" : "Enrolled"}
+                                </span>
+                              </div>
+                              <div className="mt-2 h-1.5 overflow-hidden rounded-full bg-white/10">
+                                <div
+                                  className={`h-full rounded-full transition-[width] ${
+                                    completion ? "gradient-mint" : "bg-accent/70"
+                                  }`}
+                                  style={{ width: `${progress}%` }}
+                                />
+                              </div>
+                              <div className="mt-1 flex justify-between gap-2 text-[10px] text-muted-foreground">
+                                <span>{completion ? `Completed ${formatDate(completion.date)}` : `${formatDate(course.date)} · ${course.time}`}</span>
+                                <span>{progress}%</span>
+                              </div>
+                              <p className="mt-1 text-[10px] text-muted-foreground">
+                                Course attendance: {courseAttendanceCount}/
+                                {courseAttendanceSessions} sessions
+                              </p>
                             </div>
                           </div>
-                        </div>
-                      </li>
-                    );
-                  })}
+                        </li>
+                      );
+                    },
+                  )}
                   {studentCourseHistory.length === 0 && (
                     <li className="py-3 text-center text-xs text-muted-foreground">
                       No active or completed course records.
