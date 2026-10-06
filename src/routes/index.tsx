@@ -44,7 +44,6 @@ import {
 import {
   type ChurchEvent,
   formatDate,
-  formatShort,
   formatShortThb,
   initials,
   parseNumericValue,
@@ -189,6 +188,9 @@ function Overview() {
   const totalIncome = month.income + eventDonations;
   const totalExpense = month.expense + eventExpenses;
   const netBalance = totalIncome - totalExpense;
+  const recentTransactions = [...month.rows]
+    .sort((a, b) => b.date.localeCompare(a.date))
+    .slice(0, 5);
   const recentWeeks = Array.from(
     new Set(attendance?.map((record) => record?.split("|")[1] ?? "") || []),
   )
@@ -601,7 +603,7 @@ function Overview() {
           )}
 
           <Panel
-            title="Finance · Receipts"
+            title="Recent Transactions"
             className="mt-4"
             right={
               <div className="flex gap-2">
@@ -614,32 +616,37 @@ function Overview() {
               </div>
             }
           >
-            <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
-              {(month?.rows || [])
-                .filter((t) => t.receipt)
-                .slice(0, 4)
-                .map((t) => (
-                  <div key={t.id} className="rounded-xl glass-inset p-3">
-                    <img
-                      src={t.receipt}
-                      alt={`Receipt for ${t.description}`}
-                      loading="lazy"
-                      width={512}
-                      height={512}
-                      className="w-full aspect-4/3 rounded-lg object-cover"
-                    />
-                    <p className="mt-2 text-xs">{t.category}</p>
-                    <p className="text-[11px] text-muted-foreground">
-                      {formatDate(t.date)} · {formatShort(t.amount)}
-                    </p>
-                  </div>
+            {recentTransactions.length > 0 ? (
+              <ul className="divide-y divide-white/5">
+                {recentTransactions.map((transaction) => (
+                  <li
+                    key={transaction.id}
+                    className="flex flex-wrap items-center gap-x-4 gap-y-1 py-3 first:pt-0 last:pb-0"
+                  >
+                    <div className="min-w-0 flex-1">
+                      <p className="truncate text-sm font-medium">
+                        {transaction.description}
+                      </p>
+                      <p className="text-[11px] text-muted-foreground">
+                        {transaction.category} · {formatDate(transaction.date)}
+                      </p>
+                    </div>
+                    <span
+                      className={`text-sm font-semibold ${
+                        transaction.type === "income" ? "text-mint" : "text-rose"
+                      }`}
+                    >
+                      {transaction.type === "income" ? "+" : "−"}
+                      {formatShortThb(transaction.amount)}
+                    </span>
+                  </li>
                 ))}
-              {(month?.rows || []).filter((t) => t.receipt).length === 0 && (
-                <p className="col-span-2 py-6 text-center text-xs text-muted-foreground sm:col-span-4">
-                  No receipts for the selected period.
-                </p>
-              )}
-            </div>
+              </ul>
+            ) : (
+              <p className="py-6 text-center text-xs text-muted-foreground">
+                No transactions for the selected period.
+              </p>
+            )}
           </Panel>
         </section>
 

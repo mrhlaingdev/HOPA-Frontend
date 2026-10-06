@@ -208,28 +208,6 @@ function FinancePage() {
     }
   }
 
-  function onFile(file?: File) {
-    if (!file) return;
-    const reader = new FileReader();
-    reader.onload = () => setForm((f) => ({ ...f, receipt: String(reader.result) }));
-    reader.readAsDataURL(file);
-  }
-
-  function onEditFile(file?: File) {
-    if (!file) return;
-    const reader = new FileReader();
-    reader.onload = () => {
-      if (typeof reader.result !== "string") {
-        toast.error("Unable to read the selected receipt image.");
-        return;
-      }
-      const receipt = reader.result;
-      setEditForm((f) => ({ ...f, receipt }));
-    };
-    reader.onerror = () => toast.error("Unable to read the selected receipt image.");
-    reader.readAsDataURL(file);
-  }
-
   return (
     <AppShell search={q} onSearch={setQ}>
       <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
@@ -443,22 +421,6 @@ function FinancePage() {
               <label className="block text-xs font-medium" htmlFor="transaction-category">Category<input id="transaction-category" className="field mt-1 w-full px-3 py-2 text-xs" placeholder="e.g. Sunday Offering or Supplies" required value={form.category} onChange={(e) => setForm({ ...form, category: e.target.value })} /></label>
               <label className="block text-xs font-medium" htmlFor="transaction-description">Description<input id="transaction-description" className="field mt-1 w-full px-3 py-2 text-xs" placeholder="e.g. September offering" required value={form.description} onChange={(e) => setForm({ ...form, description: e.target.value })} /></label>
               <label className="block text-xs font-medium" htmlFor="transaction-amount">Amount (฿)<input id="transaction-amount" className="field mt-1 w-full px-3 py-2 text-xs" type="number" min="0.01" step="0.01" required placeholder="e.g. 50000 THB" value={form.amount || ""} onChange={(e) => setForm({ ...form, amount: Number(e.target.value) })} /></label>
-              <label className="block rounded-xl glass-inset p-3 text-xs cursor-pointer">
-                <span className="text-muted-foreground">Upload voucher / receipt photo</span>
-                <input
-                  type="file"
-                  accept="image/*"
-                  className="mt-2 block w-full text-[11px] text-muted-foreground"
-                  onChange={(e) => onFile(e.target.files?.[0])}
-                />
-                {form.receipt && (
-                  <img
-                    src={form.receipt}
-                    alt="Receipt preview"
-                    className="mt-2 w-full aspect-4/3 rounded-lg object-cover"
-                  />
-                )}
-              </label>
               <button className="w-full rounded-xl gradient-brand py-2.5 text-xs font-medium">
                 Save Transaction
               </button>
@@ -635,22 +597,6 @@ function FinancePage() {
             <label className="block text-xs font-medium" htmlFor="edit-transaction-category">Category<input id="edit-transaction-category" className="field mt-1 w-full px-3 py-2 text-xs" placeholder="e.g. Sunday Offering or Supplies" required value={editForm.category} onChange={(e) => setEditForm({ ...editForm, category: e.target.value })} /></label>
             <label className="block text-xs font-medium" htmlFor="edit-transaction-description">Description<input id="edit-transaction-description" className="field mt-1 w-full px-3 py-2 text-xs" placeholder="e.g. September offering" required value={editForm.description} onChange={(e) => setEditForm({ ...editForm, description: e.target.value })} /></label>
             <label className="block text-xs font-medium" htmlFor="edit-transaction-amount">Amount (฿)<input id="edit-transaction-amount" className="field mt-1 w-full px-3 py-2 text-xs" type="number" min="0.01" step="0.01" required placeholder="e.g. 50000 THB" value={editForm.amount || ""} onChange={(e) => setEditForm({ ...editForm, amount: Number(e.target.value) })} /></label>
-            <label className="block rounded-xl glass-inset p-3 text-xs cursor-pointer">
-              <span className="text-muted-foreground">Replace voucher / receipt photo</span>
-              <input
-                type="file"
-                accept="image/*"
-                className="mt-2 block w-full text-[11px] text-muted-foreground"
-                onChange={(e) => onEditFile(e.target.files?.[0])}
-              />
-              {editForm.receipt && (
-                <img
-                  src={editForm.receipt}
-                  alt="Receipt preview"
-                  className="mt-2 max-h-48 w-full rounded-lg object-contain"
-                />
-              )}
-            </label>
             <Button type="submit" className="w-full">
               Save changes
             </Button>
