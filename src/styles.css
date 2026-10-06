@@ -105,6 +105,11 @@
     font-family: var(--font-body);
   }
 
+  select option {
+    background-color: #0f172a !important;
+    color: #f8fafc !important;
+  }
+
   h1,
   h2,
   h3 {
