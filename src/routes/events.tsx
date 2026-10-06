@@ -6,7 +6,7 @@ import { EmptyState } from "@/components/EmptyState";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Skeleton } from "@/components/ui/skeleton";
-import { type ChurchEvent, formatDate, formatKs } from "@/lib/church-data";
+import { type ChurchEvent, formatDate, formatKs, parseNumericValue } from "@/lib/church-data";
 import { usePermission } from "@/lib/auth";
 import { actions, formatApiError, loadEvents } from "@/lib/church-store";
 import { toast } from "sonner";
@@ -361,13 +361,7 @@ function validateEvent(form: EventForm) {
 }
 
 function parseEventAmount(value: string | number): number | null {
-  if (typeof value === "number") return Number.isFinite(value) ? value : null;
-  const trimmed = value.trim();
-  if (!trimmed) return null;
-  const match = /^(?:ks\s*)?(-?(?:\d+|\d{1,3}(?:,\d{3})+)(?:\.\d+)?)$/i.exec(trimmed);
-  if (!match?.[1]) return null;
-  const amount = Number(match[1].replaceAll(",", ""));
-  return Number.isFinite(amount) ? amount : null;
+  return parseNumericValue(value);
 }
 
 function formatEventAmount(value: string | number) {

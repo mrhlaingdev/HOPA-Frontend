@@ -8,6 +8,7 @@ import {
   type Student,
   type Teacher,
   type Txn,
+  parseNumericValue,
 } from "./church-data";
 import { getCurrentRole } from "./auth";
 
@@ -242,8 +243,8 @@ export async function loadEvents(): Promise<ChurchEvent[]> {
   const data: unknown = await response.json();
   const records = Array.isArray(data)
     ? data
-    : isRecord(data) && Array.isArray(data.events)
-      ? data.events
+    : isRecord(data) && Array.isArray(data["events"])
+      ? data["events"]
       : null;
   if (!records) throw new Error("Invalid events response from backend");
 
@@ -258,14 +259,14 @@ function isRecord(value: unknown): value is Record<string, unknown> {
 function normalizeEvent(value: unknown): ChurchEvent {
   if (!isRecord(value)) throw new Error("Invalid event record from backend");
 
-  const id = value.id;
-  const title = value.title;
-  const date = value.date ?? value.event_date;
-  const location = value.location;
-  const attendeesCount = value.attendeesCount ?? value.attendees_count ?? value.attendees;
-  const foodMenu = value.foodMenu ?? value.food_menu ?? value.catering;
-  const totalExpense = value.totalExpense ?? value.total_expense;
-  const donations = value.donations;
+  const id = value["id"];
+  const title = value["title"];
+  const date = value["date"] ?? value["event_date"];
+  const location = value["location"];
+  const attendeesCount = value["attendeesCount"] ?? value["attendees_count"] ?? value["attendees"];
+  const foodMenu = value["foodMenu"] ?? value["food_menu"] ?? value["catering"];
+  const totalExpense = value["totalExpense"] ?? value["total_expense"] ?? value["expense"];
+  const donations = value["donations"] ?? value["donations_collected"];
 
   if (
     (typeof id !== "string" && typeof id !== "number") ||
@@ -279,13 +280,28 @@ function normalizeEvent(value: unknown): ChurchEvent {
   return {
     id: String(id),
     title,
-    date,
+    date: normalizeEventDate(date),
     location,
     attendeesCount: toEventNumber(attendeesCount, "attendees count"),
     foodMenu: typeof foodMenu === "string" ? foodMenu : "",
     totalExpense: toEventAmount(totalExpense, "total expense"),
     donations: toEventAmount(donations, "donations"),
   };
+}
+
+function normalizeEventDate(value: string) {
+  const trimmed = value.trim();
+  const datePrefix = /^(\d{4}-\d{2}-\d{2})(?:$|[T ])/.exec(trimmed)?.[1];
+  if (datePrefix) {
+    const parsed = new Date(`${datePrefix}T00:00:00Z`);
+    if (!Number.isFinite(parsed.getTime()) || parsed.toISOString().slice(0, 10) !== datePrefix)
+      throw new Error("Event date is invalid");
+    return datePrefix;
+  }
+
+  const parsed = new Date(trimmed);
+  if (!Number.isFinite(parsed.getTime())) throw new Error("Event date is invalid");
+  return parsed.toISOString().slice(0, 10);
 }
 
 function toEventAmount(value: unknown, label: string): string | number {
@@ -296,8 +312,8 @@ function toEventAmount(value: unknown, label: string): string | number {
 }
 
 function toEventNumber(value: unknown, label: string) {
-  const number = typeof value === "number" ? value : Number(value ?? 0);
-  if (!Number.isFinite(number) || number < 0) {
+  const number = value === null || value === undefined ? 0 : parseNumericValue(value);
+  if (number === null || !Number.isFinite(number) || number < 0) {
     throw new Error(`Event ${label} is invalid`);
   }
   return number;
@@ -443,14 +459,11 @@ export const actions = {
     await loadTransactions();
   },
   async addEvent(event: Omit<ChurchEvent, "id">): Promise<ChurchEvent[]> {
-    await createResource(API_ENDPOINTS.events, event, "event");
+    await createResource(API_ENDPOINTS.events, toEventApiPayload(event), "event");
     return loadEvents();
   },
-  async updateEvent(
-    eventId: string,
-    event: Omit<ChurchEvent, "id">,
-  ): Promise<ChurchEvent[]> {
-    await updateResource(API_ENDPOINTS.events, eventId, event, "event");
+  async updateEvent(eventId: string, event: Omit<ChurchEvent, "id">): Promise<ChurchEvent[]> {
+    await updateResource(API_ENDPOINTS.events, eventId, toEventApiPayload(event), "event");
     return loadEvents();
   },
   async updateTxn(txnId: string, txn: Partial<Omit<Txn, "id">>) {
@@ -458,6 +471,18 @@ export const actions = {
     await loadTransactions();
   },
 };
+
+function toEventApiPayload(event: Omit<ChurchEvent, "id">) {
+  return {
+    title: event.title,
+    date: event.date,
+    location: event.location,
+    attendees_count: event.attendeesCount,
+    total_expense: event.totalExpense,
+    donations_collected: event.donations,
+    food_menu: event.foodMenu,
+  };
+}
 
 async function updateResource(endpoint: string, id: string, value: unknown, key: string) {
   if (!API_BASE_URL) throw new Error("VITE_API_BASE_URL is not configured");

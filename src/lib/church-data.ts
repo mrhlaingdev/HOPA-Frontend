@@ -108,6 +108,20 @@ export function formatShort(n: number) {
   return "Ks " + n;
 }
 
+export function parseNumericValue(value: unknown): number | null {
+  if (typeof value === "number") return Number.isFinite(value) ? value : null;
+  if (typeof value !== "string") return null;
+
+  const normalized = value
+    .trim()
+    .replaceAll(",", "")
+    .replace(/[^\d.-]/g, "");
+  if (!/^-?(?:\d+\.?\d*|\.\d+)$/.test(normalized)) return null;
+
+  const number = Number(normalized);
+  return Number.isFinite(number) ? number : null;
+}
+
 export function initials(name: string) {
   return name
     .split(" ")
@@ -118,7 +132,10 @@ export function initials(name: string) {
 }
 
 export function formatDate(iso: string) {
-  return new Date(iso + "T00:00:00Z").toLocaleDateString("en-GB", {
+  const date = /^\d{4}-\d{2}-\d{2}$/.test(iso) ? new Date(`${iso}T00:00:00Z`) : new Date(iso);
+  if (!Number.isFinite(date.getTime())) return "—";
+
+  return date.toLocaleDateString("en-GB", {
     day: "2-digit",
     month: "short",
     year: "numeric",
