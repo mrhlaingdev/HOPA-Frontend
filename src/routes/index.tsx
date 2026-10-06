@@ -1,6 +1,16 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useMemo, useState } from "react";
-import { BookOpen, BookOpenCheck, GraduationCap, Users, UsersRound } from "lucide-react";
+import {
+  BookOpen,
+  BookOpenCheck,
+  ClipboardCheck,
+  GraduationCap,
+  Receipt,
+  UserPlus,
+  UserRoundPlus,
+  Users,
+  UsersRound,
+} from "lucide-react";
 import { AppShell, Panel } from "@/components/AppShell";
 import { DateFilters } from "@/components/DateFilters";
 import { CHURCH_LEADERSHIP } from "@/lib/constants/leadership";
@@ -467,29 +477,51 @@ function Overview() {
         </section>
 
         <section aria-label="Quick actions">
-          <div className="glass max-w-2xl rounded-2xl border border-white/10 bg-slate-900/60 p-5 backdrop-blur-xl">
+          <div className="glass w-full rounded-2xl border border-white/10 bg-slate-900/60 p-5 backdrop-blur-xl">
             <p className="text-muted-foreground text-sm">Quick Actions</p>
-            <div className="mt-3 grid grid-cols-3 gap-2">
+            <div className="mt-3 grid grid-cols-2 gap-3 sm:grid-cols-4">
               <Link
                 to="/attendance"
-                className="rounded-xl py-3 text-xs font-medium text-center gradient-violet"
+                className="group flex min-h-12 items-center justify-center gap-2 rounded-xl border border-cyan-300/15 bg-cyan-300/[0.03] px-3 py-3 text-center text-xs font-medium text-cyan-100 transition-all hover:border-cyan-300/35 hover:bg-cyan-300/[0.08] hover:shadow-[0_0_20px_rgba(34,211,238,0.12)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-300/50"
               >
-                + Attendance
+                <ClipboardCheck
+                  className="size-4 shrink-0 text-cyan-200 transition-colors group-hover:text-cyan-100"
+                  aria-hidden="true"
+                />
+                <span>+ Attendance</span>
               </Link>
               {canViewFinance && (
                 <Link
                   to="/finance"
-                  className="rounded-xl py-3 text-xs font-medium text-center gradient-sky"
+                  className="group flex min-h-12 items-center justify-center gap-2 rounded-xl border border-emerald-300/15 bg-emerald-300/[0.03] px-3 py-3 text-center text-xs font-medium text-emerald-100 transition-all hover:border-emerald-300/35 hover:bg-emerald-300/[0.08] hover:shadow-[0_0_20px_rgba(52,211,153,0.12)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-300/50"
                 >
-                  + Finance
+                  <Receipt
+                    className="size-4 shrink-0 text-emerald-200 transition-colors group-hover:text-emerald-100"
+                    aria-hidden="true"
+                  />
+                  <span>+ Finance</span>
                 </Link>
               )}
               <Link
                 to="/students"
                 search={{ q: "" }}
-                className="rounded-xl py-3 text-xs font-medium text-center gradient-mint text-accent-foreground"
+                className="group flex min-h-12 items-center justify-center gap-2 rounded-xl border border-indigo-300/15 bg-indigo-300/[0.03] px-3 py-3 text-center text-xs font-medium text-indigo-100 transition-all hover:border-indigo-300/35 hover:bg-indigo-300/[0.08] hover:shadow-[0_0_20px_rgba(129,140,248,0.12)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-300/50"
               >
-                + Student
+                <UserPlus
+                  className="size-4 shrink-0 text-indigo-200 transition-colors group-hover:text-indigo-100"
+                  aria-hidden="true"
+                />
+                <span>+ Student</span>
+              </Link>
+              <Link
+                to="/staff"
+                className="group flex min-h-12 items-center justify-center gap-2 rounded-xl border border-amber-300/15 bg-amber-300/[0.03] px-3 py-3 text-center text-xs font-medium text-amber-100 transition-all hover:border-amber-300/35 hover:bg-amber-300/[0.08] hover:shadow-[0_0_20px_rgba(251,191,36,0.12)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-300/50"
+              >
+                <UserRoundPlus
+                  className="size-4 shrink-0 text-amber-200 transition-colors group-hover:text-amber-100"
+                  aria-hidden="true"
+                />
+                <span>+ Member</span>
               </Link>
             </div>
             <p className="mt-3 text-[11px] text-muted-foreground">Record data in one tap</p>
