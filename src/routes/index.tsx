@@ -116,10 +116,7 @@ function Overview() {
 
   // Student Directory တွင် ပြသရန် စနစ်ထဲရှိ ကျောင်းသားများထဲမှ ရှာဖွေပါမည်
   const filtered = useMemo(
-    () =>
-      students
-        .filter((s) => s?.name?.toLowerCase?.().includes(q.toLowerCase()))
-        .slice(0, 5),
+    () => students.filter((s) => s?.name?.toLowerCase?.().includes(q.toLowerCase())),
     [students, q],
   );
 
@@ -300,31 +297,33 @@ function Overview() {
               </span>
             }
           >
-            <div className="space-y-2">
-              {filteredStudents.slice(0, 4).map((s) => (
-                <div key={s.id} className="flex items-center gap-3">
-                  <div className="w-28 truncate text-sm opacity-85">{s.name}</div>
-                  <div className="flex gap-1.5">
-                    {recentWeeks.map((d) => {
-                      const present = filteredAttendance.includes(`${s.id}|${d}`);
-                      return (
-                        <span
-                          key={d}
-                          title={formatDate(d)}
-                          className={`size-6 rounded-md grid place-items-center text-[10px] ${
-                            present ? "bg-mint/25 text-mint" : "bg-rose/20 text-rose"
-                          }`}
-                        >
-                          {present ? "✓" : "✕"}
-                        </span>
-                      );
-                    })}
+            <div className="dashboard-scrollbar max-h-[380px] overflow-y-auto overscroll-contain pr-1">
+              <div className="space-y-2">
+                {filteredStudents.map((s) => (
+                  <div key={s.id} className="flex items-center gap-3">
+                    <div className="w-28 truncate text-sm opacity-85">{s.name}</div>
+                    <div className="flex gap-1.5">
+                      {recentWeeks.map((d) => {
+                        const present = filteredAttendance.includes(`${s.id}|${d}`);
+                        return (
+                          <span
+                            key={d}
+                            title={formatDate(d)}
+                            className={`size-6 rounded-md grid place-items-center text-[10px] ${
+                              present ? "bg-mint/25 text-mint" : "bg-rose/20 text-rose"
+                            }`}
+                          >
+                            {present ? "✓" : "✕"}
+                          </span>
+                        );
+                      })}
+                    </div>
+                    <span className="ml-auto text-[11px] text-muted-foreground">
+                      {attendanceRate(filteredAttendance, s.id)}% selected
+                    </span>
                   </div>
-                  <span className="ml-auto text-[11px] text-muted-foreground">
-                    {attendanceRate(filteredAttendance, s.id)}% selected
-                  </span>
-                </div>
-              ))}
+                ))}
+              </div>
             </div>
           </Panel>
 
@@ -341,41 +340,45 @@ function Overview() {
               />
             }
           >
-            <div className="divide-y divide-white/5 text-sm">
-              {filtered.map((s) => {
-                const rate = attendanceRate(attendance, s.id);
-                return (
-                  <Link
-                    key={s.id}
-                    to="/students"
-                    search={{ q: s.name }}
-                    className="flex items-center gap-3 py-2.5"
-                  >
-                    <div
-                      className="size-8 rounded-full grid place-items-center text-[11px] font-semibold"
-                      style={{ backgroundImage: s.gradient }}
+            <div className="dashboard-scrollbar max-h-[380px] overflow-y-auto overscroll-contain pr-1">
+              <div className="divide-y divide-white/5 text-sm">
+                {filtered.map((s) => {
+                  const rate = attendanceRate(attendance, s.id);
+                  return (
+                    <Link
+                      key={s.id}
+                      to="/students"
+                      search={{ q: s.name }}
+                      className="flex items-center gap-3 py-2.5"
                     >
-                      {initials(s.name)}
-                    </div>
-                    <div className="leading-tight">
-                      <p>{s.name}</p>
-                      <p className="text-[11px] text-muted-foreground">
-                        Grade {s.grade} · Age {s.age}
-                      </p>
-                    </div>
-                    <span
-                      className={`ml-auto rounded-full text-[11px] px-2.5 py-1 ${
-                        rate >= 85 ? "bg-mint/15 text-mint" : "bg-amber/15 text-amber"
-                      }`}
-                    >
-                      {rate}% attended
-                    </span>
-                  </Link>
-                );
-              })}
-              {filtered.length === 0 && (
-                <p className="py-6 text-center text-xs text-muted-foreground">No students found.</p>
-              )}
+                      <div
+                        className="size-8 rounded-full grid place-items-center text-[11px] font-semibold"
+                        style={{ backgroundImage: s.gradient }}
+                      >
+                        {initials(s.name)}
+                      </div>
+                      <div className="leading-tight">
+                        <p>{s.name}</p>
+                        <p className="text-[11px] text-muted-foreground">
+                          Grade {s.grade} · Age {s.age}
+                        </p>
+                      </div>
+                      <span
+                        className={`ml-auto rounded-full text-[11px] px-2.5 py-1 ${
+                          rate >= 85 ? "bg-mint/15 text-mint" : "bg-amber/15 text-amber"
+                        }`}
+                      >
+                        {rate}% attended
+                      </span>
+                    </Link>
+                  );
+                })}
+                {filtered.length === 0 && (
+                  <p className="py-6 text-center text-xs text-muted-foreground">
+                    No students found.
+                  </p>
+                )}
+              </div>
             </div>
           </Panel>
         </section>
