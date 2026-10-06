@@ -188,9 +188,6 @@ function Overview() {
   const totalIncome = month.income + eventDonations;
   const totalExpense = month.expense + eventExpenses;
   const netBalance = totalIncome - totalExpense;
-  const recentTransactions = [...month.rows]
-    .sort((a, b) => b.date.localeCompare(a.date))
-    .slice(0, 5);
   const recentWeeks = Array.from(
     new Set(attendance?.map((record) => record?.split("|")[1] ?? "") || []),
   )
@@ -602,52 +599,6 @@ function Overview() {
             </p>
           )}
 
-          <Panel
-            title="Recent Transactions"
-            className="mt-4"
-            right={
-              <div className="flex gap-2">
-                <span className="rounded-full bg-mint/15 text-mint text-[11px] px-3 py-1">
-                  Income {formatShortThb(totalIncome)}
-                </span>
-                <span className="rounded-full bg-rose/15 text-rose text-[11px] px-3 py-1">
-                  Expense {formatShortThb(totalExpense)}
-                </span>
-              </div>
-            }
-          >
-            {recentTransactions.length > 0 ? (
-              <ul className="divide-y divide-white/5">
-                {recentTransactions.map((transaction) => (
-                  <li
-                    key={transaction.id}
-                    className="flex flex-wrap items-center gap-x-4 gap-y-1 py-3 first:pt-0 last:pb-0"
-                  >
-                    <div className="min-w-0 flex-1">
-                      <p className="truncate text-sm font-medium">
-                        {transaction.description}
-                      </p>
-                      <p className="text-[11px] text-muted-foreground">
-                        {transaction.category} · {formatDate(transaction.date)}
-                      </p>
-                    </div>
-                    <span
-                      className={`text-sm font-semibold ${
-                        transaction.type === "income" ? "text-mint" : "text-rose"
-                      }`}
-                    >
-                      {transaction.type === "income" ? "+" : "−"}
-                      {formatShortThb(transaction.amount)}
-                    </span>
-                  </li>
-                ))}
-              </ul>
-            ) : (
-              <p className="py-6 text-center text-xs text-muted-foreground">
-                No transactions for the selected period.
-              </p>
-            )}
-          </Panel>
         </section>
 
         {canManageRecords && <section aria-label="Quick actions">
