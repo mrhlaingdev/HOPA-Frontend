@@ -39,6 +39,18 @@ export type ChurchState = {
   isLoading: boolean;
 };
 
+export type DashboardStats = {
+  totalStudents: number;
+  totalTeachers: number;
+  totalStaff: number;
+  maleStudents: number;
+  femaleStudents: number;
+  maleTeachers: number;
+  femaleTeachers: number;
+  maleStaff: number;
+  femaleStaff: number;
+};
+
 let state: ChurchState = {
   students: [],
   attendance: [],
@@ -85,6 +97,7 @@ const API_ENDPOINTS = {
   staff: "/api/staff",
   attendance: "/api/attendance",
   transactions: "/api/finance",
+  dashboardStats: "/api/dashboard/stats",
 } as const;
 
 async function fetchApi(path: string, init?: RequestInit) {
@@ -216,6 +229,15 @@ export async function loadTransactions() {
   const txns = await loadResource<Txn>(API_ENDPOINTS.transactions, "transactions");
   set({ txns });
   return txns;
+}
+
+export async function loadDashboardStats(): Promise<DashboardStats> {
+  if (!API_BASE_URL) throw new Error("VITE_API_BASE_URL is not configured");
+
+  const response = await fetchApi(API_ENDPOINTS.dashboardStats);
+  if (!response.ok) await throwApiError(response, "Failed to load dashboard stats");
+
+  return (await response.json()) as DashboardStats;
 }
 
 async function loadFromApi() {

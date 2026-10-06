@@ -9,13 +9,22 @@ import { actions, formatApiError, useChurch } from "@/lib/church-store";
 import { downloadCsv } from "@/lib/utils";
 import { usePermission } from "@/lib/auth";
 import { toast } from "sonner";
+import { isGender } from "@/lib/church-data";
 
 export const Route = createFileRoute("/staff")({
   head: () => ({ meta: [{ title: "Staff Directory — House Of Prayer Assembly" }] }),
   component: StaffPage,
 });
 
-const emptyForm = { name: "", position: "", phone: "", email: "", salary: 0, active: true };
+const emptyForm = {
+  name: "",
+  gender: "",
+  position: "",
+  phone: "",
+  email: "",
+  salary: 0,
+  active: true,
+};
 type StaffForm = typeof emptyForm;
 
 function StaffPage() {
@@ -48,6 +57,7 @@ function StaffPage() {
     setEditing(member);
     setForm({
       name: member.name,
+      gender: member.gender ?? "",
       position: member.position,
       phone: member.phone,
       email: member.email,
@@ -66,12 +76,15 @@ function StaffPage() {
     return "";
   }
   async function save() {
+    const gender = form.gender;
     const validationError = validate();
-    setError(validationError);
-    if (validationError) return;
+    const formError = validationError || (isGender(gender) ? "" : "Gender is required.");
+    setError(formError);
+    if (formError || !isGender(gender)) return;
+    const staffForm = { ...form, gender };
     try {
-      if (editing) await actions.updateStaff(editing.id, form);
-      else await actions.addStaff(form);
+      if (editing) await actions.updateStaff(editing.id, staffForm);
+      else await actions.addStaff(staffForm);
       setDialogOpen(false);
       toast.success(`Successfully ${editing ? "updated" : "added"} ${form.name}!`);
     } catch (requestError) {
@@ -225,6 +238,19 @@ function StaffPage() {
                 value={form.name}
                 onChange={(event) => setForm({ ...form, name: event.target.value })}
               />
+            </label>
+            <label className="text-xs font-medium">
+              Gender
+              <select
+                className="field mt-1 w-full px-3 py-2 text-xs"
+                required
+                value={form.gender}
+                onChange={(event) => setForm({ ...form, gender: event.target.value })}
+              >
+                <option value="">Select gender</option>
+                <option value="Male">Male</option>
+                <option value="Female">Female</option>
+              </select>
             </label>
             <label className="text-xs font-medium">
               Position

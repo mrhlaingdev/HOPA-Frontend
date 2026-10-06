@@ -1,7 +1,14 @@
+export type Gender = "Male" | "Female";
+
+export function isGender(value: unknown): value is Gender {
+  return value === "Male" || value === "Female";
+}
+
 export type Student = {
   id: string;
   name: string;
   nameMm: string;
+  gender: Gender;
   age: number;
   grade: string;
   parentName: string;
@@ -25,6 +32,7 @@ export type Course = {
 export type Teacher = {
   id: string;
   name: string;
+  gender: Gender;
   phone: string;
   email: string;
   specialization: string;
@@ -34,6 +42,7 @@ export type Teacher = {
 export type Staff = {
   id: string;
   name: string;
+  gender: Gender;
   position: string;
   phone: string;
   email: string;

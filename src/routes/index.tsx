@@ -1,5 +1,5 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import {
   BookOpen,
   BookOpenCheck,
@@ -17,22 +17,16 @@ import { CHURCH_LEADERSHIP } from "@/lib/constants/leadership";
 import {
   ALL_DATE_FILTER,
   attendanceRate,
+  formatApiError,
+  loadDashboardStats,
   matchesDate,
   monthlyTotals,
   useChurch,
+  type DashboardStats,
 } from "@/lib/church-store";
 import { formatDate, formatShort, initials } from "@/lib/church-data";
 import { usePermission } from "@/lib/auth";
-
-function countGender<T extends object>(records: readonly T[], gender: "male" | "female") {
-  const values =
-    gender === "male" ? ["male", "m", "boy", "boys"] : ["female", "f", "girl", "girls"];
-
-  return records.filter((record) => {
-    const value = (record as T & { gender?: unknown }).gender;
-    return typeof value === "string" && values.includes(value.trim().toLowerCase());
-  }).length;
-}
+import { toast } from "sonner";
 
 export const Route = createFileRoute("/")({
   head: () => ({
@@ -73,18 +67,28 @@ function Overview() {
   const staff = storedStaff?.filter(Boolean) || [];
   const activeTeachersCount = teachers.filter((teacher) => teacher.active !== false).length;
   const activeMembersCount = staff.filter((member) => member.active !== false).length;
-  const studentMaleCount = countGender(students, "male");
-  const studentFemaleCount = countGender(students, "female");
-  const teacherMaleCount = countGender(teachers, "male");
-  const teacherFemaleCount = countGender(teachers, "female");
-  const memberMaleCount = countGender(staff, "male");
-  const memberFemaleCount = countGender(staff, "female");
   const courses = storedCourses?.filter(Boolean) || [];
   const attendance = storedAttendance?.filter(Boolean) || [];
   const completions = storedCompletions?.filter(Boolean) || [];
   const txns = storedTxns?.filter(Boolean) || [];
   const [q, setQ] = useState("");
   const [dateFilter, setDateFilter] = useState(ALL_DATE_FILTER);
+  const [dashboardStats, setDashboardStats] = useState<DashboardStats | null>(null);
+
+  useEffect(() => {
+    let active = true;
+    loadDashboardStats()
+      .then((stats) => {
+        if (active) setDashboardStats(stats);
+      })
+      .catch((error: unknown) => {
+        console.error("Unable to load dashboard stats", error);
+        toast.error(formatApiError(error, "Unable to load dashboard stats"));
+      });
+    return () => {
+      active = false;
+    };
+  }, []);
 
   // Total Students အတွက် စနစ်ထဲရှိသမျှ ကျောင်းသားအကုန်လုံးကို ယူပါမည်
   const filteredStudents = students;
@@ -172,7 +176,7 @@ function Overview() {
                 <div>
                   <p className="text-sm text-slate-300">Total Students</p>
                   <p className="mt-3 text-4xl font-display font-bold leading-none text-white">
-                    {filteredStudents.length}
+                    {dashboardStats?.totalStudents ?? "—"}
                   </p>
                 </div>
                 <span className="grid size-11 shrink-0 place-items-center rounded-full border border-cyan-300/30 bg-cyan-400/10 text-cyan-200">
@@ -182,8 +186,9 @@ function Overview() {
               <div className="mt-4 flex items-center gap-2">
                 <span className="size-1.5 rounded-full bg-cyan-300" />
                 <p className="text-xs text-slate-300">
-                  {studentMaleCount} Boys <span className="px-1 text-slate-500">•</span>
-                  {studentFemaleCount} Girls
+                  {dashboardStats?.maleStudents ?? "—"} Male{" "}
+                  <span className="px-1 text-slate-500">•</span>
+                  {dashboardStats?.femaleStudents ?? "—"} Female
                 </p>
               </div>
               <div className="mt-2 text-[11px] text-slate-500">All registered students</div>
@@ -193,7 +198,7 @@ function Overview() {
                 <div>
                   <p className="text-sm text-slate-300">Total Teachers</p>
                   <p className="mt-3 text-4xl font-display font-bold leading-none text-white">
-                    {teachers.length}
+                    {dashboardStats?.totalTeachers ?? "—"}
                   </p>
                 </div>
                 <span className="grid size-11 shrink-0 place-items-center rounded-full border border-emerald-300/30 bg-emerald-400/10 text-emerald-200">
@@ -202,8 +207,9 @@ function Overview() {
               </div>
               <div className="mt-4 flex items-center gap-2">
                 <p className="text-xs text-slate-300">
-                  {teacherMaleCount} Male <span className="px-1 text-slate-500">•</span>
-                  {teacherFemaleCount} Female
+                  {dashboardStats?.maleTeachers ?? "—"} Male{" "}
+                  <span className="px-1 text-slate-500">•</span>
+                  {dashboardStats?.femaleTeachers ?? "—"} Female
                 </p>
               </div>
               <div className="mt-2 flex items-center gap-2">
@@ -220,7 +226,7 @@ function Overview() {
                 <div>
                   <p className="text-sm text-slate-300">Total Members</p>
                   <p className="mt-3 text-4xl font-display font-bold leading-none text-white">
-                    {staff.length}
+                    {dashboardStats?.totalStaff ?? "—"}
                   </p>
                 </div>
                 <span className="grid size-11 shrink-0 place-items-center rounded-full border border-indigo-300/30 bg-indigo-400/10 text-indigo-200">
@@ -229,8 +235,9 @@ function Overview() {
               </div>
               <div className="mt-4 flex items-center gap-2">
                 <p className="text-xs text-slate-300">
-                  {memberMaleCount} Male <span className="px-1 text-slate-500">•</span>
-                  {memberFemaleCount} Female
+                  {dashboardStats?.maleStaff ?? "—"} Male{" "}
+                  <span className="px-1 text-slate-500">•</span>
+                  {dashboardStats?.femaleStaff ?? "—"} Female
                 </p>
               </div>
               <div className="mt-2 flex items-center gap-2">

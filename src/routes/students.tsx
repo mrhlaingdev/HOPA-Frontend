@@ -14,7 +14,7 @@ import {
   formatApiError,
   useChurch,
 } from "@/lib/church-store";
-import { formatDate, initials } from "@/lib/church-data";
+import { formatDate, initials, isGender } from "@/lib/church-data";
 import { toast } from "sonner";
 import { usePermission } from "@/lib/auth";
 import { downloadCsv } from "@/lib/utils";
@@ -48,6 +48,7 @@ export const Route = createFileRoute("/students")({
 const emptyForm = {
   name: "",
   nameMm: "",
+  gender: "",
   age: 8,
   grade: "",
   parentName: "",
@@ -76,6 +77,7 @@ function StudentsPage() {
 
   function validateStudentForm(studentForm: typeof emptyForm) {
     if (!studentForm.name.trim()) return "Full name is required.";
+    if (!isGender(studentForm.gender)) return "Gender is required.";
     if (!studentForm.parentName.trim()) return "Parent name is required.";
     if (!studentForm.parentPhone.trim()) return "Parent phone is required.";
     if (!studentForm.address.trim()) return "Address is required.";
@@ -123,6 +125,7 @@ function StudentsPage() {
     setEditForm({
       name: student.name,
       nameMm: student.nameMm,
+      gender: student.gender ?? "",
       age: student.age,
       grade: student.grade,
       parentName: student.parentName,
@@ -192,11 +195,13 @@ function StudentsPage() {
               className="mb-4 grid grid-cols-4 gap-2 rounded-xl glass-inset p-3"
               onSubmit={async (e) => {
                 e.preventDefault();
+                const gender = form.gender;
                 const validationError = validateStudentForm(form);
-                setFormError(validationError);
-                if (validationError) return;
+                const error = validationError || (isGender(gender) ? "" : "Gender is required.");
+                setFormError(error);
+                if (error || !isGender(gender)) return;
                 try {
-                  const id = await actions.addStudent(form);
+                  const id = await actions.addStudent({ ...form, gender });
                   if (id) setSelected(id);
                   setForm(emptyForm);
                   setAdding(false);
@@ -209,6 +214,20 @@ function StudentsPage() {
             >
               {formError && <p className="col-span-4 text-xs text-rose">{formError}</p>}
               <label className="col-span-2 text-xs font-medium" htmlFor="student-name">Student Name<input id="student-name" className="field mt-1 w-full px-3 py-2 text-xs" placeholder="e.g. Thazin Moe" required value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} /></label>
+              <label className="text-xs font-medium" htmlFor="student-gender">
+                Gender
+                <select
+                  id="student-gender"
+                  className="field mt-1 w-full px-3 py-2 text-xs"
+                  required
+                  value={form.gender}
+                  onChange={(e) => setForm({ ...form, gender: e.target.value })}
+                >
+                  <option value="">Select gender</option>
+                  <option value="Male">Male</option>
+                  <option value="Female">Female</option>
+                </select>
+              </label>
               <label className="text-xs font-medium" htmlFor="student-age">Age<input id="student-age" className="field mt-1 w-full px-3 py-2 text-xs" placeholder="e.g. 8" type="number" min="1" step="1" required value={form.age} onChange={(e) => setForm({ ...form, age: Number(e.target.value) })} /></label>
               <label className="text-xs font-medium" htmlFor="student-grade">Grade / Class<input type="text" className="w-full rounded-md border border-input bg-background px-3 py-2 text-xs" placeholder="e.g. G1 / KG" required value={form.grade} onChange={(e) => setForm({ ...form, grade: e.target.value })} /></label>
               <label className="text-xs font-medium" htmlFor="student-parent-name">Parent Name<input id="student-parent-name" className="field mt-1 w-full px-3 py-2 text-xs" placeholder="e.g. May Thu" required value={form.parentName} onChange={(e) => setForm({ ...form, parentName: e.target.value })} /></label>
@@ -491,11 +510,13 @@ function StudentsPage() {
             className="grid grid-cols-2 gap-2"
             onSubmit={async (event) => {
               event.preventDefault();
+              const gender = editForm.gender;
               const validationError = validateStudentForm(editForm);
-              setEditError(validationError);
-              if (!editing || validationError) return;
+              const error = validationError || (isGender(gender) ? "" : "Gender is required.");
+              setEditError(error);
+              if (!editing || error || !isGender(gender)) return;
               try {
-                await actions.updateStudent(editing.id, editForm);
+                await actions.updateStudent(editing.id, { ...editForm, gender });
                 setEditing(null);
                 setEditForm(emptyForm);
                 toast.success(`Successfully updated ${editForm.name}!`);
@@ -506,6 +527,7 @@ function StudentsPage() {
           >
             {editError && <p className="col-span-2 text-xs text-rose">{editError}</p>}
             <label className="col-span-2 text-xs font-medium" htmlFor="edit-student-name">Student Name<input id="edit-student-name" className="field mt-1 w-full px-3 py-2 text-xs" placeholder="e.g. Thazin Moe" value={editForm.name} required onChange={(e) => setEditForm({ ...editForm, name: e.target.value })} /></label>
+            <label className="text-xs font-medium" htmlFor="edit-student-gender">Gender<select id="edit-student-gender" className="field mt-1 w-full px-3 py-2 text-xs" required value={editForm.gender} onChange={(e) => setEditForm({ ...editForm, gender: e.target.value })}><option value="">Select gender</option><option value="Male">Male</option><option value="Female">Female</option></select></label>
             <label className="text-xs font-medium" htmlFor="edit-student-name-mm">Myanmar Name<input id="edit-student-name-mm" className="field mt-1 w-full px-3 py-2 text-xs" placeholder="Optional Myanmar name" value={editForm.nameMm} onChange={(e) => setEditForm({ ...editForm, nameMm: e.target.value })} /></label>
             <label className="text-xs font-medium" htmlFor="edit-student-enrolled">Enrollment Date<input id="edit-student-enrolled" className="field mt-1 w-full px-3 py-2 text-xs" type="date" value={editForm.enrolled} required onChange={(e) => setEditForm({ ...editForm, enrolled: e.target.value })} /></label>
             <label className="text-xs font-medium" htmlFor="edit-student-age">Age<input id="edit-student-age" className="field mt-1 w-full px-3 py-2 text-xs" type="number" placeholder="e.g. 8" min="1" step="1" required value={editForm.age} onChange={(e) => setEditForm({ ...editForm, age: Number(e.target.value) })} /></label>
