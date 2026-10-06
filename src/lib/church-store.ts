@@ -256,7 +256,11 @@ export async function loadTransactions() {
     if (typeof description !== "string") {
       throw new Error("Invalid transaction response: missing title or description");
     }
-    return { ...transaction, description };
+    const amount = parseNumericValue(transaction.amount);
+    if (amount === null) {
+      throw new Error("Invalid transaction response: amount must be numeric");
+    }
+    return { ...transaction, description, amount };
   });
   set({ txns });
   return txns;

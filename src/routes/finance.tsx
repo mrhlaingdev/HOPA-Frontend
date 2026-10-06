@@ -192,7 +192,8 @@ function FinancePage() {
     if (!transaction.date) return "Transaction date is required.";
     if (!transaction.category.trim()) return "Category is required.";
     if (!transaction.description.trim()) return "Description is required.";
-    if (!Number.isFinite(transaction.amount) || transaction.amount <= 0)
+    const amount = Number(transaction.amount);
+    if (!Number.isFinite(amount) || amount <= 0)
       return "Amount must be greater than 0.";
     return "";
   };
@@ -217,7 +218,15 @@ function FinancePage() {
   function onEditFile(file?: File) {
     if (!file) return;
     const reader = new FileReader();
-    reader.onload = () => setEditForm((f) => ({ ...f, receipt: String(reader.result) }));
+    reader.onload = () => {
+      if (typeof reader.result !== "string") {
+        toast.error("Unable to read the selected receipt image.");
+        return;
+      }
+      const receipt = reader.result;
+      setEditForm((f) => ({ ...f, receipt }));
+    };
+    reader.onerror = () => toast.error("Unable to read the selected receipt image.");
     reader.readAsDataURL(file);
   }
 
@@ -605,7 +614,10 @@ function FinancePage() {
               setEditError(validationError);
               if (!editing || validationError) return;
               try {
-                await actions.updateTxn(editing.id, editForm);
+                await actions.updateTxn(editing.id, {
+                  ...editForm,
+                  amount: Number(editForm.amount),
+                });
                 setEditing(null);
                 const description = editForm.description;
                 setEditForm(emptyTxn);
@@ -635,7 +647,7 @@ function FinancePage() {
                 <img
                   src={editForm.receipt}
                   alt="Receipt preview"
-                  className="mt-2 w-full aspect-4/3 rounded-lg object-cover"
+                  className="mt-2 max-h-48 w-full rounded-lg object-contain"
                 />
               )}
             </label>
