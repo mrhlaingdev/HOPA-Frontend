@@ -126,26 +126,26 @@
   border: 1px solid rgb(255 255 255 / 0.1);
 }
 
-.dashboard-scrollbar {
-  scrollbar-color: rgb(71 85 105 / 0.7) transparent;
+.custom-scrollbar {
+  scrollbar-color: rgb(71 85 105 / 0.85) transparent;
   scrollbar-width: thin;
 }
 
-.dashboard-scrollbar::-webkit-scrollbar {
+.custom-scrollbar::-webkit-scrollbar {
   width: 6px;
 }
 
-.dashboard-scrollbar::-webkit-scrollbar-track {
+.custom-scrollbar::-webkit-scrollbar-track {
   background: transparent;
 }
 
-.dashboard-scrollbar::-webkit-scrollbar-thumb {
+.custom-scrollbar::-webkit-scrollbar-thumb {
   border-radius: 9999px;
-  background: rgb(71 85 105 / 0.7);
+  background: rgb(71 85 105 / 0.85);
 }
 
-.dashboard-scrollbar::-webkit-scrollbar-thumb:hover {
-  background: rgb(100 116 139 / 0.85);
+.custom-scrollbar::-webkit-scrollbar-thumb:hover {
+  background: rgb(100 116 139 / 0.95);
 }
 
 @utility gradient-brand {

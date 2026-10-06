@@ -288,7 +288,7 @@ function Overview() {
         >
           <Panel
             title="Weekly Attendance"
-            className="h-full border border-white/10 bg-slate-900/60 backdrop-blur-xl"
+            className="h-[380px] flex flex-col justify-between border border-white/10 bg-slate-900/60 backdrop-blur-xl"
             right={
               <span className="text-[11px] text-muted-foreground">
                 {recentWeeks.length > 0
@@ -297,7 +297,7 @@ function Overview() {
               </span>
             }
           >
-            <div className="dashboard-scrollbar h-[300px] overflow-y-auto overscroll-contain pr-2">
+            <div className="h-[280px] max-h-[280px] overflow-y-auto overflow-x-hidden pr-2 custom-scrollbar">
               <div className="space-y-2">
                 {filteredStudents.map((s) => (
                   <div key={s.id} className="flex items-center gap-3">
@@ -329,7 +329,7 @@ function Overview() {
 
           <Panel
             title="Student Directory"
-            className="h-full border border-white/10 bg-slate-900/60 backdrop-blur-xl"
+            className="h-[380px] flex flex-col justify-between border border-white/10 bg-slate-900/60 backdrop-blur-xl"
             right={
               <input
                 value={q}
@@ -340,7 +340,7 @@ function Overview() {
               />
             }
           >
-            <div className="dashboard-scrollbar h-[300px] overflow-y-auto overscroll-contain pr-2">
+            <div className="h-[280px] max-h-[280px] overflow-y-auto overflow-x-hidden pr-2 custom-scrollbar">
               <div className="divide-y divide-white/5 text-sm">
                 {filtered.map((s) => {
                   const rate = attendanceRate(attendance, s.id);
