@@ -1,5 +1,5 @@
 import { Link, useRouterState } from "@tanstack/react-router";
-import { Bell, Check, Menu, X } from "lucide-react";
+import { Bell, CalendarDays, Check, Menu, X } from "lucide-react";
 import { useEffect, useState, type ReactNode } from "react";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import {
@@ -25,7 +25,20 @@ const nav = [
   { to: "/teachers", glyph: "♙", label: "Teachers", mm: "ဆရာများ", permission: "view-teachers" },
   { to: "/staff", glyph: "♟", label: "Members", mm: "အသင်းသားများ", permission: "view-staff" },
   { to: "/finance", glyph: "₵", label: "Finance", mm: "ငွေစာရင်း", permission: "view-finance" },
-  { to: "/audit-logs", glyph: "≋", label: "Activity Logs", mm: "မှတ်တမ်း", permission: "view-audit-logs" },
+  {
+    to: "/events",
+    glyph: <CalendarDays className="size-4" />,
+    label: "Events",
+    mm: "ပွဲများ",
+    permission: "view-events",
+  },
+  {
+    to: "/audit-logs",
+    glyph: "≋",
+    label: "Activity Logs",
+    mm: "မှတ်တမ်း",
+    permission: "view-audit-logs",
+  },
 ] as const;
 
 const notificationStorageKey = "hopa-read-notifications";

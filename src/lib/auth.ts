@@ -17,6 +17,8 @@ export type Permission =
   | "view-staff"
   | "manage-staff"
   | "view-audit-logs"
+  | "view-events"
+  | "manage-events"
   | "delete-records";
 
 const rolePermissions: Record<Role, readonly Permission[]> = {
@@ -34,6 +36,8 @@ const rolePermissions: Record<Role, readonly Permission[]> = {
     "view-staff",
     "manage-staff",
     "view-audit-logs",
+    "view-events",
+    "manage-events",
     "delete-records",
   ],
   STAFF: [
@@ -47,8 +51,17 @@ const rolePermissions: Record<Role, readonly Permission[]> = {
     "manage-teachers",
     "view-staff",
     "manage-staff",
+    "view-events",
+    "manage-events",
   ],
-  VIEWER: ["view-dashboard", "view-students", "view-attendance", "view-courses", "view-teachers"],
+  VIEWER: [
+    "view-dashboard",
+    "view-students",
+    "view-attendance",
+    "view-courses",
+    "view-teachers",
+    "view-events",
+  ],
 };
 
 const ROLE_STORAGE_KEY = "hopa-role";

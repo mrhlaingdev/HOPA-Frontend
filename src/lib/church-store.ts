@@ -2,6 +2,7 @@ import { useEffect, useSyncExternalStore } from "react";
 import { toast } from "sonner";
 import {
   type Completion,
+  type ChurchEvent,
   type Course,
   type Staff,
   type Student,
@@ -97,6 +98,7 @@ const API_ENDPOINTS = {
   staff: "/api/staff",
   attendance: "/api/attendance",
   transactions: "/api/finance",
+  events: "/api/events",
   dashboardStats: "/api/dashboard/stats",
 } as const;
 
@@ -229,6 +231,69 @@ export async function loadTransactions() {
   const txns = await loadResource<Txn>(API_ENDPOINTS.transactions, "transactions");
   set({ txns });
   return txns;
+}
+
+export async function loadEvents(): Promise<ChurchEvent[]> {
+  if (!API_BASE_URL) throw new Error("VITE_API_BASE_URL is not configured");
+
+  const response = await fetchApi(API_ENDPOINTS.events);
+  if (!response.ok) await throwApiError(response, "Failed to load events");
+
+  const data: unknown = await response.json();
+  const records = Array.isArray(data)
+    ? data
+    : isRecord(data) && Array.isArray(data.events)
+      ? data.events
+      : null;
+  if (!records) throw new Error("Invalid events response from backend");
+
+  const events = records.map(normalizeEvent);
+  return events;
+}
+
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return typeof value === "object" && value !== null && !Array.isArray(value);
+}
+
+function normalizeEvent(value: unknown): ChurchEvent {
+  if (!isRecord(value)) throw new Error("Invalid event record from backend");
+
+  const id = value.id;
+  const title = value.title;
+  const date = value.date ?? value.event_date;
+  const location = value.location;
+  const attendeesCount = value.attendeesCount ?? value.attendees_count ?? value.attendees;
+  const foodMenu = value.foodMenu ?? value.food_menu ?? value.catering;
+  const totalExpense = value.totalExpense ?? value.total_expense;
+  const donations = value.donations;
+
+  if (
+    (typeof id !== "string" && typeof id !== "number") ||
+    typeof title !== "string" ||
+    typeof date !== "string" ||
+    typeof location !== "string"
+  ) {
+    throw new Error("Event record is missing required fields");
+  }
+
+  return {
+    id: String(id),
+    title,
+    date,
+    location,
+    attendeesCount: toEventNumber(attendeesCount, "attendees count"),
+    foodMenu: typeof foodMenu === "string" ? foodMenu : "",
+    totalExpense: toEventNumber(totalExpense, "total expense"),
+    donations: toEventNumber(donations, "donations"),
+  };
+}
+
+function toEventNumber(value: unknown, label: string) {
+  const number = typeof value === "number" ? value : Number(value ?? 0);
+  if (!Number.isFinite(number) || number < 0) {
+    throw new Error(`Event ${label} is invalid`);
+  }
+  return number;
 }
 
 export async function loadDashboardStats(): Promise<DashboardStats> {
@@ -369,6 +434,17 @@ export const actions = {
     if (!response.ok) await throwApiError(response, "Failed to create transaction");
 
     await loadTransactions();
+  },
+  async addEvent(event: Omit<ChurchEvent, "id">): Promise<ChurchEvent[]> {
+    await createResource(API_ENDPOINTS.events, event, "event");
+    return loadEvents();
+  },
+  async updateEvent(
+    eventId: string,
+    event: Omit<ChurchEvent, "id">,
+  ): Promise<ChurchEvent[]> {
+    await updateResource(API_ENDPOINTS.events, eventId, event, "event");
+    return loadEvents();
   },
   async updateTxn(txnId: string, txn: Partial<Omit<Txn, "id">>) {
     await updateResource(API_ENDPOINTS.transactions, txnId, txn, "transaction");

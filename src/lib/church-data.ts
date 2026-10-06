@@ -66,6 +66,17 @@ export type Txn = {
   receipt?: string | undefined;
 };
 
+export type ChurchEvent = {
+  id: string;
+  title: string;
+  date: string;
+  location: string;
+  attendeesCount: number;
+  foodMenu: string;
+  totalExpense: number;
+  donations: number;
+};
+
 export function sundays(year = new Date().getUTCFullYear()): string[] {
   const out: string[] = [];
   const d = new Date(Date.UTC(year, 0, 1));
