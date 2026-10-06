@@ -73,8 +73,8 @@ export type ChurchEvent = {
   location: string;
   attendeesCount: number;
   foodMenu: string;
-  totalExpense: number;
-  donations: number;
+  totalExpense: string | number;
+  donations: string | number;
 };
 
 export function sundays(year = new Date().getUTCFullYear()): string[] {

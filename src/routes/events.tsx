@@ -24,7 +24,10 @@ export const Route = createFileRoute("/events")({
   component: EventsPage,
 });
 
-type EventForm = Omit<ChurchEvent, "id">;
+type EventForm = Omit<ChurchEvent, "id" | "totalExpense" | "donations"> & {
+  totalExpense: string;
+  donations: string;
+};
 
 const emptyForm = (): EventForm => ({
   title: "",
@@ -32,8 +35,8 @@ const emptyForm = (): EventForm => ({
   location: "",
   attendeesCount: 0,
   foodMenu: "",
-  totalExpense: 0,
-  donations: 0,
+  totalExpense: "",
+  donations: "",
 });
 
 function EventsPage() {
@@ -79,7 +82,10 @@ function EventsPage() {
       );
     })
     .sort((a, b) => b.date.localeCompare(a.date));
-  const totalExpense = events.reduce((total, event) => total + event.totalExpense, 0);
+  const totalExpense = events.reduce(
+    (total, event) => total + (parseEventAmount(event.totalExpense) ?? 0),
+    0,
+  );
   const totalAttendees = events.reduce((total, event) => total + event.attendeesCount, 0);
 
   function openAddDialog() {
@@ -90,9 +96,16 @@ function EventsPage() {
   }
 
   function openEditDialog(event: ChurchEvent) {
-    const { id: _id, ...eventForm } = event;
     setEditing(event);
-    setForm(eventForm);
+    setForm({
+      title: event.title,
+      date: event.date,
+      location: event.location,
+      attendeesCount: event.attendeesCount,
+      foodMenu: event.foodMenu,
+      totalExpense: String(event.totalExpense ?? ""),
+      donations: String(event.donations ?? ""),
+    });
     setFormError("");
     setDialogOpen(true);
   }
@@ -223,11 +236,13 @@ function EventsPage() {
                 <div className="mt-4 flex flex-wrap justify-between gap-2 border-t border-white/10 pt-3 text-xs">
                   <span className="text-muted-foreground">
                     Expense{" "}
-                    <strong className="ml-1 text-foreground">{formatKs(event.totalExpense)}</strong>
+                    <strong className="ml-1 text-foreground">
+                      {formatEventAmount(event.totalExpense)}
+                    </strong>
                   </span>
                   <span className="text-muted-foreground">
                     Donations{" "}
-                    <strong className="ml-1 text-mint">{formatKs(event.donations)}</strong>
+                    <strong className="ml-1 text-mint">{formatEventAmount(event.donations)}</strong>
                   </span>
                 </div>
               </article>
@@ -282,7 +297,7 @@ function EventsPage() {
                   type="number"
                   min="0"
                   step="1"
-                  className="field mt-1 w-full px-3 py-2 text-sm"
+                  className="field mt-1 block w-full min-w-0 px-3 py-2 text-sm"
                   value={form.attendeesCount}
                   onChange={(e) => setForm({ ...form, attendeesCount: e.target.valueAsNumber })}
                   required
@@ -303,25 +318,21 @@ function EventsPage() {
               <FormField label="Total Expense (Ks)" htmlFor="event-expense">
                 <input
                   id="event-expense"
-                  type="number"
-                  min="0"
-                  step="1"
-                  className="field mt-1 w-full px-3 py-2 text-sm"
+                  type="text"
+                  inputMode="text"
+                  className="field mt-1 block w-full min-w-0 px-3 py-2 text-sm"
                   value={form.totalExpense}
-                  onChange={(e) => setForm({ ...form, totalExpense: e.target.valueAsNumber })}
-                  required
+                  onChange={(e) => setForm({ ...form, totalExpense: e.target.value })}
                 />
               </FormField>
               <FormField label="Donations (Ks)" htmlFor="event-donations">
                 <input
                   id="event-donations"
-                  type="number"
-                  min="0"
-                  step="1"
-                  className="field mt-1 w-full px-3 py-2 text-sm"
+                  type="text"
+                  inputMode="text"
+                  className="field mt-1 block w-full min-w-0 px-3 py-2 text-sm"
                   value={form.donations}
-                  onChange={(e) => setForm({ ...form, donations: e.target.valueAsNumber })}
-                  required
+                  onChange={(e) => setForm({ ...form, donations: e.target.value })}
                 />
               </FormField>
             </div>
@@ -346,11 +357,23 @@ function validateEvent(form: EventForm) {
   if (!form.location.trim()) return "Event location is required.";
   if (!Number.isInteger(form.attendeesCount) || form.attendeesCount < 0)
     return "Attendees count must be a non-negative whole number.";
-  if (!Number.isFinite(form.totalExpense) || form.totalExpense < 0)
-    return "Total expense must be a non-negative number.";
-  if (!Number.isFinite(form.donations) || form.donations < 0)
-    return "Donations must be a non-negative number.";
   return "";
+}
+
+function parseEventAmount(value: string | number): number | null {
+  if (typeof value === "number") return Number.isFinite(value) ? value : null;
+  const trimmed = value.trim();
+  if (!trimmed) return null;
+  const match = /^(?:ks\s*)?(-?(?:\d+|\d{1,3}(?:,\d{3})+)(?:\.\d+)?)$/i.exec(trimmed);
+  if (!match?.[1]) return null;
+  const amount = Number(match[1].replaceAll(",", ""));
+  return Number.isFinite(amount) ? amount : null;
+}
+
+function formatEventAmount(value: string | number) {
+  const amount = parseEventAmount(value);
+  if (amount !== null) return formatKs(amount);
+  return String(value).trim() || "—";
 }
 
 function SummaryCard({

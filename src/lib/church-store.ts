@@ -283,9 +283,16 @@ function normalizeEvent(value: unknown): ChurchEvent {
     location,
     attendeesCount: toEventNumber(attendeesCount, "attendees count"),
     foodMenu: typeof foodMenu === "string" ? foodMenu : "",
-    totalExpense: toEventNumber(totalExpense, "total expense"),
-    donations: toEventNumber(donations, "donations"),
+    totalExpense: toEventAmount(totalExpense, "total expense"),
+    donations: toEventAmount(donations, "donations"),
   };
+}
+
+function toEventAmount(value: unknown, label: string): string | number {
+  if (value === null || value === undefined) return "";
+  if (typeof value === "string") return value;
+  if (typeof value === "number" && Number.isFinite(value)) return value;
+  throw new Error(`Event ${label} is invalid`);
 }
 
 function toEventNumber(value: unknown, label: string) {
