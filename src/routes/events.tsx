@@ -1,6 +1,15 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useEffect, useState, type FormEvent } from "react";
-import { CalendarDays, MapPin, Pencil, Plus, Trash2, UsersRound, Utensils } from "lucide-react";
+import {
+  CalendarDays,
+  MapPin,
+  Pencil,
+  Plus,
+  Search,
+  Trash2,
+  UsersRound,
+  Utensils,
+} from "lucide-react";
 import { AppShell } from "@/components/AppShell";
 import { EmptyState } from "@/components/EmptyState";
 import { Button } from "@/components/ui/button";
@@ -43,6 +52,8 @@ function EventsPage() {
   const canManage = usePermission("manage-events");
   const [events, setEvents] = useState<ChurchEvent[]>([]);
   const [query, setQuery] = useState("");
+  const [selectedYear, setSelectedYear] = useState("all");
+  const [selectedMonth, setSelectedMonth] = useState("all");
   const [isLoading, setIsLoading] = useState(true);
   const [loadError, setLoadError] = useState("");
   const [isSaving, setIsSaving] = useState(false);
@@ -74,21 +85,27 @@ function EventsPage() {
     };
   }, []);
 
+  const years = [...new Set(events.map((event) => event.date.slice(0, 4)))].sort((a, b) =>
+    b.localeCompare(a),
+  );
   const visibleEvents = events
     .filter((event) => {
       const searchText = query.trim().toLowerCase();
+      const [year, month] = event.date.split("-");
       return (
-        !searchText ||
-        event.title.toLowerCase().includes(searchText) ||
-        event.location.toLowerCase().includes(searchText)
+        (!searchText ||
+          event.title.toLowerCase().includes(searchText) ||
+          event.location.toLowerCase().includes(searchText)) &&
+        (selectedYear === "all" || year === selectedYear) &&
+        (selectedMonth === "all" || month === selectedMonth)
       );
     })
     .sort((a, b) => b.date.localeCompare(a.date));
-  const totalExpense = events.reduce(
+  const totalExpense = visibleEvents.reduce(
     (total, event) => total + (parseEventAmount(event.totalExpense) ?? 0),
     0,
   );
-  const totalAttendees = events.reduce((total, event) => total + event.attendeesCount, 0);
+  const totalAttendees = visibleEvents.reduce((total, event) => total + event.attendeesCount, 0);
 
   function openAddDialog() {
     setEditing(null);
@@ -170,7 +187,7 @@ function EventsPage() {
       <div className="mb-5 grid grid-cols-1 gap-4 sm:grid-cols-3">
         <SummaryCard
           label="Total Events"
-          value={events.length.toLocaleString()}
+          value={visibleEvents.length.toLocaleString()}
           icon={CalendarDays}
         />
         <SummaryCard label="Total Expense" value={formatKs(totalExpense)} icon={Utensils} />
@@ -182,12 +199,63 @@ function EventsPage() {
       </div>
 
       <section className="glass rounded-2xl p-5">
-        <div className="mb-4 flex items-center justify-between">
+        <div className="mb-4 flex flex-wrap items-end justify-between gap-3">
           <div>
             <h2 className="font-display font-semibold">All Events</h2>
             <p className="text-[11px] text-muted-foreground">
               {visibleEvents.length} {visibleEvents.length === 1 ? "event" : "events"}
             </p>
+          </div>
+          <div className="flex w-full flex-wrap items-center gap-2 sm:w-auto">
+            <label className="relative min-w-48 flex-1 sm:flex-none" htmlFor="event-search">
+              <Search className="absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
+              <input
+                id="event-search"
+                type="search"
+                value={query}
+                onChange={(event) => setQuery(event.target.value)}
+                placeholder="Search title or location"
+                className="field w-full py-2 pl-9 pr-3 text-xs"
+              />
+            </label>
+            <label className="sr-only" htmlFor="event-year-filter">
+              Filter events by year
+            </label>
+            <select
+              id="event-year-filter"
+              value={selectedYear}
+              onChange={(event) => setSelectedYear(event.target.value)}
+              className="field px-3 py-2 text-xs"
+            >
+              <option value="all">All Years</option>
+              {years.map((year) => (
+                <option key={year} value={year}>
+                  {year}
+                </option>
+              ))}
+            </select>
+            <label className="sr-only" htmlFor="event-month-filter">
+              Filter events by month
+            </label>
+            <select
+              id="event-month-filter"
+              value={selectedMonth}
+              onChange={(event) => setSelectedMonth(event.target.value)}
+              className="field px-3 py-2 text-xs"
+            >
+              <option value="all">All Months</option>
+              {Array.from({ length: 12 }, (_, index) => {
+                const month = String(index + 1).padStart(2, "0");
+                return (
+                  <option key={month} value={month}>
+                    {new Date(Date.UTC(2020, index)).toLocaleString("en", {
+                      month: "short",
+                      timeZone: "UTC",
+                    })}
+                  </option>
+                );
+              })}
+            </select>
           </div>
         </div>
         {isLoading ? (
