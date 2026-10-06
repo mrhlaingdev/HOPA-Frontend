@@ -275,10 +275,13 @@ function Overview() {
           </div>
         </section>
 
-        <section aria-label="Weekly attendance">
+        <section
+          aria-label="Attendance and student directory"
+          className="grid grid-cols-1 items-stretch gap-4 lg:grid-cols-2"
+        >
           <Panel
             title="Weekly Attendance"
-            className="w-full"
+            className="h-full border border-white/10 bg-slate-900/60 backdrop-blur-xl"
             right={
               <span className="text-[11px] text-muted-foreground">
                 {recentWeeks.length > 0
@@ -312,6 +315,57 @@ function Overview() {
                   </span>
                 </div>
               ))}
+            </div>
+          </Panel>
+
+          <Panel
+            title="Student Directory"
+            className="h-full border border-white/10 bg-slate-900/60 backdrop-blur-xl"
+            right={
+              <input
+                value={q}
+                onChange={(e) => setQ(e.target.value)}
+                className="field px-3 py-1.5 text-xs"
+                placeholder="Search name…"
+                aria-label="Search students"
+              />
+            }
+          >
+            <div className="divide-y divide-white/5 text-sm">
+              {filtered.map((s) => {
+                const rate = attendanceRate(attendance, s.id);
+                return (
+                  <Link
+                    key={s.id}
+                    to="/students"
+                    search={{ q: s.name }}
+                    className="flex items-center gap-3 py-2.5"
+                  >
+                    <div
+                      className="size-8 rounded-full grid place-items-center text-[11px] font-semibold"
+                      style={{ backgroundImage: s.gradient }}
+                    >
+                      {initials(s.name)}
+                    </div>
+                    <div className="leading-tight">
+                      <p>{s.name}</p>
+                      <p className="text-[11px] text-muted-foreground">
+                        Grade {s.grade} · Age {s.age}
+                      </p>
+                    </div>
+                    <span
+                      className={`ml-auto rounded-full text-[11px] px-2.5 py-1 ${
+                        rate >= 85 ? "bg-mint/15 text-mint" : "bg-amber/15 text-amber"
+                      }`}
+                    >
+                      {rate}% attended
+                    </span>
+                  </Link>
+                );
+              })}
+              {filtered.length === 0 && (
+                <p className="py-6 text-center text-xs text-muted-foreground">No students found.</p>
+              )}
             </div>
           </Panel>
         </section>
@@ -412,8 +466,8 @@ function Overview() {
           </Panel>
         </section>
 
-        <section aria-label="Quick actions and directory" className="grid grid-cols-12 gap-4">
-          <div className="glass col-span-12 rounded-2xl p-5 lg:col-span-4">
+        <section aria-label="Quick actions">
+          <div className="glass max-w-2xl rounded-2xl border border-white/10 bg-slate-900/60 p-5 backdrop-blur-xl">
             <p className="text-muted-foreground text-sm">Quick Actions</p>
             <div className="mt-3 grid grid-cols-3 gap-2">
               <Link
@@ -440,57 +494,6 @@ function Overview() {
             </div>
             <p className="mt-3 text-[11px] text-muted-foreground">Record data in one tap</p>
           </div>
-
-          <Panel
-            title="Student Directory"
-            className="col-span-12 lg:col-span-8"
-            right={
-              <input
-                value={q}
-                onChange={(e) => setQ(e.target.value)}
-                className="field px-3 py-1.5 text-xs"
-                placeholder="Search name…"
-                aria-label="Search students"
-              />
-            }
-          >
-            <div className="divide-y divide-white/5 text-sm">
-              {filtered.map((s) => {
-                const rate = attendanceRate(attendance, s.id);
-                return (
-                  <Link
-                    key={s.id}
-                    to="/students"
-                    search={{ q: s.name }}
-                    className="flex items-center gap-3 py-2.5"
-                  >
-                    <div
-                      className="size-8 rounded-full grid place-items-center text-[11px] font-semibold"
-                      style={{ backgroundImage: s.gradient }}
-                    >
-                      {initials(s.name)}
-                    </div>
-                    <div className="leading-tight">
-                      <p>{s.name}</p>
-                      <p className="text-[11px] text-muted-foreground">
-                        Grade {s.grade} · Age {s.age}
-                      </p>
-                    </div>
-                    <span
-                      className={`ml-auto rounded-full text-[11px] px-2.5 py-1 ${
-                        rate >= 85 ? "bg-mint/15 text-mint" : "bg-amber/15 text-amber"
-                      }`}
-                    >
-                      {rate}% attended
-                    </span>
-                  </Link>
-                );
-              })}
-              {filtered.length === 0 && (
-                <p className="py-6 text-center text-xs text-muted-foreground">No students found.</p>
-              )}
-            </div>
-          </Panel>
         </section>
       </div>
     </AppShell>
