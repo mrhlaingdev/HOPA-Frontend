@@ -1,6 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useMemo, useState } from "react";
-import { Pencil, Trash2, UsersRound } from "lucide-react";
+import { CalendarCheck2, GraduationCap, Pencil, Trash2, UsersRound } from "lucide-react";
 import { AppShell, Panel } from "@/components/AppShell";
 import { ExportDropdown } from "@/components/ExportDropdown";
 import { EmptyState } from "@/components/EmptyState";
@@ -8,8 +8,6 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import {
-  attendanceRate,
-  attendedCount,
   allSundays,
   actions,
   formatApiError,
@@ -134,10 +132,32 @@ function StudentsPage() {
   );
 
   const student = students.find((s) => s.id === selected) ?? rows[0] ?? students[0];
-  const trainings = completions
-    .filter((c) => c.studentId === student?.id)
-    .map((c) => ({ ...c, course: courses.find((x) => x.id === c.courseId) }))
-    .filter((c) => c.course);
+  const today = new Date().toISOString().slice(0, 10);
+  const studentSessions = student
+    ? allSundays.filter((date) => date >= student.enrolled && date <= today)
+    : [];
+  const attendedSessions = student
+    ? studentSessions.filter((date) => attendance.includes(`${student.id}|${date}`))
+    : [];
+  const currentYear = today.slice(0, 4);
+  const currentYearSessions = studentSessions.filter((date) => date.startsWith(currentYear));
+  const currentYearAttended = student
+    ? currentYearSessions.filter((date) => attendance.includes(`${student.id}|${date}`)).length
+    : 0;
+  const currentYearRate =
+    currentYearSessions.length === 0
+      ? 0
+      : Math.round((currentYearAttended / currentYearSessions.length) * 100);
+  const studentCourseHistory = student
+    ? courses
+        .map((course) => {
+          const completion = completions.find(
+            (record) => record.studentId === student.id && record.courseId === course.id,
+          );
+          return { course, completion };
+        })
+        .filter(({ course, completion }) => course.active || completion)
+    : [];
 
   return (
     <AppShell search={q} onSearch={setQ}>
@@ -450,42 +470,116 @@ function StudentsPage() {
                     </dt>
                     <dd className="mt-0.5 text-muted-foreground">{formatDate(student.enrolled)}</dd>
                   </div>
-                  <div>
-                    <dt className="text-[10px] uppercase tracking-[0.14em] text-muted-foreground">
-                      Sundays attended
-                    </dt>
-                    <dd className="mt-0.5 text-muted-foreground">
-                      {attendedCount(attendance, student.id)}/{allSundays.length}
-                    </dd>
-                  </div>
                 </dl>
+              </Panel>
 
-                <div className="mt-4">
-                  <div className="flex items-center justify-between text-[11px]">
-                    <span className="uppercase tracking-[0.14em] text-muted-foreground">
-                      Yearly attendance
-                    </span>
-                    <span className="text-mint">{attendanceRate(attendance, student.id)}%</span>
-                  </div>
-                  <div className="mt-2 h-1.5 rounded-full bg-white/10 overflow-hidden">
+              <Panel
+                title="Attendance History"
+                mm={`${attendedSessions.length} of ${studentSessions.length} sessions attended`}
+              >
+                <div className="flex items-center gap-3 rounded-xl border border-white/10 bg-white/[0.03] p-3">
+                  <CalendarCheck2 className="size-5 shrink-0 text-mint" />
+                  <div className="min-w-0 flex-1">
+                    <div className="flex items-center justify-between gap-2 text-xs">
+                      <span className="font-medium">{currentYear} attendance</span>
+                      <span className="text-mint">{currentYearRate}%</span>
+                    </div>
                     <div
-                      className="h-full rounded-full gradient-mint"
-                      style={{ width: `${attendanceRate(attendance, student.id)}%` }}
-                    />
+                      className="mt-2 h-2 overflow-hidden rounded-full bg-white/10"
+                      role="meter"
+                      aria-label={`${currentYear} attendance rate`}
+                      aria-valuemin={0}
+                      aria-valuemax={100}
+                      aria-valuenow={currentYearRate}
+                    >
+                      <div
+                        className="h-full rounded-full gradient-mint transition-[width]"
+                        style={{ width: `${currentYearRate}%` }}
+                      />
+                    </div>
+                    <p className="mt-1 text-[10px] text-muted-foreground">
+                      {currentYearAttended} of {currentYearSessions.length} sessions
+                    </p>
                   </div>
+                </div>
+                <div className="mt-3 max-h-64 space-y-1 overflow-y-auto pr-1">
+                  {studentSessions.length === 0 ? (
+                    <p className="py-3 text-center text-xs text-muted-foreground">
+                      No Sunday sessions since enrollment.
+                    </p>
+                  ) : (
+                    [...studentSessions].reverse().map((date) => {
+                      const attended = attendance.includes(`${student.id}|${date}`);
+                      return (
+                        <div
+                          key={date}
+                          className="flex items-center justify-between gap-3 rounded-lg px-2 py-1.5 text-xs hover:bg-white/[0.04]"
+                        >
+                          <span className="text-muted-foreground">{formatDate(date)}</span>
+                          <span
+                            className={`rounded-full px-2 py-0.5 text-[10px] font-medium ${
+                              attended
+                                ? "bg-mint/15 text-mint"
+                                : "bg-rose/15 text-rose"
+                            }`}
+                          >
+                            {attended ? "Attended" : "Absent"}
+                          </span>
+                        </div>
+                      );
+                    })
+                  )}
                 </div>
               </Panel>
 
-              <Panel title="Training Completion History" mm="သင်တန်း ပြီးမြောက်မှု မှတ်တမ်း">
-                <ul className="space-y-2 text-xs">
-                  {trainings.map((t) => (
-                    <li key={t.courseId} className="flex justify-between gap-2">
-                      <span>{t.course!.title}</span>
-                      <span className="text-mint shrink-0">{formatDate(t.date)}</span>
+              <Panel
+                title="Course Training Records"
+                mm={`${studentCourseHistory.filter(({ completion }) => completion).length} completed · ${studentCourseHistory.filter(({ completion }) => !completion).length} in progress`}
+              >
+                <ul className="space-y-3">
+                  {studentCourseHistory.map(({ course, completion }) => {
+                    const progress = completion ? 100 : 0;
+                    return (
+                      <li
+                        key={course.id}
+                        className="rounded-xl border border-white/10 bg-white/[0.03] p-3"
+                      >
+                        <div className="flex items-start gap-2">
+                          <GraduationCap className="mt-0.5 size-4 shrink-0 text-accent" />
+                          <div className="min-w-0 flex-1">
+                            <div className="flex flex-wrap items-center justify-between gap-2">
+                              <span className="text-xs font-medium">{course.title}</span>
+                              <span
+                                className={`rounded-full px-2 py-0.5 text-[10px] font-medium ${
+                                  completion
+                                    ? "bg-mint/15 text-mint"
+                                    : "bg-accent/15 text-accent"
+                                }`}
+                              >
+                                {completion ? "Completed" : "Enrolled"}
+                              </span>
+                            </div>
+                            <div className="mt-2 h-1.5 overflow-hidden rounded-full bg-white/10">
+                              <div
+                                className={`h-full rounded-full transition-[width] ${
+                                  completion ? "gradient-mint" : "bg-accent/70"
+                                }`}
+                                style={{ width: `${progress}%` }}
+                              />
+                            </div>
+                            <div className="mt-1 flex justify-between gap-2 text-[10px] text-muted-foreground">
+                              <span>{completion ? `Completed ${formatDate(completion.date)}` : `${formatDate(course.date)} · ${course.time}`}</span>
+                              <span>{progress}%</span>
+                            </div>
+                          </div>
+                        </div>
+                      </li>
+                    );
+                  })}
+                  {studentCourseHistory.length === 0 && (
+                    <li className="py-3 text-center text-xs text-muted-foreground">
+                      No active or completed course records.
                     </li>
-                  ))}
-                  {trainings.length === 0 && (
-                    <li className="text-muted-foreground">No completed training yet.</li>
                   )}
                 </ul>
               </Panel>
