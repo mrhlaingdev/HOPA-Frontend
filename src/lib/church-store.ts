@@ -38,7 +38,24 @@ export type ChurchState = {
   staff: Staff[];
   completions: Completion[];
   txns: Txn[];
+  events: ChurchEvent[];
   isLoading: boolean;
+};
+
+export type SystemBackup = {
+  format: "hopa-full-backup";
+  version: 1;
+  createdAt: string;
+  data: {
+    students: Student[];
+    teachers: Teacher[];
+    staff: Staff[];
+    courses: Course[];
+    attendance: string[];
+    completions: Completion[];
+    finance: Txn[];
+    events: ChurchEvent[];
+  };
 };
 
 export type DashboardStats = {
@@ -61,6 +78,7 @@ let state: ChurchState = {
   staff: [],
   completions: [],
   txns: [],
+  events: [],
   isLoading: true,
 };
 let loadPromise: Promise<void> | undefined;
@@ -100,6 +118,7 @@ const API_ENDPOINTS = {
   attendance: "/api/attendance",
   transactions: "/api/finance",
   events: "/api/events",
+  backupRestore: "/api/backup/restore",
   dashboardStats: "/api/dashboard/stats",
 } as const;
 
@@ -249,7 +268,176 @@ export async function loadEvents(): Promise<ChurchEvent[]> {
   if (!records) throw new Error("Invalid events response from backend");
 
   const events = records.map(normalizeEvent);
+  set({ events });
   return events;
+}
+
+export function parseSystemBackup(value: unknown): SystemBackup {
+  if (
+    !isRecord(value) ||
+    value["format"] !== "hopa-full-backup" ||
+    value["version"] !== 1 ||
+    typeof value["createdAt"] !== "string" ||
+    !Number.isFinite(Date.parse(value["createdAt"])) ||
+    !isRecord(value["data"])
+  ) {
+    throw new Error("This file is not a valid HOPA backup.");
+  }
+
+  const data = value["data"];
+  const students = requireBackupArray(data["students"], "students", isBackupStudent);
+  const teachers = requireBackupArray(data["teachers"], "teachers", isBackupTeacher);
+  const staff = requireBackupArray(data["staff"], "staff", isBackupStaff);
+  const courses = requireBackupArray(data["courses"], "courses", isBackupCourse);
+  const attendance = requireBackupArray(
+    data["attendance"],
+    "attendance",
+    (item): item is string => typeof item === "string" && item.includes("|"),
+  );
+  const completions = requireBackupArray(data["completions"], "completions", isBackupCompletion);
+  const finance = requireBackupArray(data["finance"], "finance", isBackupTransaction);
+  const events = requireBackupArray(data["events"], "events", isBackupEvent);
+
+  return {
+    format: "hopa-full-backup",
+    version: 1,
+    createdAt: value["createdAt"],
+    data: { students, teachers, staff, courses, attendance, completions, finance, events },
+  };
+}
+
+function requireBackupArray<T>(
+  value: unknown,
+  label: string,
+  isItem: (item: unknown) => item is T,
+): T[] {
+  if (!Array.isArray(value) || !value.every(isItem)) {
+    throw new Error(`The backup contains invalid ${label} data.`);
+  }
+  return value;
+}
+
+function isBackupStudent(value: unknown): value is Student {
+  return (
+    isRecord(value) &&
+    typeof value["id"] === "string" &&
+    typeof value["name"] === "string" &&
+    typeof value["nameMm"] === "string" &&
+    (value["gender"] === "Male" || value["gender"] === "Female") &&
+    typeof value["age"] === "number" &&
+    Number.isFinite(value["age"]) &&
+    typeof value["grade"] === "string" &&
+    typeof value["parentName"] === "string" &&
+    typeof value["parentPhone"] === "string" &&
+    typeof value["address"] === "string" &&
+    typeof value["enrolled"] === "string" &&
+    typeof value["gradient"] === "string"
+  );
+}
+
+function isBackupTeacher(value: unknown): value is Teacher {
+  return (
+    isRecord(value) &&
+    typeof value["id"] === "string" &&
+    typeof value["name"] === "string" &&
+    (value["gender"] === "Male" || value["gender"] === "Female") &&
+    typeof value["phone"] === "string" &&
+    typeof value["email"] === "string" &&
+    typeof value["specialization"] === "string" &&
+    (value["active"] === undefined || typeof value["active"] === "boolean")
+  );
+}
+
+function isBackupStaff(value: unknown): value is Staff {
+  return (
+    isRecord(value) &&
+    typeof value["id"] === "string" &&
+    typeof value["name"] === "string" &&
+    (value["gender"] === "Male" || value["gender"] === "Female") &&
+    typeof value["position"] === "string" &&
+    typeof value["phone"] === "string" &&
+    typeof value["email"] === "string" &&
+    typeof value["salary"] === "number" &&
+    Number.isFinite(value["salary"]) &&
+    (value["active"] === undefined || typeof value["active"] === "boolean")
+  );
+}
+
+function isBackupCourse(value: unknown): value is Course {
+  return (
+    isRecord(value) &&
+    typeof value["id"] === "string" &&
+    typeof value["title"] === "string" &&
+    typeof value["titleMm"] === "string" &&
+    typeof value["date"] === "string" &&
+    typeof value["time"] === "string" &&
+    typeof value["instructor"] === "string" &&
+    (value["teacherId"] === undefined || typeof value["teacherId"] === "string") &&
+    typeof value["active"] === "boolean"
+  );
+}
+
+function isBackupCompletion(value: unknown): value is Completion {
+  return (
+    isRecord(value) &&
+    typeof value["courseId"] === "string" &&
+    typeof value["studentId"] === "string" &&
+    typeof value["date"] === "string"
+  );
+}
+
+function isBackupTransaction(value: unknown): value is Txn {
+  return (
+    isRecord(value) &&
+    typeof value["id"] === "string" &&
+    typeof value["date"] === "string" &&
+    (value["type"] === "income" || value["type"] === "expense") &&
+    typeof value["category"] === "string" &&
+    typeof value["description"] === "string" &&
+    typeof value["amount"] === "number" &&
+    Number.isFinite(value["amount"]) &&
+    (value["receipt"] === undefined || typeof value["receipt"] === "string")
+  );
+}
+
+function isBackupEvent(value: unknown): value is ChurchEvent {
+  return (
+    isRecord(value) &&
+    typeof value["id"] === "string" &&
+    typeof value["title"] === "string" &&
+    typeof value["date"] === "string" &&
+    typeof value["location"] === "string" &&
+    typeof value["attendeesCount"] === "number" &&
+    Number.isFinite(value["attendeesCount"]) &&
+    typeof value["foodMenu"] === "string" &&
+    (typeof value["totalExpense"] === "string" ||
+      (typeof value["totalExpense"] === "number" && Number.isFinite(value["totalExpense"]))) &&
+    (typeof value["donations"] === "string" ||
+      (typeof value["donations"] === "number" && Number.isFinite(value["donations"])))
+  );
+}
+
+export async function restoreSystemBackup(value: unknown) {
+  const backup = parseSystemBackup(value);
+  if (!API_BASE_URL) throw new Error("VITE_API_BASE_URL is not configured");
+
+  const response = await fetchApi(API_ENDPOINTS.backupRestore, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(backup),
+  });
+  if (!response.ok) await throwApiError(response, "Failed to restore system backup");
+
+  set({
+    students: backup.data.students,
+    teachers: backup.data.teachers,
+    staff: backup.data.staff,
+    courses: backup.data.courses,
+    attendance: backup.data.attendance,
+    completions: backup.data.completions,
+    txns: backup.data.finance,
+    events: backup.data.events,
+  });
 }
 
 function isRecord(value: unknown): value is Record<string, unknown> {

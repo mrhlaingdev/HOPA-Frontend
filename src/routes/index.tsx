@@ -1,11 +1,13 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import {
   BookOpen,
   BookOpenCheck,
   ClipboardCheck,
+  Download,
   GraduationCap,
   Receipt,
+  RotateCcw,
   UserPlus,
   UserRoundPlus,
   Users,
@@ -13,15 +15,30 @@ import {
 } from "lucide-react";
 import { AppShell, Panel } from "@/components/AppShell";
 import { DateFilters } from "@/components/DateFilters";
+import { Button } from "@/components/ui/button";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import { CHURCH_LEADERSHIP } from "@/lib/constants/leadership";
 import {
   ALL_DATE_FILTER,
   attendanceRate,
   formatApiError,
   loadDashboardStats,
+  loadEvents,
   matchesDate,
   monthlyTotals,
+  parseSystemBackup,
+  restoreSystemBackup,
   useChurch,
+  type SystemBackup,
   type DashboardStats,
 } from "@/lib/church-store";
 import { formatDate, formatShort, initials } from "@/lib/church-data";
@@ -61,6 +78,7 @@ function Overview() {
     attendance: storedAttendance,
     completions: storedCompletions,
     txns: storedTxns,
+    isLoading,
   } = useChurch();
   const students = storedStudents?.filter(Boolean) || [];
   const teachers = storedTeachers?.filter(Boolean) || [];
@@ -74,6 +92,11 @@ function Overview() {
   const [q, setQ] = useState("");
   const [dateFilter, setDateFilter] = useState(ALL_DATE_FILTER);
   const [dashboardStats, setDashboardStats] = useState<DashboardStats | null>(null);
+  const [isBackupLoading, setIsBackupLoading] = useState(false);
+  const [isRestoringBackup, setIsRestoringBackup] = useState(false);
+  const [pendingBackup, setPendingBackup] = useState<SystemBackup | null>(null);
+  const backupFileInput = useRef<HTMLInputElement>(null);
+  const canManageSystem = usePermission("manage-finance");
   const displayedDashboardStats = dashboardStats ?? {
     totalStudents: students.length,
     totalTeachers: teachers.length,
@@ -128,6 +151,68 @@ function Overview() {
     .sort()
     .slice(-7);
   const lastWeek = recentWeeks[recentWeeks.length - 1];
+
+  async function downloadFullBackup() {
+    setIsBackupLoading(true);
+    try {
+      const events = await loadEvents();
+      const backup = {
+        format: "hopa-full-backup" as const,
+        version: 1 as const,
+        createdAt: new Date().toISOString(),
+        data: {
+          students,
+          teachers,
+          staff,
+          courses,
+          attendance,
+          completions,
+          finance: txns,
+          events,
+        },
+      };
+      const blob = new Blob([JSON.stringify(backup, null, 2)], {
+        type: "application/json;charset=utf-8",
+      });
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement("a");
+      link.href = url;
+      link.download = `hopa_backup_${new Date().toISOString().slice(0, 10)}.json`;
+      link.click();
+      window.setTimeout(() => URL.revokeObjectURL(url), 0);
+      toast.success("Full system backup downloaded.");
+    } catch (error) {
+      toast.error(formatApiError(error, "Unable to download full backup"));
+    } finally {
+      setIsBackupLoading(false);
+    }
+  }
+
+  async function selectBackupFile(file?: File) {
+    if (!file) return;
+    try {
+      const backup = parseSystemBackup(JSON.parse(await file.text()) as unknown);
+      setPendingBackup(backup);
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "Unable to read backup file.");
+    } finally {
+      if (backupFileInput.current) backupFileInput.current.value = "";
+    }
+  }
+
+  async function confirmRestoreBackup() {
+    if (!pendingBackup) return;
+    setIsRestoringBackup(true);
+    try {
+      await restoreSystemBackup(pendingBackup);
+      setPendingBackup(null);
+      toast.success("System data restored successfully.");
+    } catch (error) {
+      toast.error(formatApiError(error, "Unable to restore system data"));
+    } finally {
+      setIsRestoringBackup(false);
+    }
+  }
 
   // Student Directory တွင် ပြသရန် စနစ်ထဲရှိ ကျောင်းသားများထဲမှ ရှာဖွေပါမည်
   const filtered = useMemo(
@@ -548,7 +633,83 @@ function Overview() {
             <p className="mt-3 text-[11px] text-muted-foreground">Record data in one tap</p>
           </div>
         </section>
+
+        {canManageSystem && (
+          <section aria-label="Backup and restore">
+            <Panel
+              title="Backup &amp; Restore"
+              mm="Download or restore a full system data backup"
+              className="border border-amber-300/15"
+            >
+              <p className="max-w-3xl text-xs text-muted-foreground">
+                Back up students, teachers, staff, courses, attendance, finance, and events to a
+                timestamped JSON file. Restoring sends the selected backup to the server and
+                replaces active system data.
+              </p>
+              <div className="mt-4 flex flex-wrap gap-2">
+                <Button
+                  type="button"
+                  onClick={downloadFullBackup}
+                  disabled={isBackupLoading || isLoading}
+                  className="gap-2"
+                >
+                  <Download className="size-4" />
+                  {isBackupLoading ? "Preparing Backup…" : "Download Full Backup"}
+                </Button>
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={() => backupFileInput.current?.click()}
+                  disabled={isRestoringBackup}
+                  className="gap-2"
+                >
+                  <RotateCcw className="size-4" />
+                  Upload &amp; Restore Data
+                </Button>
+                <input
+                  ref={backupFileInput}
+                  type="file"
+                  accept="application/json,.json"
+                  className="sr-only"
+                  aria-label="Select HOPA backup JSON file"
+                  onChange={(event) => void selectBackupFile(event.target.files?.[0])}
+                />
+              </div>
+            </Panel>
+          </section>
+        )}
       </div>
+
+      <AlertDialog
+        open={!!pendingBackup}
+        onOpenChange={(open) => {
+          if (!open && !isRestoringBackup) setPendingBackup(null);
+        }}
+      >
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Restore system data?</AlertDialogTitle>
+            <AlertDialogDescription>
+              This will replace the active system data with the selected backup. This change affects
+              students, teachers, staff, courses, attendance, finance, and events. Make sure you
+              have a current backup before continuing.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={isRestoringBackup}>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              disabled={isRestoringBackup}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+              onClick={(event) => {
+                event.preventDefault();
+                void confirmRestoreBackup();
+              }}
+            >
+              {isRestoringBackup ? "Restoring…" : "Restore Data"}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </AppShell>
   );
 }
