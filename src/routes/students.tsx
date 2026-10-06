@@ -284,10 +284,11 @@ function StudentsPage() {
             ) : rows.length === 0 ? (
               <EmptyState icon={UsersRound} description="Add a student or adjust your search filters to see records here." />
             ) : (
-            <table className="min-w-[42rem] w-full text-sm">
+            <table className="min-w-[46rem] w-full text-sm">
               <thead>
                 <tr className="text-[10px] uppercase tracking-[0.14em] text-muted-foreground border-b border-white/10">
                   <th className="text-left font-medium py-2 pl-2">Name</th>
+                  <th className="text-left font-medium py-2">Gender</th>
                   <th className="text-left font-medium py-2">Age / Grade</th>
                   <th className="text-left font-medium py-2">Parent Phone</th>
                   <th className="text-left font-medium py-2">Address</th>
@@ -320,6 +321,7 @@ function StudentsPage() {
                           </div>
                         </div>
                       </td>
+                      <td className="py-2.5 text-muted-foreground">{s.gender}</td>
                       <td className="py-2.5 text-muted-foreground">
                         {s.age} · G{s.grade}
                       </td>
@@ -368,7 +370,7 @@ function StudentsPage() {
                 })}
                 {rows.length === 0 && (
                   <tr>
-                    <td colSpan={6} className="py-8 text-center text-xs text-muted-foreground">
+                    <td colSpan={7} className="py-8 text-center text-xs text-muted-foreground">
                       No students match this search.
                     </td>
                   </tr>

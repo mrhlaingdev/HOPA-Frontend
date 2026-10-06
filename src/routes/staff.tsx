@@ -152,10 +152,11 @@ function StaffPage() {
           />
         ) : (
           <div className="overflow-x-auto">
-            <table className="min-w-[44rem] w-full text-sm">
+            <table className="min-w-[48rem] w-full text-sm">
               <thead>
                 <tr className="border-b border-white/10 text-left text-[10px] uppercase tracking-[0.14em] text-muted-foreground">
                   <th className="py-2">Name</th>
+                  <th className="py-2">Gender</th>
                   <th className="py-2">Position</th>
                   <th className="py-2">Phone</th>
                   <th className="py-2">Email</th>
@@ -168,6 +169,7 @@ function StaffPage() {
                 {rows.map((member) => (
                   <tr key={member.id}>
                     <td className="py-2.5 font-medium">{member.name}</td>
+                    <td className="py-2.5 text-muted-foreground">{member.gender}</td>
                     <td className="py-2.5 text-muted-foreground">{member.position}</td>
                     <td className="py-2.5 text-muted-foreground">{member.phone}</td>
                     <td className="py-2.5 text-muted-foreground">{member.email || "—"}</td>
