@@ -182,10 +182,52 @@ function FinancePage() {
     "#2dd4bf",
     "#f97316",
   ];
-  const rows = totals.rows.filter(
-    (t) =>
-      t.description.toLowerCase().includes(q.toLowerCase()) ||
-      t.category.toLowerCase().includes(q.toLowerCase()),
+  const historyRows = [
+    ...totals.rows.map((transaction) => ({
+      ...transaction,
+      source: "transaction" as const,
+    })),
+    ...filteredEvents.flatMap((event) => {
+      const donations = parseNumericValue(event.donations);
+      const expenses = parseNumericValue(event.totalExpense);
+      return [
+        ...(donations !== null && donations > 0
+          ? [
+              {
+                id: `event-${event.id}-donation`,
+                date: event.date,
+                type: "income" as const,
+                category: "Event Donation",
+                description: `${event.title} — Donations`,
+                amount: donations,
+                source: "event" as const,
+              },
+            ]
+          : []),
+        ...(expenses !== null && expenses > 0
+          ? [
+              {
+                id: `event-${event.id}-expense`,
+                date: event.date,
+                type: "expense" as const,
+                category: "Event Expense",
+                description: `${event.title} — Expenses`,
+                amount: expenses,
+                source: "event" as const,
+              },
+            ]
+          : []),
+      ];
+    }),
+  ].sort(
+    (a, b) =>
+      b.date.localeCompare(a.date) ||
+      a.description.localeCompare(b.description),
+  );
+  const rows = historyRows.filter(
+    (transaction) =>
+      transaction.description.toLowerCase().includes(q.toLowerCase()) ||
+      transaction.category.toLowerCase().includes(q.toLowerCase()),
   );
 
   const validateTransaction = (transaction: typeof emptyTxn) => {
@@ -440,10 +482,11 @@ function FinancePage() {
               <ExportDropdown
                 title="Finance Report"
                 filename="finance-report"
-                headers={["Date", "Type", "Category", "Description", "Amount (THB)"]}
+                headers={["Date", "Type", "Source", "Category", "Description", "Amount (THB)"]}
                 rows={rows.map((transaction) => [
                   transaction.date,
                   transaction.type,
+                  transaction.source === "event" ? "Event" : "Finance",
                   transaction.category,
                   transaction.description,
                   formatThb(transaction.amount),
@@ -497,7 +540,7 @@ function FinancePage() {
                       ) : (
                         <span className="text-[11px] text-muted-foreground">—</span>
                       )}
-                      {canManage && (
+                      {canManage && t.source === "transaction" && (
                         <Button
                           type="button"
                           variant="ghost"
@@ -520,7 +563,7 @@ function FinancePage() {
                           <span className="sr-only">Edit</span>
                         </Button>
                       )}
-                      {canDelete && (
+                      {canDelete && t.source === "transaction" && (
                         <Button
                           type="button"
                           variant="ghost"
