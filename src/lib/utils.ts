@@ -8,7 +8,7 @@ export function cn(...inputs: ClassValue[]) {
 export function downloadCsv(filename: string, headers: string[], rows: unknown[][]) {
   const escapeCell = (value: unknown) => {
     const cell = String(value ?? "");
-    return /[",\n]/.test(cell) ? `"${cell.replaceAll('"', '""')}"` : cell;
+    return /[",\r\n]/.test(cell) ? `"${cell.replaceAll('"', '""')}"` : cell;
   };
   const csv = [headers, ...rows].map((row) => row.map(escapeCell).join(",")).join("\n");
   const blob = new Blob([`\uFEFF${csv}`], { type: "text/csv;charset=utf-8;" });
