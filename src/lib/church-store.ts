@@ -248,7 +248,16 @@ export async function loadAttendance() {
 }
 
 export async function loadTransactions() {
-  const txns = await loadResource<Txn>(API_ENDPOINTS.transactions, "transactions");
+  const records = await loadResource<
+    Omit<Txn, "description"> & { description?: string; title?: string }
+  >(API_ENDPOINTS.transactions, "transactions");
+  const txns = records.map((transaction) => {
+    const description = transaction.description || transaction.title;
+    if (typeof description !== "string") {
+      throw new Error("Invalid transaction response: missing title or description");
+    }
+    return { ...transaction, description };
+  });
   set({ txns });
   return txns;
 }
@@ -640,7 +649,7 @@ export const actions = {
     const response = await fetchApi(API_ENDPOINTS.transactions, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(t),
+      body: JSON.stringify(toTransactionApiPayload(t)),
     });
     if (!response.ok) await throwApiError(response, "Failed to create transaction");
 
@@ -659,7 +668,12 @@ export const actions = {
     return loadEvents();
   },
   async updateTxn(txnId: string, txn: Partial<Omit<Txn, "id">>) {
-    await updateResource(API_ENDPOINTS.transactions, txnId, txn, "transaction");
+    await updateResource(
+      API_ENDPOINTS.transactions,
+      txnId,
+      toTransactionApiPayload(txn),
+      "transaction",
+    );
     await loadTransactions();
   },
   async deleteTxn(txnId: string) {
@@ -677,6 +691,15 @@ function toEventApiPayload(event: Omit<ChurchEvent, "id">) {
     total_expense: event.totalExpense,
     donations_collected: event.donations,
     food_menu: event.foodMenu,
+  };
+}
+
+function toTransactionApiPayload(transaction: Partial<Omit<Txn, "id">>) {
+  return {
+    ...transaction,
+    ...(typeof transaction.description === "string"
+      ? { title: transaction.description }
+      : {}),
   };
 }
 
