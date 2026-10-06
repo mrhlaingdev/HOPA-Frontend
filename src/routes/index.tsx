@@ -74,6 +74,17 @@ function Overview() {
   const [q, setQ] = useState("");
   const [dateFilter, setDateFilter] = useState(ALL_DATE_FILTER);
   const [dashboardStats, setDashboardStats] = useState<DashboardStats | null>(null);
+  const displayedDashboardStats = dashboardStats ?? {
+    totalStudents: students.length,
+    totalTeachers: teachers.length,
+    totalStaff: staff.length,
+    maleStudents: students.filter((student) => student.gender === "Male").length,
+    femaleStudents: students.filter((student) => student.gender === "Female").length,
+    maleTeachers: teachers.filter((teacher) => teacher.gender === "Male").length,
+    femaleTeachers: teachers.filter((teacher) => teacher.gender === "Female").length,
+    maleStaff: staff.filter((member) => member.gender === "Male").length,
+    femaleStaff: staff.filter((member) => member.gender === "Female").length,
+  };
 
   useEffect(() => {
     let active = true;
@@ -176,7 +187,7 @@ function Overview() {
                 <div>
                   <p className="text-sm text-slate-300">Total Students</p>
                   <p className="mt-3 text-4xl font-display font-bold leading-none text-white">
-                    {dashboardStats?.totalStudents ?? "—"}
+                    {displayedDashboardStats.totalStudents}
                   </p>
                 </div>
                 <span className="grid size-11 shrink-0 place-items-center rounded-full border border-cyan-300/30 bg-cyan-400/10 text-cyan-200">
@@ -186,9 +197,9 @@ function Overview() {
               <div className="mt-4 flex items-center gap-2">
                 <span className="size-1.5 rounded-full bg-cyan-300" />
                 <p className="text-xs text-slate-300">
-                  {dashboardStats?.maleStudents ?? "—"} Male{" "}
+                  {displayedDashboardStats.maleStudents} Male{" "}
                   <span className="px-1 text-slate-500">•</span>
-                  {dashboardStats?.femaleStudents ?? "—"} Female
+                  {displayedDashboardStats.femaleStudents} Female
                 </p>
               </div>
               <div className="mt-2 text-[11px] text-slate-500">All registered students</div>
@@ -198,7 +209,7 @@ function Overview() {
                 <div>
                   <p className="text-sm text-slate-300">Total Teachers</p>
                   <p className="mt-3 text-4xl font-display font-bold leading-none text-white">
-                    {dashboardStats?.totalTeachers ?? "—"}
+                    {displayedDashboardStats.totalTeachers}
                   </p>
                 </div>
                 <span className="grid size-11 shrink-0 place-items-center rounded-full border border-emerald-300/30 bg-emerald-400/10 text-emerald-200">
@@ -207,9 +218,9 @@ function Overview() {
               </div>
               <div className="mt-4 flex items-center gap-2">
                 <p className="text-xs text-slate-300">
-                  {dashboardStats?.maleTeachers ?? "—"} Male{" "}
+                  {displayedDashboardStats.maleTeachers} Male{" "}
                   <span className="px-1 text-slate-500">•</span>
-                  {dashboardStats?.femaleTeachers ?? "—"} Female
+                  {displayedDashboardStats.femaleTeachers} Female
                 </p>
               </div>
               <div className="mt-2 flex items-center gap-2">
@@ -226,7 +237,7 @@ function Overview() {
                 <div>
                   <p className="text-sm text-slate-300">Total Members</p>
                   <p className="mt-3 text-4xl font-display font-bold leading-none text-white">
-                    {dashboardStats?.totalStaff ?? "—"}
+                    {displayedDashboardStats.totalStaff}
                   </p>
                 </div>
                 <span className="grid size-11 shrink-0 place-items-center rounded-full border border-indigo-300/30 bg-indigo-400/10 text-indigo-200">
@@ -235,9 +246,9 @@ function Overview() {
               </div>
               <div className="mt-4 flex items-center gap-2">
                 <p className="text-xs text-slate-300">
-                  {dashboardStats?.maleStaff ?? "—"} Male{" "}
+                  {displayedDashboardStats.maleStaff} Male{" "}
                   <span className="px-1 text-slate-500">•</span>
-                  {dashboardStats?.femaleStaff ?? "—"} Female
+                  {displayedDashboardStats.femaleStaff} Female
                 </p>
               </div>
               <div className="mt-2 flex items-center gap-2">
