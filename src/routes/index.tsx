@@ -41,7 +41,14 @@ import {
   type SystemBackup,
   type DashboardStats,
 } from "@/lib/church-store";
-import { formatDate, formatShort, initials } from "@/lib/church-data";
+import {
+  type ChurchEvent,
+  formatDate,
+  formatShort,
+  formatShortThb,
+  initials,
+  parseNumericValue,
+} from "@/lib/church-data";
 import { usePermission } from "@/lib/auth";
 import { toast } from "sonner";
 
@@ -91,6 +98,9 @@ function Overview() {
   const txns = storedTxns?.filter(Boolean) || [];
   const [q, setQ] = useState("");
   const [dateFilter, setDateFilter] = useState(ALL_DATE_FILTER);
+  const [events, setEvents] = useState<ChurchEvent[]>([]);
+  const [areEventsLoading, setAreEventsLoading] = useState(true);
+  const [eventLoadError, setEventLoadError] = useState("");
   const [dashboardStats, setDashboardStats] = useState<DashboardStats | null>(null);
   const [isBackupLoading, setIsBackupLoading] = useState(false);
   const [isRestoringBackup, setIsRestoringBackup] = useState(false);
@@ -125,6 +135,28 @@ function Overview() {
     };
   }, []);
 
+  useEffect(() => {
+    let active = true;
+    loadEvents()
+      .then((result) => {
+        if (active) setEvents(result);
+      })
+      .catch((error: unknown) => {
+        if (!active) return;
+        const message = formatApiError(error, "Unable to load event finances");
+        setEventLoadError(message);
+        console.error(message, error);
+        toast.error(message);
+      })
+      .finally(() => {
+        if (active) setAreEventsLoading(false);
+      });
+
+    return () => {
+      active = false;
+    };
+  }, []);
+
   // Total Students အတွက် စနစ်ထဲရှိသမျှ ကျောင်းသားအကုန်လုံးကို ယူပါမည်
   const filteredStudents = students;
 
@@ -145,6 +177,18 @@ function Overview() {
     net: 0,
     rows: [],
   };
+  const filteredEvents = events.filter((event) => matchesDate(event.date, dateFilter));
+  const eventExpenses = filteredEvents.reduce(
+    (sum, event) => sum + (parseNumericValue(event.totalExpense) ?? 0),
+    0,
+  );
+  const eventDonations = filteredEvents.reduce(
+    (sum, event) => sum + (parseNumericValue(event.donations) ?? 0),
+    0,
+  );
+  const totalIncome = month.income + eventDonations;
+  const totalExpense = month.expense + eventExpenses;
+  const netBalance = totalIncome - totalExpense;
   const recentWeeks = Array.from(
     new Set(attendance?.map((record) => record?.split("|")[1] ?? "") || []),
   )
@@ -509,36 +553,52 @@ function Overview() {
           </div>
           <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
             <div className="glass-inset rounded-xl border border-white/5 p-4">
-              <p className="text-muted-foreground text-sm">Monthly Income</p>
+              <p className="text-muted-foreground text-sm">Monthly Income (฿)</p>
               <p className="mt-1 text-3xl font-display font-bold">
-                {formatShort(month?.income || 0)}
+                {formatShortThb(totalIncome)}
               </p>
               <div className="mt-3 flex items-center gap-2">
                 <span className="size-2.5 rounded-full bg-mint" />
-                <span className="text-[11px] text-muted-foreground">Donations &amp; offerings</span>
+                <span className="text-[11px] text-muted-foreground">
+                  Donations &amp; offerings, including events
+                </span>
               </div>
             </div>
             <div className="glass-inset rounded-xl border border-white/5 p-4">
-              <p className="text-muted-foreground text-sm">Monthly Expenses</p>
+              <p className="text-muted-foreground text-sm">Monthly Expenses (฿)</p>
               <p className="mt-1 text-3xl font-display font-bold">
-                {formatShort(month?.expense || 0)}
+                {formatShortThb(totalExpense)}
               </p>
               <div className="mt-3 flex items-center gap-2">
                 <span className="size-2.5 rounded-full bg-rose" />
-                <span className="text-[11px] text-muted-foreground">Supplies &amp; utilities</span>
+                <span className="text-[11px] text-muted-foreground">
+                  Supplies, utilities &amp; event expenses
+                </span>
               </div>
             </div>
             <div className="glass-inset rounded-xl border border-emerald-300/15 p-4">
               <p className="text-muted-foreground text-sm">
-                Net Balance <span className="opacity-60">· လက်ကျန်</span>
+                Net Balance (฿) <span className="opacity-60">· လက်ကျန်</span>
               </p>
               <p className="mt-1 text-3xl font-display font-bold text-mint">
-                {(month?.net || 0) >= 0 ? "+ " : "− "}
-                {formatShort(Math.abs(month?.net || 0))}
+                {netBalance >= 0 ? "+ " : "− "}
+                {formatShortThb(Math.abs(netBalance))}
               </p>
-              <p className="mt-3 text-[11px] text-muted-foreground">Income − Expense</p>
+              <p className="mt-3 text-[11px] text-muted-foreground">
+                Income − expense, including events
+              </p>
             </div>
           </div>
+          {areEventsLoading && (
+            <p className="mt-2 text-[11px] text-muted-foreground" role="status">
+              Loading event income and expenses…
+            </p>
+          )}
+          {eventLoadError && (
+            <p className="mt-2 text-[11px] text-rose" role="alert">
+              Event income and expenses could not be included.
+            </p>
+          )}
 
           <Panel
             title="Finance · Receipts"
@@ -546,10 +606,10 @@ function Overview() {
             right={
               <div className="flex gap-2">
                 <span className="rounded-full bg-mint/15 text-mint text-[11px] px-3 py-1">
-                  Income {formatShort(month?.income || 0)}
+                  Income {formatShortThb(totalIncome)}
                 </span>
                 <span className="rounded-full bg-rose/15 text-rose text-[11px] px-3 py-1">
-                  Expense {formatShort(month?.expense || 0)}
+                  Expense {formatShortThb(totalExpense)}
                 </span>
               </div>
             }
