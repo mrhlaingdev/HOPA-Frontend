@@ -162,309 +162,340 @@ function Overview() {
         </div>
       </Panel>
 
-      <div className="grid grid-cols-12 gap-4">
-        <div className="col-span-12 grid grid-cols-1 gap-4 sm:grid-cols-3">
-          <div className="glass relative overflow-hidden rounded-2xl border border-cyan-300/20 bg-slate-900/60 p-5 shadow-[0_0_24px_rgba(34,211,238,0.07)] backdrop-blur-xl">
-            <div className="flex items-start justify-between gap-3">
-              <div>
-                <p className="text-sm text-slate-300">Total Students</p>
-                <p className="mt-3 text-4xl font-display font-bold leading-none text-white">
-                  {filteredStudents.length}
+      <div className="space-y-4">
+        <section aria-label="People statistics">
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
+            <div className="glass relative overflow-hidden rounded-2xl border border-cyan-300/20 bg-slate-900/60 p-5 shadow-[0_0_24px_rgba(34,211,238,0.07)] backdrop-blur-xl">
+              <div className="flex items-start justify-between gap-3">
+                <div>
+                  <p className="text-sm text-slate-300">Total Students</p>
+                  <p className="mt-3 text-4xl font-display font-bold leading-none text-white">
+                    {filteredStudents.length}
+                  </p>
+                </div>
+                <span className="grid size-11 shrink-0 place-items-center rounded-full border border-cyan-300/30 bg-cyan-400/10 text-cyan-200">
+                  <Users className="size-5" aria-hidden="true" />
+                </span>
+              </div>
+              <div className="mt-4 flex items-center gap-2">
+                <span className="size-1.5 rounded-full bg-cyan-300" />
+                <p className="text-xs text-slate-300">
+                  {studentMaleCount} Boys <span className="px-1 text-slate-500">•</span>
+                  {studentFemaleCount} Girls
                 </p>
               </div>
-              <span className="grid size-11 shrink-0 place-items-center rounded-full border border-cyan-300/30 bg-cyan-400/10 text-cyan-200">
-                <Users className="size-5" aria-hidden="true" />
-              </span>
+              <div className="mt-2 text-[11px] text-slate-500">All registered students</div>
             </div>
-            <div className="mt-4 flex items-center gap-2">
-              <span className="size-1.5 rounded-full bg-cyan-300" />
-              <p className="text-xs text-slate-300">
-                {studentMaleCount} Boys <span className="px-1 text-slate-500">•</span>
-                {studentFemaleCount} Girls
-              </p>
-            </div>
-            <div className="mt-2 text-[11px] text-slate-500">
-              All registered students
-            </div>
-          </div>
-          <div className="glass relative overflow-hidden rounded-2xl border border-emerald-300/20 bg-slate-900/60 p-5 shadow-[0_0_24px_rgba(52,211,153,0.07)] backdrop-blur-xl">
-            <div className="flex items-start justify-between gap-3">
-              <div>
-                <p className="text-sm text-slate-300">Total Teachers</p>
-                <p className="mt-3 text-4xl font-display font-bold leading-none text-white">
-                  {teachers.length}
+            <div className="glass relative overflow-hidden rounded-2xl border border-emerald-300/20 bg-slate-900/60 p-5 shadow-[0_0_24px_rgba(52,211,153,0.07)] backdrop-blur-xl">
+              <div className="flex items-start justify-between gap-3">
+                <div>
+                  <p className="text-sm text-slate-300">Total Teachers</p>
+                  <p className="mt-3 text-4xl font-display font-bold leading-none text-white">
+                    {teachers.length}
+                  </p>
+                </div>
+                <span className="grid size-11 shrink-0 place-items-center rounded-full border border-emerald-300/30 bg-emerald-400/10 text-emerald-200">
+                  <GraduationCap className="size-5" aria-hidden="true" />
+                </span>
+              </div>
+              <div className="mt-4 flex items-center gap-2">
+                <p className="text-xs text-slate-300">
+                  {teacherMaleCount} Male <span className="px-1 text-slate-500">•</span>
+                  {teacherFemaleCount} Female
                 </p>
               </div>
-              <span className="grid size-11 shrink-0 place-items-center rounded-full border border-emerald-300/30 bg-emerald-400/10 text-emerald-200">
-                <GraduationCap className="size-5" aria-hidden="true" />
-              </span>
+              <div className="mt-2 flex items-center gap-2">
+                <span className="rounded-full border border-emerald-300/20 bg-emerald-300/10 px-2 py-0.5 text-[10px] font-medium text-emerald-200">
+                  {activeTeachersCount} active
+                </span>
+                <span className="text-[11px] text-slate-400">
+                  {teachers.length - activeTeachersCount} inactive
+                </span>
+              </div>
             </div>
-            <div className="mt-4 flex items-center gap-2">
-              <p className="text-xs text-slate-300">
-                {teacherMaleCount} Male <span className="px-1 text-slate-500">•</span>
-                {teacherFemaleCount} Female
-              </p>
-            </div>
-            <div className="mt-2 flex items-center gap-2">
-              <span className="rounded-full border border-emerald-300/20 bg-emerald-300/10 px-2 py-0.5 text-[10px] font-medium text-emerald-200">
-                {activeTeachersCount} active
-              </span>
-              <span className="text-[11px] text-slate-400">
-                {teachers.length - activeTeachersCount} inactive
-              </span>
-            </div>
-          </div>
-          <div className="glass relative overflow-hidden rounded-2xl border border-indigo-300/20 bg-slate-900/60 p-5 shadow-[0_0_24px_rgba(129,140,248,0.07)] backdrop-blur-xl">
-            <div className="flex items-start justify-between gap-3">
-              <div>
-                <p className="text-sm text-slate-300">Total Members</p>
-                <p className="mt-3 text-4xl font-display font-bold leading-none text-white">
-                  {staff.length}
+            <div className="glass relative overflow-hidden rounded-2xl border border-indigo-300/20 bg-slate-900/60 p-5 shadow-[0_0_24px_rgba(129,140,248,0.07)] backdrop-blur-xl">
+              <div className="flex items-start justify-between gap-3">
+                <div>
+                  <p className="text-sm text-slate-300">Total Members</p>
+                  <p className="mt-3 text-4xl font-display font-bold leading-none text-white">
+                    {staff.length}
+                  </p>
+                </div>
+                <span className="grid size-11 shrink-0 place-items-center rounded-full border border-indigo-300/30 bg-indigo-400/10 text-indigo-200">
+                  <UsersRound className="size-5" aria-hidden="true" />
+                </span>
+              </div>
+              <div className="mt-4 flex items-center gap-2">
+                <p className="text-xs text-slate-300">
+                  {memberMaleCount} Male <span className="px-1 text-slate-500">•</span>
+                  {memberFemaleCount} Female
                 </p>
               </div>
-              <span className="grid size-11 shrink-0 place-items-center rounded-full border border-indigo-300/30 bg-indigo-400/10 text-indigo-200">
-                <UsersRound className="size-5" aria-hidden="true" />
-              </span>
+              <div className="mt-2 flex items-center gap-2">
+                <span className="rounded-full border border-indigo-300/20 bg-indigo-300/10 px-2 py-0.5 text-[10px] font-medium text-indigo-200">
+                  {activeMembersCount} active
+                </span>
+                <span className="text-[11px] text-slate-400">
+                  {staff.length - activeMembersCount} inactive
+                </span>
+              </div>
             </div>
-            <div className="mt-4 flex items-center gap-2">
-              <p className="text-xs text-slate-300">
-                {memberMaleCount} Male <span className="px-1 text-slate-500">•</span>
-                {memberFemaleCount} Female
+          </div>
+        </section>
+
+        <section aria-label="Operational and attendance" className="grid grid-cols-12 gap-4">
+          <div className="glass col-span-12 rounded-2xl p-5 lg:col-span-8">
+            <div className="flex items-baseline justify-between">
+              <p className="text-muted-foreground text-sm">Weekly Attendance Trend</p>
+              <span className="text-[11px] text-muted-foreground">Live data</span>
+            </div>
+            <div className="mt-4 flex h-10 items-end gap-1.5">
+              {weeklyCounts?.map((c, i) => (
+                <div
+                  key={recentWeeks[i]}
+                  className="flex-1 rounded-t bg-accent"
+                  style={{ height: `${(c / peak) * 100}%`, opacity: 0.4 + i * 0.09 }}
+                  title={`${formatDate(recentWeeks[i]!)}: ${c} present`}
+                />
+              ))}
+            </div>
+          </div>
+
+          <div className="col-span-12 grid gap-4 sm:grid-cols-2 lg:col-span-4 lg:grid-cols-1">
+            <div className="glass flex flex-col rounded-2xl p-5">
+              <p className="text-muted-foreground text-sm">Active Courses</p>
+              <p className="mt-1 text-3xl font-display font-bold">{activeCoursesCount}</p>
+              <p className="mt-auto text-[11px] text-muted-foreground">
+                {courses.length} total courses in system
               </p>
             </div>
-            <div className="mt-2 flex items-center gap-2">
-              <span className="rounded-full border border-indigo-300/20 bg-indigo-300/10 px-2 py-0.5 text-[10px] font-medium text-indigo-200">
-                {activeMembersCount} active
-              </span>
-              <span className="text-[11px] text-slate-400">
-                {staff.length - activeMembersCount} inactive
-              </span>
+            <div className="glass flex flex-col rounded-2xl p-5">
+              <p className="text-muted-foreground text-sm">Courses Completed</p>
+              <p className="mt-1 text-3xl font-display font-bold text-accent">
+                {completedInPeriod}
+              </p>
+              <p className="mt-auto text-[11px] text-muted-foreground">
+                In the selected month or period
+              </p>
             </div>
           </div>
-        </div>
 
-        <div className="glass rounded-2xl col-span-12 lg:col-span-8 p-5">
-          <div className="flex items-baseline justify-between">
-            <p className="text-muted-foreground text-sm">Weekly Attendance Trend</p>
-            <span className="text-[11px] text-muted-foreground">Live data</span>
-          </div>
-          <div className="mt-4 flex h-10 items-end gap-1.5">
-            {weeklyCounts?.map((c, i) => (
-              <div
-                key={recentWeeks[i]}
-                className="flex-1 rounded-t bg-accent"
-                style={{ height: `${(c / peak) * 100}%`, opacity: 0.4 + i * 0.09 }}
-                title={`${formatDate(recentWeeks[i]!)}: ${c} present`}
-              />
-            ))}
-          </div>
-        </div>
+          <Panel
+            title="Weekly Attendance"
+            className="col-span-12"
+            right={
+              <span className="text-[11px] text-muted-foreground">
+                {recentWeeks.length > 0
+                  ? `Last 7 Sundays · ${formatDate(recentWeeks[0]!)} – ${formatDate(lastWeek!)}`
+                  : "No attendance data for this period"}
+              </span>
+            }
+          >
+            <div className="space-y-2">
+              {filteredStudents.slice(0, 4).map((s) => (
+                <div key={s.id} className="flex items-center gap-3">
+                  <div className="w-28 truncate text-sm opacity-85">{s.name}</div>
+                  <div className="flex gap-1.5">
+                    {recentWeeks.map((d) => {
+                      const present = filteredAttendance.includes(`${s.id}|${d}`);
+                      return (
+                        <span
+                          key={d}
+                          title={formatDate(d)}
+                          className={`size-6 rounded-md grid place-items-center text-[10px] ${
+                            present ? "bg-mint/25 text-mint" : "bg-rose/20 text-rose"
+                          }`}
+                        >
+                          {present ? "✓" : "✕"}
+                        </span>
+                      );
+                    })}
+                  </div>
+                  <span className="ml-auto text-[11px] text-muted-foreground">
+                    {attendanceRate(filteredAttendance, s.id)}% selected
+                  </span>
+                </div>
+              ))}
+            </div>
+          </Panel>
+        </section>
 
-        <div className="col-span-12 grid grid-rows-2 gap-4 lg:col-span-4">
-          <div className="glass rounded-2xl p-5 flex flex-col">
-            <p className="text-muted-foreground text-sm">Active Courses</p>
-            <p className="mt-1 text-3xl font-display font-bold">
-              {activeCoursesCount}
-            </p>
-            <p className="mt-auto text-[11px] text-muted-foreground">
-              {courses.length} total courses in system
-            </p>
-          </div>
-          <div className="glass rounded-2xl p-5 flex flex-col justify-center">
-            <p className="text-muted-foreground text-sm">
-              Net Balance <span className="opacity-60">· လက်ကျန်</span>
-            </p>
-            <p className="mt-1 text-2xl font-display font-bold text-mint">
-              {(month?.net || 0) >= 0 ? "+ " : "− "}
-              {formatShort(Math.abs(month?.net || 0))}
-            </p>
-            <p className="mt-1 text-[11px] text-muted-foreground">Income − Expense</p>
-          </div>
-        </div>
-
-        <div className="glass rounded-2xl col-span-4 p-5">
-          <p className="text-muted-foreground text-sm">Monthly Income</p>
-          <p className="mt-1 text-3xl font-display font-bold">{formatShort(month?.income || 0)}</p>
-          <div className="mt-3 flex items-center gap-2">
-            <span className="size-2.5 rounded-full bg-mint" />
-            <span className="text-[11px] text-muted-foreground">Donations &amp; offerings</span>
-          </div>
-        </div>
-
-        <div className="glass rounded-2xl col-span-4 p-5">
-          <p className="text-muted-foreground text-sm">Monthly Expenses</p>
-          <p className="mt-1 text-3xl font-display font-bold">{formatShort(month?.expense || 0)}</p>
-          <div className="mt-3 flex items-center gap-2">
-            <span className="size-2.5 rounded-full bg-rose" />
-            <span className="text-[11px] text-muted-foreground">Supplies &amp; utilities</span>
-          </div>
-        </div>
-
-        <div className="glass rounded-2xl col-span-4 p-5">
-          <p className="text-muted-foreground text-sm">Courses Completed</p>
-          <p className="mt-1 text-3xl font-display font-bold text-accent">{completedInPeriod}</p>
-          <p className="mt-3 text-[11px] text-muted-foreground">In the selected month or period</p>
-        </div>
-
-        <div className="glass rounded-2xl col-span-4 p-5">
-          <p className="text-muted-foreground text-sm">Quick Actions</p>
-          <div className="mt-3 grid grid-cols-3 gap-2">
-            <Link
-              to="/attendance"
-              className="rounded-xl py-3 text-xs font-medium text-center gradient-violet"
-            >
-              + Attendance
-            </Link>
+        <section
+          aria-label="Financial overview"
+          className="rounded-2xl border border-emerald-300/15 bg-slate-900/40 p-4 shadow-[0_0_28px_rgba(52,211,153,0.05)] backdrop-blur-xl"
+        >
+          <div className="mb-3 flex items-center justify-between gap-3">
+            <div>
+              <h2 className="text-sm font-semibold text-slate-100">Financial Overview</h2>
+              <p className="mt-0.5 text-[11px] text-slate-400">
+                Monthly income, expenses, and balance
+              </p>
+            </div>
             {canViewFinance && (
               <Link
                 to="/finance"
-                className="rounded-xl py-3 text-xs font-medium text-center gradient-sky"
+                className="text-xs font-medium text-emerald-200 hover:text-emerald-100"
               >
-                + Finance
+                Open finance
               </Link>
             )}
-            <Link
-              to="/students"
-              search={{ q: "" }}
-              className="rounded-xl py-3 text-xs font-medium text-center gradient-mint text-accent-foreground"
-            >
-              + Student
-            </Link>
           </div>
-          <p className="mt-3 text-[11px] text-muted-foreground">Record data in one tap</p>
-        </div>
-
-        <Panel
-          title="Student Directory"
-          className="col-span-5"
-          right={
-            <input
-              value={q}
-              onChange={(e) => setQ(e.target.value)}
-              className="field px-3 py-1.5 text-xs"
-              placeholder="Search name…"
-              aria-label="Search students"
-            />
-          }
-        >
-          <div className="divide-y divide-white/5 text-sm">
-            {filtered.map((s) => {
-              const rate = attendanceRate(attendance, s.id);
-              return (
-                <Link
-                  key={s.id}
-                  to="/students"
-                  search={{ q: s.name }}
-                  className="flex items-center gap-3 py-2.5"
-                >
-                  <div
-                    className="size-8 rounded-full grid place-items-center text-[11px] font-semibold"
-                    style={{ backgroundImage: s.gradient }}
-                  >
-                    {initials(s.name)}
-                  </div>
-                  <div className="leading-tight">
-                    <p>{s.name}</p>
-                    <p className="text-[11px] text-muted-foreground">
-                      Grade {s.grade} · Age {s.age}
-                    </p>
-                  </div>
-                  <span
-                    className={`ml-auto rounded-full text-[11px] px-2.5 py-1 ${
-                      rate >= 85 ? "bg-mint/15 text-mint" : "bg-amber/15 text-amber"
-                    }`}
-                  >
-                    {rate}% attended
-                  </span>
-                </Link>
-              );
-            })}
-            {filtered.length === 0 && (
-              <p className="py-6 text-center text-xs text-muted-foreground">No students found.</p>
-            )}
+          <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
+            <div className="glass-inset rounded-xl border border-white/5 p-4">
+              <p className="text-muted-foreground text-sm">Monthly Income</p>
+              <p className="mt-1 text-3xl font-display font-bold">
+                {formatShort(month?.income || 0)}
+              </p>
+              <div className="mt-3 flex items-center gap-2">
+                <span className="size-2.5 rounded-full bg-mint" />
+                <span className="text-[11px] text-muted-foreground">Donations &amp; offerings</span>
+              </div>
+            </div>
+            <div className="glass-inset rounded-xl border border-white/5 p-4">
+              <p className="text-muted-foreground text-sm">Monthly Expenses</p>
+              <p className="mt-1 text-3xl font-display font-bold">
+                {formatShort(month?.expense || 0)}
+              </p>
+              <div className="mt-3 flex items-center gap-2">
+                <span className="size-2.5 rounded-full bg-rose" />
+                <span className="text-[11px] text-muted-foreground">Supplies &amp; utilities</span>
+              </div>
+            </div>
+            <div className="glass-inset rounded-xl border border-emerald-300/15 p-4">
+              <p className="text-muted-foreground text-sm">
+                Net Balance <span className="opacity-60">· လက်ကျန်</span>
+              </p>
+              <p className="mt-1 text-3xl font-display font-bold text-mint">
+                {(month?.net || 0) >= 0 ? "+ " : "− "}
+                {formatShort(Math.abs(month?.net || 0))}
+              </p>
+              <p className="mt-3 text-[11px] text-muted-foreground">Income − Expense</p>
+            </div>
           </div>
-        </Panel>
 
-        <Panel
-          title="Weekly Attendance"
-          className="col-span-7"
-          right={
-            <span className="text-[11px] text-muted-foreground">
-              {recentWeeks.length > 0
-                ? `Last 7 Sundays · ${formatDate(recentWeeks[0]!)} – ${formatDate(lastWeek!)}`
-                : "No attendance data for this period"}
-            </span>
-          }
-        >
-          <div className="space-y-2">
-            {filteredStudents.slice(0, 4).map((s) => (
-              <div key={s.id} className="flex items-center gap-3">
-                <div className="w-28 truncate text-sm opacity-85">{s.name}</div>
-                <div className="flex gap-1.5">
-                  {recentWeeks.map((d) => {
-                    const present = filteredAttendance.includes(`${s.id}|${d}`);
-                    return (
-                      <span
-                        key={d}
-                        title={formatDate(d)}
-                        className={`size-6 rounded-md grid place-items-center text-[10px] ${
-                          present ? "bg-mint/25 text-mint" : "bg-rose/20 text-rose"
-                        }`}
-                      >
-                        {present ? "✓" : "✕"}
-                      </span>
-                    );
-                  })}
-                </div>
-                <span className="ml-auto text-[11px] text-muted-foreground">
-                  {attendanceRate(filteredAttendance, s.id)}% selected
+          <Panel
+            title="Finance · Receipts"
+            className="mt-4"
+            right={
+              <div className="flex gap-2">
+                <span className="rounded-full bg-mint/15 text-mint text-[11px] px-3 py-1">
+                  Income {formatShort(month?.income || 0)}
+                </span>
+                <span className="rounded-full bg-rose/15 text-rose text-[11px] px-3 py-1">
+                  Expense {formatShort(month?.expense || 0)}
                 </span>
               </div>
-            ))}
-          </div>
-        </Panel>
-
-        <Panel
-          title="Finance · Receipts"
-          className="col-span-12"
-          right={
-            <div className="flex gap-2">
-              <span className="rounded-full bg-mint/15 text-mint text-[11px] px-3 py-1">
-                Income {formatShort(month?.income || 0)}
-              </span>
-              <span className="rounded-full bg-rose/15 text-rose text-[11px] px-3 py-1">
-                Expense {formatShort(month?.expense || 0)}
-              </span>
+            }
+          >
+            <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+              {(month?.rows || [])
+                .filter((t) => t.receipt)
+                .slice(0, 4)
+                .map((t) => (
+                  <div key={t.id} className="rounded-xl glass-inset p-3">
+                    <img
+                      src={t.receipt}
+                      alt={`Receipt for ${t.description}`}
+                      loading="lazy"
+                      width={512}
+                      height={512}
+                      className="w-full aspect-4/3 rounded-lg object-cover"
+                    />
+                    <p className="mt-2 text-xs">{t.category}</p>
+                    <p className="text-[11px] text-muted-foreground">
+                      {formatDate(t.date)} · {formatShort(t.amount)}
+                    </p>
+                  </div>
+                ))}
+              {(month?.rows || []).filter((t) => t.receipt).length === 0 && (
+                <p className="col-span-2 py-6 text-center text-xs text-muted-foreground sm:col-span-4">
+                  No receipts for the selected period.
+                </p>
+              )}
             </div>
-          }
-        >
-          <div className="grid grid-cols-4 gap-3">
-            {(month?.rows || [])
-              .filter((t) => t.receipt)
-              .slice(0, 4)
-              .map((t) => (
-                <div key={t.id} className="rounded-xl glass-inset p-3">
-                  <img
-                    src={t.receipt}
-                    alt={`Receipt for ${t.description}`}
-                    loading="lazy"
-                    width={512}
-                    height={512}
-                    className="w-full aspect-4/3 rounded-lg object-cover"
-                  />
-                  <p className="mt-2 text-xs">{t.category}</p>
-                  <p className="text-[11px] text-muted-foreground">
-                    {formatDate(t.date)} · {formatShort(t.amount)}
-                  </p>
-                </div>
-              ))}
-            {(month?.rows || []).filter((t) => t.receipt).length === 0 && (
-              <p className="col-span-4 py-6 text-center text-xs text-muted-foreground">
-                No receipts for the selected period.
-              </p>
-            )}
+          </Panel>
+        </section>
+
+        <section aria-label="Quick actions and directory" className="grid grid-cols-12 gap-4">
+          <div className="glass col-span-12 rounded-2xl p-5 lg:col-span-4">
+            <p className="text-muted-foreground text-sm">Quick Actions</p>
+            <div className="mt-3 grid grid-cols-3 gap-2">
+              <Link
+                to="/attendance"
+                className="rounded-xl py-3 text-xs font-medium text-center gradient-violet"
+              >
+                + Attendance
+              </Link>
+              {canViewFinance && (
+                <Link
+                  to="/finance"
+                  className="rounded-xl py-3 text-xs font-medium text-center gradient-sky"
+                >
+                  + Finance
+                </Link>
+              )}
+              <Link
+                to="/students"
+                search={{ q: "" }}
+                className="rounded-xl py-3 text-xs font-medium text-center gradient-mint text-accent-foreground"
+              >
+                + Student
+              </Link>
+            </div>
+            <p className="mt-3 text-[11px] text-muted-foreground">Record data in one tap</p>
           </div>
-        </Panel>
+
+          <Panel
+            title="Student Directory"
+            className="col-span-12 lg:col-span-8"
+            right={
+              <input
+                value={q}
+                onChange={(e) => setQ(e.target.value)}
+                className="field px-3 py-1.5 text-xs"
+                placeholder="Search name…"
+                aria-label="Search students"
+              />
+            }
+          >
+            <div className="divide-y divide-white/5 text-sm">
+              {filtered.map((s) => {
+                const rate = attendanceRate(attendance, s.id);
+                return (
+                  <Link
+                    key={s.id}
+                    to="/students"
+                    search={{ q: s.name }}
+                    className="flex items-center gap-3 py-2.5"
+                  >
+                    <div
+                      className="size-8 rounded-full grid place-items-center text-[11px] font-semibold"
+                      style={{ backgroundImage: s.gradient }}
+                    >
+                      {initials(s.name)}
+                    </div>
+                    <div className="leading-tight">
+                      <p>{s.name}</p>
+                      <p className="text-[11px] text-muted-foreground">
+                        Grade {s.grade} · Age {s.age}
+                      </p>
+                    </div>
+                    <span
+                      className={`ml-auto rounded-full text-[11px] px-2.5 py-1 ${
+                        rate >= 85 ? "bg-mint/15 text-mint" : "bg-amber/15 text-amber"
+                      }`}
+                    >
+                      {rate}% attended
+                    </span>
+                  </Link>
+                );
+              })}
+              {filtered.length === 0 && (
+                <p className="py-6 text-center text-xs text-muted-foreground">No students found.</p>
+              )}
+            </div>
+          </Panel>
+        </section>
       </div>
     </AppShell>
   );
