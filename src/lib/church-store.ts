@@ -70,6 +70,20 @@ export type DashboardStats = {
   femaleStaff: number;
 };
 
+export type ActivityLog = {
+  id?: string | number;
+  userId?: string | number;
+  user_id?: string | number;
+  userRole?: string;
+  user_role?: string;
+  action?: string;
+  resource?: string;
+  details?: unknown;
+  timestamp?: string;
+  createdAt?: string;
+  created_at?: string;
+};
+
 let state: ChurchState = {
   students: [],
   attendance: [],
@@ -283,6 +297,24 @@ export async function loadEvents(): Promise<ChurchEvent[]> {
   const events = records.map(normalizeEvent);
   set({ events });
   return events;
+}
+
+export async function loadActivityLogs(): Promise<ActivityLog[]> {
+  if (!API_BASE_URL) throw new Error("VITE_API_BASE_URL is not configured");
+
+  const response = await fetchApi("/api/audit-logs");
+  if (!response.ok) await throwApiError(response, "Failed to load activity notifications");
+
+  const payload: unknown = await response.json();
+  const records = Array.isArray(payload)
+    ? payload
+    : isRecord(payload)
+      ? (payload["logs"] ?? payload["data"])
+      : null;
+  if (!Array.isArray(records)) {
+    throw new Error("Invalid activity logs response from backend");
+  }
+  return records.filter(isRecord) as ActivityLog[];
 }
 
 export function parseSystemBackup(value: unknown): SystemBackup {
