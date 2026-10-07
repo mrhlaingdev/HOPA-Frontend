@@ -8,7 +8,6 @@ import {
   type Student,
   type Teacher,
   type Txn,
-  DEFAULT_ATTENDANCE_COURSES,
   localDateString,
   parseNumericValue,
 } from "./church-data";
@@ -893,10 +892,10 @@ export const actions = {
   enrollStudentInCourse(courseId: string, studentId: string, date: string) {
     if (!date) throw new Error("Course attendance date is required");
 
-    const course = state.courses.find((item) => item.id === courseId) ??
-      DEFAULT_ATTENDANCE_COURSES.find((item) => item.id === courseId);
+    const course = state.courses.find((item) => item.id === courseId);
+    if (!course) throw new Error("Course not found");
     const currentEnrolledIds = [
-      ...(course?.enrolledStudentIds ?? []),
+      ...(course.enrolledStudentIds ?? []),
       ...state.courseEnrollments
         .filter((enrollment) => enrollment.courseId === courseId)
         .map((enrollment) => enrollment.studentId),
@@ -914,23 +913,9 @@ export const actions = {
     );
 
     set({
-      courses: course
-        ? state.courses.some((item) => item.id === courseId)
-          ? state.courses.map((item) =>
-              item.id === courseId ? { ...item, enrolledStudentIds } : item,
-            )
-            : [
-                ...state.courses,
-                ...DEFAULT_ATTENDANCE_COURSES.filter(
-                  (defaultCourse) =>
-                    !state.courses.some((item) => item.id === defaultCourse.id),
-                ).map((defaultCourse) => ({
-                  ...defaultCourse,
-                  enrolledStudentIds:
-                    defaultCourse.id === courseId ? enrolledStudentIds : [],
-                })),
-              ]
-          : state.courses,
+      courses: state.courses.map((item) =>
+        item.id === courseId ? { ...item, enrolledStudentIds } : item,
+      ),
       courseEnrollments: hasEnrollmentRecord
         ? state.courseEnrollments
         : [...state.courseEnrollments, { courseId, studentId, enrolledAt: date }],

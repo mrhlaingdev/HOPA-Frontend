@@ -17,7 +17,6 @@ import {
   useChurch,
 } from "@/lib/church-store";
 import {
-  DEFAULT_ATTENDANCE_COURSES,
   formatDate,
   initials,
   localDateString,
@@ -61,10 +60,7 @@ function AttendancePage() {
   useEffect(() => {
     setIsMounted(true);
   }, []);
-  const activeCourses = useMemo(() => {
-    const availableCourses = courses.filter((course) => course.active);
-    return availableCourses.length > 0 ? availableCourses : DEFAULT_ATTENDANCE_COURSES;
-  }, [courses]);
+  const activeCourses = useMemo(() => courses.filter((course) => course.active), [courses]);
   // ယနေ့ သို့မဟုတ် ယနေ့ထက် မကျော်သော အနီးစပ်ဆုံး တနင်္ဂနွေနေ့ရက်စွဲကို ရှာယူမည်
   const getInitialSunday = () => {
   const today = localDateString();
@@ -76,9 +72,7 @@ function AttendancePage() {
 
   const [week, setWeek] = useState<string>(getInitialSunday());
   const [mode, setMode] = useState<"sunday" | "course">("sunday");
-  const [selectedCourseId, setSelectedCourseId] = useState(
-    activeCourses[0]?.id ?? DEFAULT_ATTENDANCE_COURSES[0]!.id,
-  );
+  const [selectedCourseId, setSelectedCourseId] = useState(activeCourses[0]?.id ?? "");
   const [courseSessionDate, setCourseSessionDate] = useState(localDateString());
   const [studentToEnroll, setStudentToEnroll] = useState("");
   const [manageEnrollments, setManageEnrollments] = useState(false);
@@ -106,14 +100,8 @@ function AttendancePage() {
   }, [selectedCourse, selectedCourseId]);
 
   const currentCourse =
-    courses.find((course) => course.id === selectedCourseId) ?? selectedCourse;
-  const enrolledIds =
-    currentCourse?.enrolledStudentIds ||
-    (selectedCourse
-      ? courseEnrollments
-          .filter((enrollment) => enrollment.courseId === selectedCourse.id)
-          .map((enrollment) => enrollment.studentId)
-      : []);
+    courses.find((course) => course.id === selectedCourseId);
+  const enrolledIds = currentCourse?.enrolledStudentIds || [];
   const enrolledStudents = useMemo(
     () => students.filter((student) => enrolledIds.includes(student.id)),
     [students, enrolledIds, rosterTick],
@@ -122,7 +110,7 @@ function AttendancePage() {
     ? students.filter(
         (student) =>
           student.name.toLowerCase().includes(q.toLowerCase()) &&
-          (enrolledIds.includes(student.id) ||
+          (enrolledStudents.some((enrolledStudent) => enrolledStudent.id === student.id) ||
             courseAttendance.some(
               (record) =>
                 record.courseId === selectedCourse.id && record.studentId === student.id,
