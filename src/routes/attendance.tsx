@@ -1,4 +1,4 @@
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, Link } from "@tanstack/react-router";
 import { useEffect, useMemo, useState } from "react";
 import { CalendarCheck2, Pencil } from "lucide-react";
 import { AppShell, Panel } from "@/components/AppShell";
@@ -60,7 +60,6 @@ function AttendancePage() {
   useEffect(() => {
     setIsMounted(true);
   }, []);
-  const activeCourses = useMemo(() => courses.filter((course) => course.active), [courses]);
   // ယနေ့ သို့မဟုတ် ယနေ့ထက် မကျော်သော အနီးစပ်ဆုံး တနင်္ဂနွေနေ့ရက်စွဲကို ရှာယူမည်
   const getInitialSunday = () => {
   const today = localDateString();
@@ -72,7 +71,7 @@ function AttendancePage() {
 
   const [week, setWeek] = useState<string>(getInitialSunday());
   const [mode, setMode] = useState<"sunday" | "course">("sunday");
-  const [selectedCourseId, setSelectedCourseId] = useState(activeCourses[0]?.id ?? "");
+  const [selectedCourseId, setSelectedCourseId] = useState(courses[0]?.id ?? "");
   const [courseSessionDate, setCourseSessionDate] = useState(localDateString());
   const [studentToEnroll, setStudentToEnroll] = useState("");
   const [manageEnrollments, setManageEnrollments] = useState(false);
@@ -90,18 +89,15 @@ function AttendancePage() {
   const rows = students.filter((s) => s.name.toLowerCase().includes(q.toLowerCase()));
   const presentCount = rows.filter((s) => attendance.includes(`${s.id}|${week}`)).length;
   const absentCount = rows.length - presentCount;
-  const selectedCourse =
-    activeCourses.find((course) => course.id === selectedCourseId) ?? activeCourses[0];
+  const selectedCourse = courses.find((course) => course.id === selectedCourseId);
 
   useEffect(() => {
-    if (selectedCourse && selectedCourse.id !== selectedCourseId) {
-      setSelectedCourseId(selectedCourse.id);
+    if (courses.length > 0 && !courses.some((course) => course.id === selectedCourseId)) {
+      setSelectedCourseId(courses[0]!.id);
     }
-  }, [selectedCourse, selectedCourseId]);
+  }, [courses, selectedCourseId]);
 
-  const currentCourse =
-    courses.find((course) => course.id === selectedCourseId);
-  const enrolledIds = currentCourse?.enrolledStudentIds || [];
+  const enrolledIds = selectedCourse?.enrolledStudentIds || [];
   const enrolledStudents = useMemo(
     () => students.filter((student) => enrolledIds.includes(student.id)),
     [students, enrolledIds, rosterTick],
@@ -110,11 +106,7 @@ function AttendancePage() {
     ? students.filter(
         (student) =>
           student.name.toLowerCase().includes(q.toLowerCase()) &&
-          (enrolledStudents.some((enrolledStudent) => enrolledStudent.id === student.id) ||
-            courseAttendance.some(
-              (record) =>
-                record.courseId === selectedCourse.id && record.studentId === student.id,
-            )),
+          enrolledStudents.some((enrolledStudent) => enrolledStudent.id === student.id),
       )
     : [];
   const courseSessions = selectedCourse
@@ -442,7 +434,7 @@ function AttendancePage() {
                 className="field mt-1 w-full px-3 py-2 text-xs"
                 aria-label="Select course"
               >
-                {activeCourses.map((course) => (
+                {courses.map((course) => (
                   <option key={course.id} value={course.id}>
                     {course.title}
                   </option>
@@ -537,10 +529,28 @@ function AttendancePage() {
             )}
           </div>
 
-          {!selectedCourse ? (
+          {courses.length === 0 && !isLoading ? (
+            <div className="rounded-xl border border-white/10 bg-white/5 p-6 text-center">
+              <h2 className="font-medium">No courses available</h2>
+              <p className="mt-1 text-sm text-muted-foreground">
+                Create a course before recording course attendance.
+              </p>
+              <Link
+                to="/courses"
+                className="mt-4 inline-flex rounded-xl gradient-brand px-4 py-2 text-sm font-medium"
+              >
+                Create a course
+              </Link>
+            </div>
+          ) : courses.length === 0 ? (
+            <div className="grid grid-cols-12 gap-4">
+              <Skeleton className="col-span-12 h-72 lg:col-span-6" />
+              <Skeleton className="col-span-12 h-72 lg:col-span-6" />
+            </div>
+          ) : !selectedCourse ? (
             <EmptyState
               icon={CalendarCheck2}
-              description="Create or activate a course before recording course attendance."
+              description="Select a course to record course attendance."
             />
           ) : (
             <div className="grid grid-cols-12 gap-4">
