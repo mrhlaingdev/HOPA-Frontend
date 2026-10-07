@@ -16,7 +16,12 @@ import {
   formatApiError,
   useChurch,
 } from "@/lib/church-store";
-import { formatDate, initials, localDateString } from "@/lib/church-data";
+import {
+  DEFAULT_ATTENDANCE_COURSES,
+  formatDate,
+  initials,
+  localDateString,
+} from "@/lib/church-data";
 import { toast } from "sonner";
 
 export const Route = createFileRoute("/attendance")({
@@ -52,6 +57,10 @@ function AttendancePage() {
     isLoading,
   } = useChurch();
   const canManage = usePermission("manage-students");
+  const activeCourses = useMemo(() => {
+    const availableCourses = courses.filter((course) => course.active);
+    return availableCourses.length > 0 ? availableCourses : DEFAULT_ATTENDANCE_COURSES;
+  }, [courses]);
   // ယနေ့ သို့မဟုတ် ယနေ့ထက် မကျော်သော အနီးစပ်ဆုံး တနင်္ဂနွေနေ့ရက်စွဲကို ရှာယူမည်
   const getInitialSunday = () => {
   const today = localDateString();
@@ -63,9 +72,12 @@ function AttendancePage() {
 
   const [week, setWeek] = useState<string>(getInitialSunday());
   const [mode, setMode] = useState<"sunday" | "course">("sunday");
-  const [selectedCourseId, setSelectedCourseId] = useState("");
+  const [selectedCourseId, setSelectedCourseId] = useState(
+    activeCourses[0]?.id ?? DEFAULT_ATTENDANCE_COURSES[0]!.id,
+  );
   const [courseSessionDate, setCourseSessionDate] = useState(localDateString());
   const [studentToEnroll, setStudentToEnroll] = useState("");
+  const [manageEnrollments, setManageEnrollments] = useState(false);
   const [q, setQ] = useState("");
   const [editing, setEditing] = useState<(typeof students)[number] | null>(null);
   const [editForm, setEditForm] = useState({ date: week, present: false });
@@ -79,7 +91,6 @@ function AttendancePage() {
   const rows = students.filter((s) => s.name.toLowerCase().includes(q.toLowerCase()));
   const presentCount = rows.filter((s) => attendance.includes(`${s.id}|${week}`)).length;
   const absentCount = rows.length - presentCount;
-  const activeCourses = useMemo(() => courses.filter((course) => course.active), [courses]);
   const selectedCourse =
     activeCourses.find((course) => course.id === selectedCourseId) ?? activeCourses[0];
 
@@ -446,37 +457,57 @@ function AttendancePage() {
                 {hasCourseSession ? "Session Ready" : "Start Session"}
               </Button>
             )}
-            {canManage && selectedCourse && unenrolledStudents.length > 0 && (
-              <div className="flex items-end gap-2">
-                <label className="text-xs font-medium">
-                  Enroll student
-                  <select
-                    value={studentToEnroll}
-                    onChange={(event) => setStudentToEnroll(event.target.value)}
-                    className="field mt-1 block min-w-44 px-3 py-2 text-xs"
-                    aria-label="Select student to enroll"
-                  >
-                    <option value="">Select student</option>
-                    {unenrolledStudents.map((student) => (
-                      <option key={student.id} value={student.id}>
-                        {student.name}
-                      </option>
-                    ))}
-                  </select>
-                </label>
+            {canManage && selectedCourse && (
+              <>
                 <Button
                   type="button"
                   variant="outline"
-                  disabled={!studentToEnroll}
-                  onClick={() => {
-                    actions.enrollStudentInCourse(selectedCourse.id, studentToEnroll);
-                    setStudentToEnroll("");
-                    toast.success("Student enrolled in the course.");
-                  }}
+                  onClick={() => setManageEnrollments((open) => !open)}
                 >
-                  Enroll
+                  + Manage Enrolled Students
                 </Button>
-              </div>
+                {manageEnrollments && (
+                  <div className="w-full rounded-xl border border-white/10 p-3">
+                    <p className="mb-2 text-xs font-medium">Enrolled students</p>
+                    <p className="mb-3 text-xs text-muted-foreground">
+                      {students
+                        .filter((student) => isCourseEnrolled(selectedCourse.id, student.id))
+                        .map((student) => student.name)
+                        .join(", ") || "No students enrolled yet."}
+                    </p>
+                    <div className="flex flex-wrap items-end gap-2">
+                      <label className="text-xs font-medium">
+                        Enroll student
+                        <select
+                          value={studentToEnroll}
+                          onChange={(event) => setStudentToEnroll(event.target.value)}
+                          className="field mt-1 block min-w-44 px-3 py-2 text-xs"
+                          aria-label="Select student to enroll"
+                        >
+                          <option value="">Select student</option>
+                          {unenrolledStudents.map((student) => (
+                            <option key={student.id} value={student.id}>
+                              {student.name}
+                            </option>
+                          ))}
+                        </select>
+                      </label>
+                      <Button
+                        type="button"
+                        variant="outline"
+                        disabled={!studentToEnroll}
+                        onClick={() => {
+                          actions.enrollStudentInCourse(selectedCourse.id, studentToEnroll);
+                          setStudentToEnroll("");
+                          toast.success("Student enrolled in the course.");
+                        }}
+                      >
+                        Enroll
+                      </Button>
+                    </div>
+                  </div>
+                )}
+              </>
             )}
           </div>
 

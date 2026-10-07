@@ -29,6 +29,21 @@ export type Course = {
   active: boolean;
 };
 
+export const DEFAULT_ATTENDANCE_COURSES: Course[] = [
+  "Bible Studies",
+  "Computer Basic",
+  "Guitar",
+  "Thai Language",
+].map((title) => ({
+  id: `default-${title.toLowerCase().replaceAll(" ", "-")}`,
+  title,
+  titleMm: "",
+  date: localDateString(),
+  time: "",
+  instructor: "",
+  active: true,
+}));
+
 export type Teacher = {
   id: string;
   name: string;
