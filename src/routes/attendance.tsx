@@ -506,9 +506,10 @@ function AttendancePage() {
                         variant="outline"
                         disabled={!studentToEnroll}
                         onClick={() => {
+                          if (!selectedCourseId || !studentToEnroll) return;
                           try {
                             actions.enrollStudentInCourse(
-                              selectedCourse.id,
+                              selectedCourseId,
                               studentToEnroll,
                               courseSessionDate,
                             );
