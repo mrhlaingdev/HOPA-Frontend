@@ -8,6 +8,7 @@ import {
   type Student,
   type Teacher,
   type Txn,
+  DEFAULT_ATTENDANCE_COURSES,
   localDateString,
   parseNumericValue,
 } from "./church-data";
@@ -258,11 +259,13 @@ export function useChurch() {
   useEffect(() => {
     if (!persistedStateLoaded) {
       persistedStateLoaded = true;
+      const courseEnrollments = loadPersistedCourseEnrollments();
       set({
         attendance: loadPersistedStringArray("hopa-sunday-attendance"),
         courseAttendance: loadPersistedCourseAttendance(),
         courseAttendanceSessions: loadPersistedCourseAttendanceSessions(),
-        courseEnrollments: loadPersistedCourseEnrollments(),
+        courseEnrollments,
+        courses: withCourseEnrollments(state.courses, courseEnrollments),
         completions: loadPersistedCompletions(),
       });
     }
@@ -373,9 +376,24 @@ async function loadResource<T>(endpoint: string, key: string): Promise<T[]> {
 }
 
 export async function loadCourses() {
-  const courses = await loadResource<Course>(API_ENDPOINTS.courses, "courses");
+  const loadedCourses = await loadResource<Course>(API_ENDPOINTS.courses, "courses");
+  const courses = withCourseEnrollments(loadedCourses, state.courseEnrollments);
   set({ courses });
   return courses;
+}
+
+function withCourseEnrollments(courses: Course[], enrollments: CourseEnrollment[]): Course[] {
+  return courses.map((course) => ({
+    ...course,
+    enrolledStudentIds: [
+      ...new Set([
+        ...(course.enrolledStudentIds ?? []),
+        ...enrollments
+          .filter((enrollment) => enrollment.courseId === course.id)
+          .map((enrollment) => enrollment.studentId),
+      ]),
+    ],
+  }));
 }
 
 function normalizeCompletion(value: unknown): Completion {
@@ -875,7 +893,16 @@ export const actions = {
   enrollStudentInCourse(courseId: string, studentId: string, date: string) {
     if (!date) throw new Error("Course attendance date is required");
 
-    const isEnrolled = state.courseEnrollments.some(
+    const course = state.courses.find((item) => item.id === courseId) ??
+      DEFAULT_ATTENDANCE_COURSES.find((item) => item.id === courseId);
+    const currentEnrolledIds = [
+      ...(course?.enrolledStudentIds ?? []),
+      ...state.courseEnrollments
+        .filter((enrollment) => enrollment.courseId === courseId)
+        .map((enrollment) => enrollment.studentId),
+    ];
+    const enrolledStudentIds = [...new Set([...currentEnrolledIds, studentId])];
+    const hasEnrollmentRecord = state.courseEnrollments.some(
       (enrollment) => enrollment.courseId === courseId && enrollment.studentId === studentId,
     );
     const hasSession = state.courseAttendanceSessions.some(
@@ -887,7 +914,24 @@ export const actions = {
     );
 
     set({
-      courseEnrollments: isEnrolled
+      courses: course
+        ? state.courses.some((item) => item.id === courseId)
+          ? state.courses.map((item) =>
+              item.id === courseId ? { ...item, enrolledStudentIds } : item,
+            )
+            : [
+                ...state.courses,
+                ...DEFAULT_ATTENDANCE_COURSES.filter(
+                  (defaultCourse) =>
+                    !state.courses.some((item) => item.id === defaultCourse.id),
+                ).map((defaultCourse) => ({
+                  ...defaultCourse,
+                  enrolledStudentIds:
+                    defaultCourse.id === courseId ? enrolledStudentIds : [],
+                })),
+              ]
+          : state.courses,
+      courseEnrollments: hasEnrollmentRecord
         ? state.courseEnrollments
         : [...state.courseEnrollments, { courseId, studentId, enrolledAt: date }],
       courseAttendanceSessions: hasSession

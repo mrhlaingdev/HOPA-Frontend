@@ -82,6 +82,7 @@ function AttendancePage() {
   const [courseSessionDate, setCourseSessionDate] = useState(localDateString());
   const [studentToEnroll, setStudentToEnroll] = useState("");
   const [manageEnrollments, setManageEnrollments] = useState(false);
+  const [rosterTick, setRosterTick] = useState(0);
   const [q, setQ] = useState("");
   const [editing, setEditing] = useState<(typeof students)[number] | null>(null);
   const [editForm, setEditForm] = useState({ date: week, present: false });
@@ -104,15 +105,19 @@ function AttendancePage() {
     }
   }, [selectedCourse, selectedCourseId]);
 
-  const enrolledIds = selectedCourse
-    ? courseEnrollments
-        .filter((enrollment) => enrollment.courseId === selectedCourse.id)
-        .map((enrollment) => enrollment.studentId)
-    : [];
-  const isCourseEnrolled = (courseId: string, studentId: string) =>
-    courseEnrollments.some(
-      (enrollment) => enrollment.courseId === courseId && enrollment.studentId === studentId,
-    );
+  const currentCourse =
+    courses.find((course) => course.id === selectedCourseId) ?? selectedCourse;
+  const enrolledIds =
+    currentCourse?.enrolledStudentIds ||
+    (selectedCourse
+      ? courseEnrollments
+          .filter((enrollment) => enrollment.courseId === selectedCourse.id)
+          .map((enrollment) => enrollment.studentId)
+      : []);
+  const enrolledStudents = useMemo(
+    () => students.filter((student) => enrolledIds.includes(student.id)),
+    [students, enrolledIds, rosterTick],
+  );
   const courseRows = selectedCourse
     ? students.filter(
         (student) =>
@@ -495,8 +500,7 @@ function AttendancePage() {
                   <div className="w-full rounded-xl border border-white/10 p-3">
                     <p className="mb-2 text-xs font-medium">Enrolled students</p>
                     <p className="mb-3 text-xs text-muted-foreground">
-                      {students
-                        .filter((student) => isCourseEnrolled(selectedCourse.id, student.id))
+                      {enrolledStudents
                         .map((student) => student.name)
                         .join(", ") || "No students enrolled yet."}
                     </p>
@@ -528,6 +532,7 @@ function AttendancePage() {
                               studentToEnroll,
                               courseSessionDate,
                             );
+                            setRosterTick((tick) => tick + 1);
                             setStudentToEnroll("");
                             toast.success("Student enrolled in the course.");
                           } catch (error) {

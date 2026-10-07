@@ -27,6 +27,7 @@ export type Course = {
   instructor: string;
   teacherId?: string;
   active: boolean;
+  enrolledStudentIds?: string[];
 };
 
 export const DEFAULT_ATTENDANCE_COURSES: Course[] = [
