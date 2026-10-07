@@ -134,19 +134,20 @@ const COURSE_ENROLLMENTS_STORAGE_KEY = "hopa-course-enrollments";
 
 let state: ChurchState = {
   students: [],
-  attendance: loadPersistedStringArray("hopa-sunday-attendance"),
-  courseAttendance: loadPersistedCourseAttendance(),
-  courseAttendanceSessions: loadPersistedCourseAttendanceSessions(),
-  courseEnrollments: loadPersistedCourseEnrollments(),
+  attendance: [],
+  courseAttendance: [],
+  courseAttendanceSessions: [],
+  courseEnrollments: [],
   courses: [],
   teachers: [],
   staff: [],
-  completions: loadPersistedCompletions(),
+  completions: [],
   txns: [],
   events: [],
   isLoading: true,
 };
 let loadPromise: Promise<void> | undefined;
+let persistedStateLoaded = false;
 
 const listeners = new Set<() => void>();
 const API_TIMEOUT_MS = 10_000;
@@ -255,6 +256,16 @@ function persistJson(key: string, value: unknown) {
 
 export function useChurch() {
   useEffect(() => {
+    if (!persistedStateLoaded) {
+      persistedStateLoaded = true;
+      set({
+        attendance: loadPersistedStringArray("hopa-sunday-attendance"),
+        courseAttendance: loadPersistedCourseAttendance(),
+        courseAttendanceSessions: loadPersistedCourseAttendanceSessions(),
+        courseEnrollments: loadPersistedCourseEnrollments(),
+        completions: loadPersistedCompletions(),
+      });
+    }
     if (!loadPromise) loadPromise = loadFromApi();
   }, []);
   return useSyncExternalStore(subscribe, getSnapshot, getSnapshot);
