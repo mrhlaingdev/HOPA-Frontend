@@ -123,6 +123,8 @@ function AttendancePage() {
         .sort((a, b) => b.localeCompare(a))
         .slice(0, 10)
     : [];
+  const courseHistoryDates =
+    courseSessions.length > 0 ? courseSessions : [courseSessionDate];
   const sessionsForStudent = (courseId: string, studentId: string) => {
     const enrolledAt = courseEnrollments.find(
       (enrollment) => enrollment.courseId === courseId && enrollment.studentId === studentId,
@@ -497,9 +499,17 @@ function AttendancePage() {
                         variant="outline"
                         disabled={!studentToEnroll}
                         onClick={() => {
-                          actions.enrollStudentInCourse(selectedCourse.id, studentToEnroll);
-                          setStudentToEnroll("");
-                          toast.success("Student enrolled in the course.");
+                          try {
+                            actions.enrollStudentInCourse(selectedCourse.id, studentToEnroll);
+                            actions.startCourseAttendanceSession(
+                              selectedCourse.id,
+                              courseSessionDate,
+                            );
+                            setStudentToEnroll("");
+                            toast.success("Student enrolled in the course.");
+                          } catch (error) {
+                            toast.error(formatApiError(error, "Unable to enroll student"));
+                          }
                         }}
                       >
                         Enroll
@@ -523,7 +533,7 @@ function AttendancePage() {
                 mm={`${coursePresentCount} of ${courseRows.length} present · ${formatDate(courseSessionDate)}`}
                 className="col-span-12 lg:col-span-6"
               >
-                {isLoading ? (
+                {isLoading && courseRows.length === 0 ? (
                   <div className="space-y-3 py-2">
                     {[1, 2, 3, 4].map((row) => (
                       <Skeleton key={row} className="h-10 w-full" />
@@ -549,14 +559,23 @@ function AttendancePage() {
                           <input
                             type="checkbox"
                             checked={present}
-                            disabled={!canManage || !hasCourseSession}
+                            disabled={!canManage}
                             onChange={(event) => {
                               try {
+                                if (!hasCourseSession) {
+                                  actions.startCourseAttendanceSession(
+                                    selectedCourse.id,
+                                    courseSessionDate,
+                                  );
+                                }
                                 actions.updateCourseAttendance(
                                   selectedCourse.id,
                                   student.id,
                                   courseSessionDate,
                                   event.target.checked,
+                                );
+                                toast.success(
+                                  `${student.name} marked ${event.target.checked ? "present" : "absent"}.`,
                                 );
                               } catch (error) {
                                 toast.error(formatApiError(error, "Unable to update attendance"));
@@ -587,11 +606,6 @@ function AttendancePage() {
                     })}
                   </ul>
                 )}
-                {!hasCourseSession && courseRows.length > 0 && (
-                  <p className="mt-3 text-xs text-muted-foreground">
-                    Start this session before checking students in.
-                  </p>
-                )}
               </Panel>
 
               <Panel
@@ -604,7 +618,7 @@ function AttendancePage() {
                     filename="course-attendance"
                     headers={[
                       "Student",
-                      ...courseSessions.map((date) => formatDate(date)),
+                      ...courseHistoryDates.map((date) => formatDate(date)),
                       "Total Attended",
                       "Attendance Rate",
                     ]}
@@ -623,7 +637,7 @@ function AttendancePage() {
                       ).length;
                       return [
                         student.name,
-                        ...courseSessions.map((date) => {
+                        ...courseHistoryDates.map((date) => {
                           if (!studentSessions.has(date)) return "—";
                           return courseAttendance.some(
                             (record) =>
@@ -648,17 +662,12 @@ function AttendancePage() {
                       icon={CalendarCheck2}
                       description="Course attendance history will appear after students are enrolled."
                     />
-                  ) : courseSessions.length === 0 ? (
-                    <EmptyState
-                      icon={CalendarCheck2}
-                      description="No course attendance sessions have been recorded."
-                    />
                   ) : (
                     <table className="min-w-[36rem] w-full text-xs">
                       <thead>
                         <tr className="border-b border-white/10 text-[10px] text-muted-foreground">
                           <th className="py-2 pr-2 text-left font-medium">Student</th>
-                          {courseSessions.map((date) => (
+                          {courseHistoryDates.map((date) => (
                             <th key={date} className="px-1 py-2 font-medium">
                               {date.slice(8)}/{date.slice(5, 7)}
                             </th>
@@ -687,7 +696,7 @@ function AttendancePage() {
                               <td className="whitespace-nowrap py-2 pr-2 font-medium">
                                 {student.name}
                               </td>
-                              {courseSessions.map((date) => {
+                              {courseHistoryDates.map((date) => {
                                 const eligibleForDate = studentHistoryDates.includes(date);
                                 const present = courseAttendance.some(
                                   (record) =>
