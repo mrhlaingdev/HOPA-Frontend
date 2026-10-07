@@ -861,16 +861,30 @@ export const actions = {
 
     await loadAttendance();
   },
-  enrollStudentInCourse(courseId: string, studentId: string) {
-    const exists = state.courseEnrollments.some(
+  enrollStudentInCourse(courseId: string, studentId: string, date: string) {
+    if (!date) throw new Error("Course attendance date is required");
+
+    const isEnrolled = state.courseEnrollments.some(
       (enrollment) => enrollment.courseId === courseId && enrollment.studentId === studentId,
     );
-    if (exists) return;
+    const hasSession = state.courseAttendanceSessions.some(
+      (session) => session.courseId === courseId && session.date === date,
+    );
+    const hasAttendance = state.courseAttendance.some(
+      (record) =>
+        record.courseId === courseId && record.studentId === studentId && record.date === date,
+    );
+
     set({
-      courseEnrollments: [
-        ...state.courseEnrollments,
-        { courseId, studentId, enrolledAt: localDateString() },
-      ],
+      courseEnrollments: isEnrolled
+        ? state.courseEnrollments
+        : [...state.courseEnrollments, { courseId, studentId, enrolledAt: localDateString() }],
+      courseAttendanceSessions: hasSession
+        ? state.courseAttendanceSessions
+        : [...state.courseAttendanceSessions, { courseId, date }],
+      courseAttendance: hasAttendance
+        ? state.courseAttendance
+        : [...state.courseAttendance, { courseId, studentId, date, present: true }],
     });
   },
   startCourseAttendanceSession(courseId: string, date: string) {

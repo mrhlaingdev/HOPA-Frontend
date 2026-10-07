@@ -500,9 +500,9 @@ function AttendancePage() {
                         disabled={!studentToEnroll}
                         onClick={() => {
                           try {
-                            actions.enrollStudentInCourse(selectedCourse.id, studentToEnroll);
-                            actions.startCourseAttendanceSession(
+                            actions.enrollStudentInCourse(
                               selectedCourse.id,
+                              studentToEnroll,
                               courseSessionDate,
                             );
                             setStudentToEnroll("");
