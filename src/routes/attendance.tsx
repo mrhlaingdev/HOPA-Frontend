@@ -47,6 +47,7 @@ export const Route = createFileRoute("/attendance")({
 });
 
 function AttendancePage() {
+  const [isMounted, setIsMounted] = useState(false);
   const {
     students,
     attendance,
@@ -57,6 +58,9 @@ function AttendancePage() {
     isLoading,
   } = useChurch();
   const canManage = usePermission("manage-students");
+  useEffect(() => {
+    setIsMounted(true);
+  }, []);
   const activeCourses = useMemo(() => {
     const availableCourses = courses.filter((course) => course.active);
     return availableCourses.length > 0 ? availableCourses : DEFAULT_ATTENDANCE_COURSES;
@@ -100,20 +104,24 @@ function AttendancePage() {
     }
   }, [selectedCourse, selectedCourseId]);
 
+  const enrolledIds = selectedCourse
+    ? courseEnrollments
+        .filter((enrollment) => enrollment.courseId === selectedCourse.id)
+        .map((enrollment) => enrollment.studentId)
+    : [];
   const isCourseEnrolled = (courseId: string, studentId: string) =>
     courseEnrollments.some(
       (enrollment) => enrollment.courseId === courseId && enrollment.studentId === studentId,
-    );
-  const isCourseParticipant = (courseId: string, studentId: string) =>
-    isCourseEnrolled(courseId, studentId) ||
-    courseAttendance.some(
-      (record) => record.courseId === courseId && record.studentId === studentId,
     );
   const courseRows = selectedCourse
     ? students.filter(
         (student) =>
           student.name.toLowerCase().includes(q.toLowerCase()) &&
-          isCourseParticipant(selectedCourse.id, student.id),
+          (enrolledIds.includes(student.id) ||
+            courseAttendance.some(
+              (record) =>
+                record.courseId === selectedCourse.id && record.studentId === student.id,
+            )),
       )
     : [];
   const courseSessions = selectedCourse
@@ -123,8 +131,10 @@ function AttendancePage() {
         .sort((a, b) => b.localeCompare(a))
         .slice(0, 10)
     : [];
-  const courseHistoryDates =
-    courseSessions.length > 0 ? courseSessions : [courseSessionDate];
+  const courseHistoryDates = [
+    courseSessionDate,
+    ...courseSessions.filter((date) => date !== courseSessionDate),
+  ].slice(0, 10);
   const sessionsForStudent = (courseId: string, studentId: string) => {
     const enrolledAt = courseEnrollments.find(
       (enrollment) => enrollment.courseId === courseId && enrollment.studentId === studentId,
@@ -162,7 +172,7 @@ function AttendancePage() {
   const unenrolledStudents = selectedCourse
     ? students.filter(
         (student) =>
-          !isCourseEnrolled(selectedCourse.id, student.id) &&
+          !enrolledIds.includes(student.id) &&
           !courseAttendance.some(
             (record) =>
               record.courseId === selectedCourse.id && record.studentId === student.id,
@@ -186,6 +196,19 @@ function AttendancePage() {
       toast.error(formatApiError(error, "Failed to update attendance"));
     }
   };
+
+  if (!isMounted) {
+    return (
+      <main className="space-y-4 p-4">
+        <Skeleton className="h-8 w-56" />
+        <Skeleton className="h-12 w-full" />
+        <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
+          <Skeleton className="h-72 w-full" />
+          <Skeleton className="h-72 w-full" />
+        </div>
+      </main>
+    );
+  }
 
   return (
     <AppShell search={q} onSearch={setQ}>
@@ -688,7 +711,7 @@ function AttendancePage() {
                               record.present &&
                               studentSessionDates.has(record.date),
                           ).length;
-                          const studentHistoryDates = courseSessions.filter((date) =>
+                          const studentHistoryDates = courseHistoryDates.filter((date) =>
                             studentSessionDates.has(date),
                           );
                           return (

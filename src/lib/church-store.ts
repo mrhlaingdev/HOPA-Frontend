@@ -878,7 +878,7 @@ export const actions = {
     set({
       courseEnrollments: isEnrolled
         ? state.courseEnrollments
-        : [...state.courseEnrollments, { courseId, studentId, enrolledAt: localDateString() }],
+        : [...state.courseEnrollments, { courseId, studentId, enrolledAt: date }],
       courseAttendanceSessions: hasSession
         ? state.courseAttendanceSessions
         : [...state.courseAttendanceSessions, { courseId, date }],
