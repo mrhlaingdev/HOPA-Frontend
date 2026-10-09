@@ -6,7 +6,6 @@ import {
   ClipboardCheck,
   Download,
   GraduationCap,
-  ArrowRight,
   Receipt,
   RotateCcw,
   UserPlus,
@@ -309,18 +308,14 @@ function Overview() {
                   {displayedDashboardStats.femaleStudents} Female
                 </p>
               </div>
-              <div className="mt-2 flex items-center justify-between gap-2">
-                <p className="text-[11px] text-slate-500">All registered students</p>
+              <p className="mt-2 text-[11px] text-slate-500">All registered students</p>
+              <div className="mt-4">
                 <Link
                   to="/students"
                   search={{ q: "" }}
-                  className="group inline-flex items-center gap-1 rounded-md px-2 py-1 text-xs font-medium text-cyan-200 transition-colors hover:bg-cyan-300/10 hover:text-cyan-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-300/50"
+                  className="block w-full rounded-md border border-white/10 bg-slate-800/80 py-2 text-center text-sm font-medium text-slate-100 transition-colors hover:bg-slate-700/80 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-300/50"
                 >
-                  View Detail
-                  <ArrowRight
-                    className="size-3.5 transition-transform group-hover:translate-x-0.5"
-                    aria-hidden="true"
-                  />
+                  View details
                 </Link>
               </div>
             </div>
