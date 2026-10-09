@@ -71,17 +71,25 @@ export const Route = createFileRoute("/")({
   component: Overview,
 });
 
-function DashboardCardBackground({ image }: { image: string }) {
+function DashboardCardBackground({
+  image,
+  imageClassName = "opacity-[0.15] group-hover:opacity-25",
+  overlayClassName = "bg-slate-950/85",
+}: {
+  image: string;
+  imageClassName?: string;
+  overlayClassName?: string;
+}) {
   return (
     <>
       <div
         aria-hidden="true"
-        className="pointer-events-none absolute inset-0 bg-cover bg-center opacity-[0.15] transition-opacity duration-300 group-hover:opacity-25"
+        className={`pointer-events-none absolute inset-0 bg-cover bg-center transition-opacity duration-300 ${imageClassName}`}
         style={{ backgroundImage: `url(${image})` }}
       />
       <div
         aria-hidden="true"
-        className="pointer-events-none absolute inset-0 bg-slate-950/85"
+        className={`pointer-events-none absolute inset-0 ${overlayClassName}`}
       />
     </>
   );
@@ -305,7 +313,11 @@ function Overview() {
         <section aria-label="People statistics">
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
             <div className="glass group relative isolate overflow-hidden rounded-2xl border border-cyan-300/20 bg-gradient-to-br from-cyan-950/25 to-slate-900/70 p-5 shadow-[0_0_24px_rgba(34,211,238,0.05)] backdrop-blur-xl">
-              <DashboardCardBackground image="https://images.unsplash.com/photo-1577896851231-70ef18881754?q=80&w=800&auto=format&fit=crop" />
+              <DashboardCardBackground
+                image="https://images.unsplash.com/photo-1509062522246-3755977927d7?q=80&w=800&auto=format&fit=crop"
+                imageClassName="opacity-20 group-hover:opacity-30"
+                overlayClassName="bg-slate-900/80"
+              />
               <div className="relative z-10 flex items-start justify-between gap-3">
                 <div>
                   <p className="text-sm text-slate-300">Total Students</p>
