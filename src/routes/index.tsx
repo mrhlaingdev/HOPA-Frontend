@@ -346,6 +346,14 @@ function Overview() {
                   {teachers.length - activeTeachersCount} inactive
                 </span>
               </div>
+              <div className="mt-4">
+                <Link
+                  to="/teachers"
+                  className="block w-full rounded-md border border-white/10 bg-slate-800/80 py-2 text-center text-sm font-medium text-slate-100 transition-colors hover:bg-slate-700/80 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-300/50"
+                >
+                  View details
+                </Link>
+              </div>
             </div>
             <div className="glass relative overflow-hidden rounded-2xl border border-cyan-300/20 bg-gradient-to-br from-cyan-950/20 to-slate-900/70 p-5 shadow-[0_0_24px_rgba(34,211,238,0.05)] backdrop-blur-xl">
               <div className="flex items-start justify-between gap-3">
@@ -374,6 +382,14 @@ function Overview() {
                   {staff.length - activeMembersCount} inactive
                 </span>
               </div>
+              <div className="mt-4">
+                <Link
+                  to="/staff"
+                  className="block w-full rounded-md border border-white/10 bg-slate-800/80 py-2 text-center text-sm font-medium text-slate-100 transition-colors hover:bg-slate-700/80 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-300/50"
+                >
+                  View details
+                </Link>
+              </div>
             </div>
           </div>
         </section>
@@ -395,6 +411,14 @@ function Overview() {
               <p className="mt-4 text-xs text-slate-400">
                 {courses.length} total courses in system
               </p>
+              <div className="mt-4">
+                <Link
+                  to="/courses"
+                  className="block w-full rounded-md border border-white/10 bg-slate-800/80 py-2 text-center text-sm font-medium text-slate-100 transition-colors hover:bg-slate-700/80 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-300/50"
+                >
+                  View details
+                </Link>
+              </div>
             </div>
             <div className="glass relative overflow-hidden rounded-2xl border border-amber-300/20 bg-gradient-to-br from-yellow-950/20 to-slate-900/70 p-5 shadow-[0_0_24px_rgba(251,191,36,0.05)] backdrop-blur-xl">
               <div className="flex items-start justify-between gap-3">
@@ -411,6 +435,14 @@ function Overview() {
               <p className="mt-4 text-xs text-slate-400">
                 In the selected month or period
               </p>
+              <div className="mt-4">
+                <Link
+                  to="/courses"
+                  className="block w-full rounded-md border border-white/10 bg-slate-800/80 py-2 text-center text-sm font-medium text-slate-100 transition-colors hover:bg-slate-700/80 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-300/50"
+                >
+                  View details
+                </Link>
+              </div>
             </div>
           </div>
         </section>
