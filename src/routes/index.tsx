@@ -314,9 +314,9 @@ function Overview() {
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
             <div className="glass group relative isolate overflow-hidden rounded-2xl border border-cyan-300/20 bg-gradient-to-br from-cyan-950/25 to-slate-900/70 p-5 shadow-[0_0_24px_rgba(34,211,238,0.05)] backdrop-blur-xl">
               <DashboardCardBackground
-                image="https://images.unsplash.com/photo-1577896851231-70ef18881754?q=80&w=1000&auto=format&fit=crop"
-                imageClassName="opacity-30 group-hover:opacity-40"
-                overlayClassName="bg-slate-950/60"
+                image="https://www.naesp.org/wp-content/uploads/2023/03/SO23_0010_StudentUnique_2040160271.jpg"
+                imageClassName="opacity-35 group-hover:opacity-50"
+                overlayClassName="bg-slate-950/50"
               />
               <div className="relative z-10 flex items-start justify-between gap-3">
                 <div>
