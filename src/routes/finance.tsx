@@ -22,12 +22,18 @@ import { DateFilters } from "@/components/DateFilters";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import {
   ALL_DATE_FILTER,
   actions,
   formatApiError,
   loadEvents,
   matchesDate,
-  monthlyTotals,
   useChurch,
 } from "@/lib/church-store";
 import {
@@ -66,11 +72,75 @@ export const Route = createFileRoute("/finance")({
 const emptyTxn = () => ({
   date: localDateString(),
   type: "income" as "income" | "expense",
-  category: "Sunday Offering",
+  category: "အထွေထွေ အလှူငွေ (General Fund)",
   description: "",
   amount: 0,
   receipt: undefined as string | undefined,
 });
+
+const donationCategories = [
+  "အမျိုးသားအဖွဲ့ (Men's Fellowship)",
+  "အမျိုးသမီးအဖွဲ့ (Women's Fellowship)",
+  "လူငယ်အဖွဲ့ (Youth)",
+  "Sunday School",
+  "အထွေထွေ အလှူငွေ (General Fund)",
+] as const;
+
+const FINANCE_FILTERS_STORAGE_KEY = "hopa-finance-filters";
+
+function categoryForType(type: "income" | "expense", category: string) {
+  return type === "income" && !donationCategories.some((option) => option === category)
+    ? donationCategories[4]
+    : category;
+}
+
+function TransactionCategoryField({
+  id,
+  type,
+  value,
+  onChange,
+}: {
+  id: string;
+  type: "income" | "expense";
+  value: string;
+  onChange: (category: string) => void;
+}) {
+  if (type === "expense") {
+    return (
+      <label className="block text-xs font-medium" htmlFor={id}>
+        Category
+        <input
+          id={id}
+          className="field mt-1 w-full px-3 py-2 text-xs"
+          placeholder="Optional"
+          value={value}
+          onChange={(event) => onChange(event.target.value)}
+        />
+      </label>
+    );
+  }
+
+  return (
+    <label className="block text-xs font-medium" htmlFor={id}>
+      Donation / Offering Category
+      <select
+        id={id}
+        className="field mt-1 w-full px-3 py-2 text-xs"
+        value={value}
+        onChange={(event) => onChange(event.target.value)}
+      >
+        {!donationCategories.some((category) => category === value) && value && (
+          <option value={value}>{value}</option>
+        )}
+        {donationCategories.map((category) => (
+          <option key={category} value={category}>
+            {category}
+          </option>
+        ))}
+      </select>
+    </label>
+  );
+}
 
 function FinancePage() {
   const canManage = usePermission("manage-finance");
@@ -81,12 +151,69 @@ function FinancePage() {
   const [eventLoadError, setEventLoadError] = useState("");
   const [q, setQ] = useState("");
   const [dateFilter, setDateFilter] = useState(ALL_DATE_FILTER);
+  const [categoryFilter, setCategoryFilter] = useState("all");
+  const [filtersLoaded, setFiltersLoaded] = useState(false);
   const [form, setForm] = useState(emptyTxn());
   const [formError, setFormError] = useState("");
   const [viewing, setViewing] = useState<string | null>(null);
   const [editing, setEditing] = useState<(typeof txns)[number] | null>(null);
   const [editForm, setEditForm] = useState(emptyTxn());
   const [editError, setEditError] = useState("");
+
+  useEffect(() => {
+    try {
+      const stored = window.localStorage.getItem(FINANCE_FILTERS_STORAGE_KEY);
+      if (stored) {
+        const parsed: unknown = JSON.parse(stored);
+        if (
+          typeof parsed === "object" &&
+          parsed !== null &&
+          "date" in parsed &&
+          typeof parsed.date === "object" &&
+          parsed.date !== null &&
+          "year" in parsed.date &&
+          typeof parsed.date.year === "string" &&
+          "month" in parsed.date &&
+          typeof parsed.date.month === "string" &&
+          "category" in parsed &&
+          typeof parsed.category === "string"
+        ) {
+          const year = parsed.date.year;
+          const month = parsed.date.month;
+          setDateFilter({
+            year: year === "all" || /^\d{4}$/.test(year) ? year : "all",
+            month: month === "all" || /^(0[1-9]|1[0-2])$/.test(month) ? month : "all",
+          });
+          setCategoryFilter(
+            parsed.category === "all" ||
+              donationCategories.some((category) => category === parsed.category)
+              ? parsed.category
+              : "all",
+          );
+        } else {
+          throw new Error("Saved finance filters have an invalid format");
+        }
+      }
+    } catch (error) {
+      console.error("Unable to load saved finance filters", error);
+      toast.error("Saved finance filters are invalid and could not be loaded.");
+    } finally {
+      setFiltersLoaded(true);
+    }
+  }, []);
+
+  useEffect(() => {
+    if (!filtersLoaded) return;
+    try {
+      window.localStorage.setItem(
+        FINANCE_FILTERS_STORAGE_KEY,
+        JSON.stringify({ date: dateFilter, category: categoryFilter }),
+      );
+    } catch (error) {
+      console.error("Unable to save finance filters", error);
+      toast.error("Finance filters changed but could not be saved on this device.");
+    }
+  }, [categoryFilter, dateFilter, filtersLoaded]);
 
   useEffect(() => {
     let active = true;
@@ -109,19 +236,39 @@ function FinancePage() {
     };
   }, []);
 
-  const totals = monthlyTotals(txns, dateFilter);
+  const dateFilteredTxns = txns.filter((transaction) => matchesDate(transaction.date, dateFilter));
+  const categoryFilteredTxns =
+    categoryFilter === "all"
+      ? dateFilteredTxns
+      : dateFilteredTxns.filter((transaction) => transaction.category === categoryFilter);
+  const totals = {
+    rows: categoryFilteredTxns,
+    income: categoryFilteredTxns
+      .filter((transaction) => transaction.type === "income")
+      .reduce((sum, transaction) => sum + transaction.amount, 0),
+    expense: categoryFilteredTxns
+      .filter((transaction) => transaction.type === "expense")
+      .reduce((sum, transaction) => sum + transaction.amount, 0),
+  };
   const filteredEvents = events.filter((event) => matchesDate(event.date, dateFilter));
-  const eventExpenses = filteredEvents.reduce(
+  const includedEvents = categoryFilter === "all" ? filteredEvents : [];
+  const eventExpenses = includedEvents.reduce(
     (sum, event) => sum + (parseNumericValue(event.totalExpense) ?? 0),
     0,
   );
-  const eventDonations = filteredEvents.reduce(
+  const eventDonations = includedEvents.reduce(
     (sum, event) => sum + (parseNumericValue(event.donations) ?? 0),
     0,
   );
   const totalIncome = totals.income + eventDonations;
   const totalExpense = totals.expense + eventExpenses;
   const netBalance = totalIncome - totalExpense;
+  const donationCategoryTotals = donationCategories.map((category) => ({
+    category,
+    amount: dateFilteredTxns
+      .filter((transaction) => transaction.type === "income" && transaction.category === category)
+      .reduce((sum, transaction) => sum + transaction.amount, 0),
+  }));
   const monthlyAnalytics = new Map<
     string,
     { period: string; income: number; expenses: number }
@@ -137,7 +284,7 @@ function FinancePage() {
     else entry.expenses += transaction.amount;
     monthlyAnalytics.set(period, entry);
   }
-  for (const event of filteredEvents) {
+  for (const event of includedEvents) {
     const period = event.date.slice(0, 7);
     const entry = monthlyAnalytics.get(period) ?? {
       period,
@@ -188,7 +335,7 @@ function FinancePage() {
       ...transaction,
       source: "transaction" as const,
     })),
-    ...filteredEvents.flatMap((event) => {
+    ...includedEvents.flatMap((event) => {
       const donations = parseNumericValue(event.donations);
       const expenses = parseNumericValue(event.totalExpense);
       return [
@@ -255,11 +402,29 @@ function FinancePage() {
           <h1 className="font-display text-2xl font-semibold">Petty Cash &amp; Finance</h1>
           <p className="text-[11px] text-muted-foreground">ငွေစာရင်း စီမံခန့်ခွဲမှု</p>
         </div>
-        <DateFilters
-          value={dateFilter}
-          onChange={setDateFilter}
-          dates={[...txns.map((txn) => txn.date), ...events.map((event) => event.date)]}
-        />
+        <div className="flex flex-wrap items-center gap-2">
+          <Select value={categoryFilter} onValueChange={setCategoryFilter}>
+            <SelectTrigger
+              className="field h-auto w-auto min-w-40 px-3 py-2 text-xs"
+              aria-label="Filter by category"
+            >
+              <SelectValue placeholder="All Categories" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">All Categories</SelectItem>
+              {donationCategories.map((category) => (
+                <SelectItem key={category} value={category}>
+                  {category}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+          <DateFilters
+            value={dateFilter}
+            onChange={setDateFilter}
+            dates={[...txns.map((txn) => txn.date), ...events.map((event) => event.date)]}
+          />
+        </div>
       </div>
 
       <div className="grid grid-cols-12 gap-4">
@@ -313,6 +478,29 @@ function FinancePage() {
             </div>
           )}
         </div>
+
+        <section className="col-span-12" aria-label="Donation totals by category">
+          <div className="mb-3">
+            <h2 className="font-display text-lg font-semibold">
+              Donations &amp; Offerings by Category
+            </h2>
+            <p className="text-xs text-muted-foreground">
+              Totals for {dateFilter.year === "all" ? "all years" : dateFilter.year} ·{" "}
+              {dateFilter.month === "all" ? "all months" : "the selected month"}
+            </p>
+          </div>
+          <div className="grid grid-cols-2 gap-3 md:grid-cols-3 xl:grid-cols-5">
+            {donationCategoryTotals.map(({ category, amount }) => (
+              <div key={category} className="glass rounded-2xl p-4">
+                <p className="min-h-10 text-xs text-muted-foreground">{category}</p>
+                <p className="mt-2 font-display text-xl font-bold text-mint">
+                  {formatShortThb(amount)}
+                </p>
+                <p className="mt-1 text-[10px] text-muted-foreground">{formatThb(amount)}</p>
+              </div>
+            ))}
+          </div>
+        </section>
 
         <section className="col-span-12" aria-label="Financial analytics">
           <div className="mb-3">
@@ -461,10 +649,33 @@ function FinancePage() {
             >
               {formError && <p className="text-xs text-rose">{formError}</p>}
               <div className="grid grid-cols-2 gap-2">
-                <label className="text-xs font-medium" htmlFor="transaction-type">Transaction Type<select id="transaction-type" value={form.type} onChange={(e) => setForm({ ...form, type: e.target.value as "income" | "expense" })} className="field mt-1 w-full px-3 py-2 text-xs"><option value="income">Income</option><option value="expense">Expense</option></select></label>
+                <label className="text-xs font-medium" htmlFor="transaction-type">
+                  Transaction Type
+                  <select
+                    id="transaction-type"
+                    value={form.type}
+                    onChange={(event) => {
+                      const type = event.target.value === "expense" ? "expense" : "income";
+                      setForm({
+                        ...form,
+                        type,
+                        category: categoryForType(type, form.category),
+                      });
+                    }}
+                    className="field mt-1 w-full px-3 py-2 text-xs"
+                  >
+                    <option value="income">Income</option>
+                    <option value="expense">Expense</option>
+                  </select>
+                </label>
                 <label className="text-xs font-medium" htmlFor="transaction-date">Transaction Date<input id="transaction-date" type="date" value={form.date} onChange={(e) => setForm({ ...form, date: e.target.value })} className="field mt-1 w-full px-3 py-2 text-xs" /></label>
               </div>
-              <label className="block text-xs font-medium" htmlFor="transaction-category">Category<input id="transaction-category" className="field mt-1 w-full px-3 py-2 text-xs" placeholder="Optional" value={form.category} onChange={(e) => setForm({ ...form, category: e.target.value })} /></label>
+              <TransactionCategoryField
+                id="transaction-category"
+                type={form.type}
+                value={form.category}
+                onChange={(category) => setForm({ ...form, category })}
+              />
               <label className="block text-xs font-medium" htmlFor="transaction-description">Description<input id="transaction-description" className="field mt-1 w-full px-3 py-2 text-xs" placeholder="Optional" value={form.description} onChange={(e) => setForm({ ...form, description: e.target.value })} /></label>
               <label className="block text-xs font-medium" htmlFor="transaction-amount">Amount (฿)<input id="transaction-amount" className="field mt-1 w-full px-3 py-2 text-xs" type="number" min="0.01" step="0.01" required placeholder="e.g. 50000 THB" value={form.amount || ""} onChange={(e) => setForm({ ...form, amount: Number(e.target.value) })} /></label>
               <button className="w-full rounded-xl gradient-brand py-2.5 text-xs font-medium">
@@ -641,10 +852,33 @@ function FinancePage() {
           >
             {editError && <p className="text-xs text-rose">{editError}</p>}
             <div className="grid grid-cols-2 gap-2">
-              <label className="text-xs font-medium" htmlFor="edit-transaction-type">Transaction Type<select id="edit-transaction-type" className="field mt-1 w-full px-3 py-2 text-xs" value={editForm.type} onChange={(e) => setEditForm({ ...editForm, type: e.target.value as "income" | "expense" })}><option value="income">Income</option><option value="expense">Expense</option></select></label>
+              <label className="text-xs font-medium" htmlFor="edit-transaction-type">
+                Transaction Type
+                <select
+                  id="edit-transaction-type"
+                  className="field mt-1 w-full px-3 py-2 text-xs"
+                  value={editForm.type}
+                  onChange={(event) => {
+                    const type = event.target.value === "expense" ? "expense" : "income";
+                    setEditForm({
+                      ...editForm,
+                      type,
+                      category: categoryForType(type, editForm.category),
+                    });
+                  }}
+                >
+                  <option value="income">Income</option>
+                  <option value="expense">Expense</option>
+                </select>
+              </label>
               <label className="text-xs font-medium" htmlFor="edit-transaction-date">Transaction Date<input id="edit-transaction-date" className="field mt-1 w-full px-3 py-2 text-xs" type="date" value={editForm.date} onChange={(e) => setEditForm({ ...editForm, date: e.target.value })} /></label>
             </div>
-            <label className="block text-xs font-medium" htmlFor="edit-transaction-category">Category<input id="edit-transaction-category" className="field mt-1 w-full px-3 py-2 text-xs" placeholder="Optional" value={editForm.category} onChange={(e) => setEditForm({ ...editForm, category: e.target.value })} /></label>
+            <TransactionCategoryField
+              id="edit-transaction-category"
+              type={editForm.type}
+              value={editForm.category}
+              onChange={(category) => setEditForm({ ...editForm, category })}
+            />
             <label className="block text-xs font-medium" htmlFor="edit-transaction-description">Description<input id="edit-transaction-description" className="field mt-1 w-full px-3 py-2 text-xs" placeholder="Optional" value={editForm.description} onChange={(e) => setEditForm({ ...editForm, description: e.target.value })} /></label>
             <label className="block text-xs font-medium" htmlFor="edit-transaction-amount">Amount (฿)<input id="edit-transaction-amount" className="field mt-1 w-full px-3 py-2 text-xs" type="number" min="0.01" step="0.01" required placeholder="e.g. 50000 THB" value={editForm.amount || ""} onChange={(e) => setEditForm({ ...editForm, amount: Number(e.target.value) })} /></label>
             <Button type="submit" className="w-full">
